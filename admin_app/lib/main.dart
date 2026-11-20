@@ -50,7 +50,7 @@ class _AdminHomeState extends State<AdminHome> {
   Future<void> edit([Map<String,dynamic>? old]) async {
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
     for(final e in fields.entries){ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}
-    bool available=old?['available']!=false, hasPlace=old?['hasPlace']==true:true, active=old?['active']!=false;
+    bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, active=old?['active']!=false;
     List<String> images=List<String>.from(old?['images']??[]);
     final result=await showDialog<bool>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,ds)=>AlertDialog(
       title:Text(old==null?'إضافة ${sections[section]}':'تعديل ${sections[section]}'),
