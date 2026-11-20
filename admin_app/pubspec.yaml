@@ -1,12 +1,13 @@
 name: al_sheikha_admin
 description: AL SHEIKHA administration app
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0+1
 environment:
   sdk: '>=3.3.0 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
+  image_picker: ^1.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
