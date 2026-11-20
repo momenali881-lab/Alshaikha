@@ -22,9 +22,9 @@ class SheikhaAdminApp extends StatelessWidget {
 
 class AdminHome extends StatefulWidget { const AdminHome({super.key}); @override State<AdminHome> createState()=>_AdminHomeState(); }
 class _AdminHomeState extends State<AdminHome> {
-  String section='members'; List<Map<String,dynamic>> rows=[]; bool busy=true; Timer? poll;
+  String section='members'; List<Map<String,dynamic>> rows=[]; bool busy=true; Timer? poll; final chatController=TextEditingController();
   @override void initState(){super.initState(); refresh(); poll=Timer.periodic(const Duration(seconds:5),(_)=>refresh(silent:true));}
-  @override void dispose(){poll?.cancel();super.dispose();}
+  @override void dispose(){poll?.cancel();chatController.dispose();super.dispose();}
   void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
   Future<void> refresh({bool silent=false}) async {
     if(!silent && mounted)setState(()=>busy=true);
@@ -101,12 +101,32 @@ class _AdminHomeState extends State<AdminHome> {
       if(section=='messages')Align(alignment:Alignment.centerRight,child:Text('المحادثة: ${m['conversationId']??'-'}')),
     ])));
   }
+  Future<void> sendAdminMessage() async {
+    final value=chatController.text.trim();
+    if(value.isEmpty)return;
+    try {
+      await SharedStore.save('messages', {'conversationId':'customer-main','sender':'الإدارة','text':value,'createdAt':DateTime.now().toIso8601String()});
+      chatController.clear();
+      await refresh(silent:true);
+    } catch(e) { note('تعذر إرسال الرد: $e'); }
+  }
+  Widget adminChat() {
+    final messages=[...rows]..sort((a,b)=>('${a['createdAt']??''}').compareTo('${b['createdAt']??''}'));
+    return Column(children:[
+      const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('محادثة العميل'),subtitle:Text('الرسائل والردود تظهر هنا تلقائياً')),
+      Expanded(child:messages.isEmpty?const Center(child:Text('لا توجد رسائل بعد')):ListView.builder(padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index){
+        final m=messages[index]; final mine=m['sender']=='الإدارة'];
+        return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(constraints:const BoxConstraints(maxWidth:320),margin:const EdgeInsets.symmetric(vertical:5),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?plum.withOpacity(.16):rose.withOpacity(.18),borderRadius:BorderRadius.circular(14)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['sender']??'عميل'}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12)),const SizedBox(height:4),Text('${m['text']??''}'),const SizedBox(height:3),Text('${m['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))])));
+      })),
+      SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[Expanded(child:TextField(controller:chatController,minLines:1,maxLines:4,decoration:const InputDecoration(hintText:'اكتب رد الإدارة...',border:OutlineInputBorder()),onSubmitted:(_)=>sendAdminMessage())),IconButton(onPressed:sendAdminMessage,icon:const Icon(Icons.send))]))),
+    ]);
+  }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
     appBar:AppBar(title:const Text('الشيخة | الإدارة'),actions:[IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh))]),
     floatingActionButton:section=='messages'?null:FloatingActionButton.extended(onPressed:()=>edit(),icon:const Icon(Icons.add),label:const Text('إضافة')),
     body:Column(children:[
       SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(label:Text(e.value),selected:section==e.key,onSelected:(_){setState(()=>section=e.key);refresh();}))).toList())),
-      Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
+      Expanded(child:section=='messages'?adminChat():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
         Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[rose,plum]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
         if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
         if(rows.isEmpty)const Card(child:Padding(padding:EdgeInsets.all(20),child:Text('لا توجد بيانات بعد. استخدم زر الإضافة للبدء.'))),
