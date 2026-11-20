@@ -1,0 +1,32 @@
+name: Build Android APKs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [admin_app, client_app]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Generate Android platform
+        working-directory: ${{ matrix.app }}
+        run: flutter create --platforms=android .
+      - name: Get packages
+        working-directory: ${{ matrix.app }}
+        run: flutter pub get
+      - name: Build release APK
+        working-directory: ${{ matrix.app }}
+        run: flutter build apk --release
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-apk
+          path: ${{ matrix.app }}/build/app/outputs/flutter-apk/app-release.apk
