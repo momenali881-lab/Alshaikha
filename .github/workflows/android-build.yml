@@ -8,25 +8,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        app: [admin_app, client_app]
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Generate Android platform
-        working-directory: ${{ matrix.app }}
-        run: flutter create --platforms=android .
-      - name: Get packages
-        working-directory: ${{ matrix.app }}
-        run: flutter pub get
-      - name: Build release APK
-        working-directory: ${{ matrix.app }}
-        run: flutter build apk --release
-      - name: Upload APK artifact
+      # Both APKs are built on the same runner so Flutter's generated debug
+      # signing certificate is identical for the signature-protected provider.
+      - name: Generate Android projects
+        run: |
+          cd admin_app && flutter create --platforms=android . && cd ..
+          cd client_app && flutter create --platforms=android . && cd ..
+          python3 scripts/prepare_android.py
+      - name: Build administration APK
+        working-directory: admin_app
+        run: flutter pub get && flutter build apk --release
+      - name: Build client APK
+        working-directory: client_app
+        run: flutter pub get && flutter build apk --release
+      - name: Upload administration APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.app }}-apk
-          path: ${{ matrix.app }}/build/app/outputs/flutter-apk/app-release.apk
+          name: admin_app-apk
+          path: admin_app/build/app/outputs/flutter-apk/app-release.apk
+      - name: Upload client APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: client_app-apk
+          path: client_app/build/app/outputs/flutter-apk/app-release.apk
