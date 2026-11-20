@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Keep one signing identity across builds so installed apps can be updated safely.
+      - name: Restore stable Android signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: alshaikha-android-debug-signing-v1
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
