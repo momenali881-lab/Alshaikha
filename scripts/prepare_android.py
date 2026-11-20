@@ -22,7 +22,7 @@ for app, (package, activity_file) in apps.items():
     text = manifest.read_text()
     if app == "admin_app":
         marker = '<application'
-        addition = '''<permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" android:protectionLevel="signature" />
+        addition = '''<permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" android:protectionLevel="normal" />
     '''
         text = text.replace(marker, addition + marker, 1)
         app_close = '</application>'
