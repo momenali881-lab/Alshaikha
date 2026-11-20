@@ -115,7 +115,7 @@ class _AdminHomeState extends State<AdminHome> {
     return Column(children:[
       const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('محادثة العميل'),subtitle:Text('الرسائل والردود تظهر هنا تلقائياً')),
       Expanded(child:messages.isEmpty?const Center(child:Text('لا توجد رسائل بعد')):ListView.builder(padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index){
-        final m=messages[index]; final mine=m['sender']=='الإدارة'];
+        final m=messages[index]; final mine=m['sender']=='الإدارة';
         return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(constraints:const BoxConstraints(maxWidth:320),margin:const EdgeInsets.symmetric(vertical:5),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?plum.withOpacity(.16):rose.withOpacity(.18),borderRadius:BorderRadius.circular(14)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['sender']??'عميل'}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12)),const SizedBox(height:4),Text('${m['text']??''}'),const SizedBox(height:3),Text('${m['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))])));
       })),
       SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[Expanded(child:TextField(controller:chatController,minLines:1,maxLines:4,decoration:const InputDecoration(hintText:'اكتب رد الإدارة...',border:OutlineInputBorder()),onSubmitted:(_)=>sendAdminMessage())),IconButton(onPressed:sendAdminMessage,icon:const Icon(Icons.send))]))),
