@@ -46,7 +46,7 @@ class _ClientHomeState extends State<ClientHome>{
  ])));
  Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   Container(height:170,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:const LinearGradient(colors:[rose,plum]),borderRadius:BorderRadius.circular(24)),child:const Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[Text('AL SHEIKHA MASSAGE CENTER',style:TextStyle(color:Colors.white70)),SizedBox(height:12),Text('الراحة تبدأ من هنا',style:TextStyle(color:Colors.white,fontSize:26,fontWeight:FontWeight.bold)),Text('عناية وراحة بتجربة مميزة',style:TextStyle(color:Colors.white))])),
-  if(banners.isNotEmpty)...banners.map((b)=>Card(child:Column(children:[if((b['images'] as List? ?? []).isNotEmpty)Image.memory(base64Decode((b['images'] as List).first),height:145,width:double.infinity,fit:BoxFit.cover),ListTile(title:Text('${b['title']??''}'),subtitle:Text('${b['description']??''}))]))),
+  if(banners.isNotEmpty)...banners.map((b)=>Card(child:Column(children:[if((b['images'] as List? ?? []).isNotEmpty)Image.memory(base64Decode((b['images'] as List).first),height:145,width:double.infinity,fit:BoxFit.cover),ListTile(title:Text('${b['title']??''}'),subtitle:Text('${b['description']??''}'))]))),
   const SizedBox(height:12),const Text('الكادر المتوفر',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
   ...members.where((m)=>'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).map(memberCard),
   const SizedBox(height:16),const Text('أرشيف الجلسات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
@@ -73,5 +73,5 @@ class MemberSearch extends SearchDelegate<String>{
  @override List<Widget>? buildActions(BuildContext context)=>[IconButton(onPressed:()=>query='',icon:const Icon(Icons.clear))];
  @override Widget? buildLeading(BuildContext context)=>IconButton(onPressed:()=>close(context,''),icon:const Icon(Icons.arrow_back));
  @override Widget buildResults(BuildContext context)=>buildSuggestions(context);
- @override Widget buildSuggestions(BuildContext context)=>ListView(children:members.where((m)=>'${m['name']} ${m['description']}'.toLowerCase().contains(query.toLowerCase())).map((m)=>ListTile(title:Text('${m['name']}'),subtitle:Text('${m['address']??''}),onTap:(){onPick(query);close(context,query);})).toList());
+ @override Widget buildSuggestions(BuildContext context)=>ListView(children:members.where((m)=>'${m['name']} ${m['description']}'.toLowerCase().contains(query.toLowerCase())).map((m)=>ListTile(title:Text('${m['name']}'),subtitle:Text('${m['address']??''}'),onTap:(){onPick(query);close(context,query);})).toList());
 }
