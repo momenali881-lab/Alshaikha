@@ -66,7 +66,7 @@ class _AdminHomeState extends State<AdminHome> {
   }
   Future<void> edit([Map<String,dynamic>? old]) async {
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
-    for(final e in fields.entries){if(section=='members'&&e.key=='address')continue;ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}
+    for(final e in fields.entries){if(section=='members'&&e.key=='address')continue;ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}if(section=='bookings'&&old==null)ctrls['durationMinutes']!.text='60';
     final landmark=TextEditingController(text:'${old?['landmark']??''}');
     String? selectedProvince=old?['province']?.toString(),selectedArea=old?['area']?.toString()??old?['district']?.toString(),selectedLandmark=old?['landmark']?.toString();
     if(selectedArea!=null&&!((iraqGovernorates[selectedProvince]??const <String>[]).contains(selectedArea)))selectedArea=null;
@@ -81,7 +81,7 @@ class _AdminHomeState extends State<AdminHome> {
     final result=await showDialog<bool>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,ds)=>AlertDialog(
       title:Text(old==null?'إضافة ${sections[section]}':'تعديل ${sections[section]}'),
       content:SizedBox(width:460,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-        ...fields.entries.where((e)=>!['available','hasPlace','memberId','date'].contains(e.key)&&!(section=='members'&&e.key=='address')).map((e)=>Padding(padding:const EdgeInsets.only(bottom:10),child:TextField(controller:ctrls[e.key],scrollPadding:const EdgeInsets.only(bottom:180),maxLines:['description','notes','text','address'].contains(e.key)?3:1,keyboardType:['age','hourlyPrice','nightlyPrice'].contains(e.key)?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:e.value,border:const OutlineInputBorder())))),
+        ...fields.entries.where((e)=>!['available','hasPlace','memberId','date'].contains(e.key)&&!(section=='members'&&e.key=='address')).map((e)=>Padding(padding:const EdgeInsets.only(bottom:10),child:TextField(controller:ctrls[e.key],scrollPadding:const EdgeInsets.only(bottom:180),maxLines:['description','notes','text','address'].contains(e.key)?3:1,keyboardType:['age','hourlyPrice','nightlyPrice','durationMinutes'].contains(e.key)?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:e.value,border:const OutlineInputBorder())))),
         if(section=='bookings')...[
           DropdownButtonFormField<String>(value:bookingMembers.any((m)=>m['id']?.toString()==selectedMemberId)?selectedMemberId:null,decoration:const InputDecoration(labelText:'اختيار عضو الكادر',border:OutlineInputBorder()),items:bookingMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Row(children:[if((m['images'] as List? ?? []).isNotEmpty)ClipRRect(borderRadius:BorderRadius.circular(6),child:Image.memory(base64Decode((m['images'] as List).first),width:30,height:30,fit:BoxFit.cover)),const SizedBox(width:8),Text('${m['name']??'عضو'}')]))).toList(),onChanged:(v)=>ds(()=>selectedMemberId=v)),
           const SizedBox(height:10),
