@@ -33,7 +33,7 @@ class _ClientHomeState extends State<ClientHome>{
   if(selectedMember==null){for(final candidate in members){if(candidate['available']!=false){selectedMember=candidate;break;}}}
   final name=TextEditingController(),phone=TextEditingController(),notes=TextEditingController();
   final landmark=TextEditingController();
-  String? selectedProvince, selectedArea, selectedLandmark;
+  String? selectedProvince, selectedArea, selectedLandmark;List<String> liveLandmarks=[];bool loadingLandmarks=false;
   DateTime? selectedDate; TimeOfDay? selectedTime;
   final result=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,ds)=>AlertDialog(
    title:const Text('طلب حجز موعد'),
@@ -45,11 +45,13 @@ class _ClientHomeState extends State<ClientHome>{
     const SizedBox(height:12),
     const Align(alignment:Alignment.centerRight,child:Text('عنوان العميل داخل العراق',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16))),
     const SizedBox(height:8),
-    DropdownButtonFormField<String>(value:selectedProvince,decoration:const InputDecoration(labelText:'المحافظة',prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((p)=>DropdownMenuItem(value:p,child:Text(p))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedArea=null;selectedLandmark=null;})),
+    DropdownButtonFormField<String>(value:selectedProvince,decoration:const InputDecoration(labelText:'المحافظة',prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((p)=>DropdownMenuItem(value:p,child:Text(p))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedArea=null;selectedLandmark=null;liveLandmarks=[];})),
     const SizedBox(height:8),
     DropdownButtonFormField<String>(value:selectedArea,decoration:const InputDecoration(labelText:'المنطقة / القضاء / الناحية / الحي'),items:(iraqGovernorates[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds(()=>selectedArea=v)),
     const SizedBox(height:8),
-    DropdownButtonFormField<String>(value:selectedLandmark,decoration:const InputDecoration(labelText:'اختر نقطة دالة باسمها الحقيقي'),items:(iraqVerifiedLandmarks[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds(()=>selectedLandmark=v)),
+    DropdownButtonFormField<String>(value:selectedLandmark,decoration:const InputDecoration(labelText:'اختر نقطة دالة باسمها الحقيقي'),items:<String>{...(iraqVerifiedLandmarks[selectedProvince]??const <String>[]),...liveLandmarks}.toList().map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds((){selectedLandmark=v;landmark.clear();})),
+    OutlinedButton.icon(onPressed:selectedProvince==null||selectedArea==null||loadingLandmarks?null:()async{ds(()=>loadingLandmarks=true);final found=await searchRealLandmarks(selectedProvince!,selectedArea!);if(!mounted)return;ds(()=>{liveLandmarks=found;loadingLandmarks=false;if(found.isNotEmpty)selectedLandmark=found.first;});note(found.isEmpty?'لم يعثر OpenStreetMap على نقاط مسماة داخل هذه المنطقة. لا توجد أسماء مختلقة.':'تم العثور على ${found.length} نقطة دالة مسماة داخل المنطقة');},icon:loadingLandmarks?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.travel_explore),label:Text(loadingLandmarks?'جارٍ البحث عن نقاط حقيقية...':'جلب نقاط دالة حقيقية داخل المنطقة من OpenStreetMap')),
+    const Align(alignment:Alignment.centerRight,child:Text('المصدر: OpenStreetMap contributors. النتائج مرتبطة بالمنطقة المختارة وقد تختلف حسب تغطية الخرائط.',style:TextStyle(fontSize:11,color:Colors.black54))),
     const Align(alignment:Alignment.centerRight,child:Text('القائمة تعرض المعالم والمرافق ذات الأسماء المنشورة في قاعدة البيانات. إذا لم يظهر اسم منطقتك، أدخل الاسم الكامل المعروف محلياً.',style:TextStyle(fontSize:12,color:Colors.black54))),
     TextField(controller:landmark,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'اسم النقطة الدالة الكامل عند عدم وجودها بالقائمة',hintText:'لا تكتب نوع المكان فقط؛ اكتب اسمه المحدد')),
     const SizedBox(height:10),
