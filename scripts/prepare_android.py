@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import re
 
 root = Path(__file__).resolve().parents[1]
 apps = {
@@ -43,4 +44,16 @@ for app, (package, activity_file) in apps.items():
         marker = '<application'
         permission = '<uses-permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" />\n    '
         text = text.replace(marker, permission + marker, 1)
+    # Ensure Android resizes the Flutter window instead of panning content
+    # behind the soft keyboard. This applies to both generated Android apps.
+    activity_pattern = r'(<activity\\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)'
+    match = re.search(activity_pattern, text, flags=re.DOTALL)
+    if match:
+        activity_tag = match.group(1)
+        if 'android:windowSoftInputMode=' in activity_tag:
+            activity_tag = re.sub(r'android:windowSoftInputMode="[^"]*"',
+                                  'android:windowSoftInputMode="adjustResize"', activity_tag)
+        else:
+            activity_tag += ' android:windowSoftInputMode="adjustResize"'
+        text = text[:match.start()] + activity_tag + match.group(2) + text[match.end():]
     manifest.write_text(text)
