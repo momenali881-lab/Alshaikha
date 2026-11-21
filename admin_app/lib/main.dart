@@ -91,7 +91,7 @@ class _AdminHomeState extends State<AdminHome> {
         ],
         if(section=='members')...[
           const Align(alignment:Alignment.centerRight,child:Padding(padding:EdgeInsets.only(top:6,bottom:8),child:Text('عنوان العضو داخل العراق',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16)))),
-          DropdownButtonFormField<String>(value:iraqGovernorates.containsKey(selectedProvince)?selectedProvince:null,decoration:const InputDecoration(labelText:'المحافظة',border:OutlineInputBorder(),prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedDistrict=null;selectedNeighborhood=null;})),
+          DropdownButtonFormField<String>(value:iraqGovernorates.containsKey(selectedProvince)?selectedProvince:null,decoration:const InputDecoration(labelText:'المحافظة',border:OutlineInputBorder(),prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedArea=null;selectedLandmark=null;})),
           const SizedBox(height:9),
           DropdownButtonFormField<String>(value:selectedArea,decoration:const InputDecoration(labelText:'المنطقة / القضاء / الناحية / الحي',border:OutlineInputBorder(),prefixIcon:Icon(Icons.map_outlined)),items:(iraqGovernorates[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds(()=>selectedArea=v)),
           const SizedBox(height:9),
@@ -122,7 +122,7 @@ class _AdminHomeState extends State<AdminHome> {
     )));
     if(result==true){
       final data=<String,dynamic>{'id':old?['id']};
-      for(final key in fields.keys){if(key=='available'||key=='hasPlace'||(section=='members'&&key=='address'))continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=key=='age'?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
+      for(final key in fields.keys){if(key=='available'||key=='hasPlace'||(section=='members'&&key=='address'))continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=(key=='age'||key=='durationMinutes')?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
       if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];}
       if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;data['province']=selectedProvince??'';data['area']=selectedArea??'';data['district']=selectedArea??'';data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,selectedArea,data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
       if(section=='banners')data['active']=active;
