@@ -24,7 +24,7 @@ for app, (package, activity_file) in apps.items():
     if 'android.permission.INTERNET' not in text:
         text = text.replace('<manifest', '<manifest', 1)
         close = text.find('>')
-        text = text[:close + 1] + '\\n    ' + internet + text[close + 1:]
+        text = text[:close + 1] + '\n    ' + internet + text[close + 1:]
     if app == "admin_app":
         marker = '<application'
         addition = '''<permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" android:protectionLevel="normal" />
