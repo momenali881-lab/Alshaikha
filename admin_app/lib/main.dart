@@ -36,7 +36,7 @@ class _AdminHomeState extends State<AdminHome> {
     'members'=>{'name':'الاسم','age':'العمر','address':'العنوان','hourlyPrice':'سعر الساعة بالدينار','nightlyPrice':'سعر الليلة بالدينار','description':'نبذة وتعريف','hasPlace':'يوجد مكان؟','available':'متاح للحجز؟'},
     'sessions'=>{'title':'عنوان الجلسة','memberId':'معرّف عضو الكادر (اختياري)','date':'التاريخ','description':'الوصف'},
     'banners'=>{'title':'عنوان البانر','description':'النص الظاهر','targetType':'الربط (member أو session)','targetId':'معرّف العنصر المرتبط'},
-    'bookings'=>{'customerName':'اسم العميل','phone':'رقم الهاتف','memberName':'اسم العضو','date':'الموعد المطلوب','notes':'ملاحظات','status':'الحالة'},
+    'bookings'=>{'customerName':'اسم العميل','phone':'رقم الهاتف','memberId':'العضو','date':'الموعد المطلوب','notes':'ملاحظات','status':'الحالة'},
     _=>{'conversationId':'رقم المحادثة','sender':'المرسل','text':'نص الرسالة','createdAt':'وقت الإرسال'}
   };
   Future<List<String>> pickImages([List<String> existing=const[]]) async {
@@ -50,12 +50,22 @@ class _AdminHomeState extends State<AdminHome> {
   Future<void> edit([Map<String,dynamic>? old]) async {
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
     for(final e in fields.entries){ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}
+    final bookingMembers=section=='bookings'?await SharedStore.list('members'):<Map<String,dynamic>>[];
+    String? selectedMemberId=old?['memberId']?.toString()??(bookingMembers.isNotEmpty?bookingMembers.first['id']?.toString():null);
+    DateTime? bookingDate=DateTime.tryParse('${old?['date']??''}');
     bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, active=old?['active']!=false;
     List<String> images=List<String>.from(old?['images']??[]);
     final result=await showDialog<bool>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,ds)=>AlertDialog(
       title:Text(old==null?'إضافة ${sections[section]}':'تعديل ${sections[section]}'),
       content:SizedBox(width:460,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-        ...fields.entries.where((e)=>!['available','hasPlace'].contains(e.key)).map((e)=>Padding(padding:const EdgeInsets.only(bottom:10),child:TextField(controller:ctrls[e.key],maxLines:['description','notes','text'].contains(e.key)?3:1,keyboardType:['age','hourlyPrice','nightlyPrice'].contains(e.key)?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:e.value,border:const OutlineInputBorder())))),
+        ...fields.entries.where((e)=>!['available','hasPlace','memberId','date'].contains(e.key)).map((e)=>Padding(padding:const EdgeInsets.only(bottom:10),child:TextField(controller:ctrls[e.key],maxLines:['description','notes','text'].contains(e.key)?3:1,keyboardType:['age','hourlyPrice','nightlyPrice'].contains(e.key)?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:e.value,border:const OutlineInputBorder())))),
+        if(section=='bookings')...[
+          DropdownButtonFormField<String>(value:bookingMembers.any((m)=>m['id']?.toString()==selectedMemberId)?selectedMemberId:null,decoration:const InputDecoration(labelText:'اختيار عضو الكادر',border:OutlineInputBorder()),items:bookingMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']??'عضو'}'))).toList(),onChanged:(v)=>ds(()=>selectedMemberId=v)),
+          const SizedBox(height:10),
+          OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:ctx,initialDate:bookingDate??DateTime.now().add(const Duration(days:1)),firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)ds(()=>bookingDate=DateTime(d.year,d.month,d.day,bookingDate?.hour??12,bookingDate?.minute??0));},icon:const Icon(Icons.calendar_month),label:Text(bookingDate==null?'تحديد تاريخ الحجز':'${bookingDate!.year}/${bookingDate!.month}/${bookingDate!.day}')),
+          OutlinedButton.icon(onPressed:()async{final t=await showTimePicker(context:ctx,initialTime:TimeOfDay.fromDateTime(bookingDate??DateTime.now()));if(t!=null)ds(()=>bookingDate=DateTime(bookingDate?.year??DateTime.now().year,bookingDate?.month??DateTime.now().month,bookingDate?.day??DateTime.now().day,t.hour,t.minute));},icon:const Icon(Icons.schedule),label:Text(bookingDate==null?'تحديد وقت الحجز':TimeOfDay.fromDateTime(bookingDate!).format(ctx))),
+          if(bookingMembers.isEmpty)const Text('أضف أعضاء الكادر أولاً لتتمكن من ربط الحجز بعضو.'),
+        ],
         if(section=='members')...[
           SwitchListTile(value:hasPlace,onChanged:(v)=>ds(()=>hasPlace=v),title:const Text('يوجد مكان')),
           SwitchListTile(value:available,onChanged:(v)=>ds(()=>available=v),title:const Text('متاح للحجز')),
@@ -74,11 +84,12 @@ class _AdminHomeState extends State<AdminHome> {
     )));
     if(result==true){
       final data=<String,dynamic>{'id':old?['id']};
-      for(final key in fields.keys){if(key=='available'||key=='hasPlace')continue;final v=ctrls[key]!.text.trim();data[key]=key=='age'?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
+      for(final key in fields.keys){if(key=='available'||key=='hasPlace')continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=key=='age'?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
+      if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];}
       if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;}
       if(section=='banners')data['active']=active;
       if(['members','sessions','banners'].contains(section))data['images']=images;
-      try{await SharedStore.save(section,data);await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
+      if(section=='bookings'&&(selectedMemberId==null||bookingDate==null)){note('اختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{await SharedStore.save(section,data);await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
     for(final c in ctrls.values){c.dispose();}
   }
