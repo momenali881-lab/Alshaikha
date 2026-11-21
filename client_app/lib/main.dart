@@ -90,7 +90,7 @@ class _ClientHomeState extends State<ClientHome>{
   photo(m,size:76),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',style:const TextStyle(color:plum))])),
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
- ]))))
+  ]))));
  Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   Container(height:170,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:const LinearGradient(colors:[rose,plum]),borderRadius:BorderRadius.circular(24)),child:const Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[Text('AL SHEIKHA MASSAGE CENTER',style:TextStyle(color:Colors.white70)),SizedBox(height:12),Text('الراحة تبدأ من هنا',style:TextStyle(color:Colors.white,fontSize:26,fontWeight:FontWeight.bold)),Text('عناية وراحة بتجربة مميزة',style:TextStyle(color:Colors.white))])),
   if(banners.isNotEmpty)...banners.map((b)=>Card(child:Column(children:[if((b['images'] as List? ?? []).isNotEmpty)Image.memory(base64Decode((b['images'] as List).first),height:145,width:double.infinity,fit:BoxFit.cover),ListTile(title:Text('${b['title']??''}'),subtitle:Text('${b['description']??''}'))]))),
