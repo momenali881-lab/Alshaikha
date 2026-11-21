@@ -95,9 +95,13 @@ class _ClientHomeState extends State<ClientHome>{
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
   ]))));
+ Widget bannerCard(Map<String,dynamic> b)=>SizedBox(width:310,child:Card(clipBehavior:Clip.antiAlias,child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  Expanded(child:imageList(b).isNotEmpty?GestureDetector(onTap:()=>viewImages(imageList(b),0),child:Image.memory(base64Decode(imageList(b).first),fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.broken_image)))):Container(color:plum.withOpacity(.08),child:const Center(child:Icon(Icons.image_outlined,size:42,color:plum)))),
+  if('${b['title']??''}'.toString().isNotEmpty||'${b['description']??''}'.toString().isNotEmpty)Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[if('${b['title']??''}'.isNotEmpty)Text('${b['title']}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.bold)),if('${b['description']??''}'.isNotEmpty)Text('${b['description']}',maxLines:2,overflow:TextOverflow.ellipsis)]))
+ ])));
  Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
-  Container(height:170,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:const LinearGradient(colors:[rose,plum]),borderRadius:BorderRadius.circular(24)),child:const Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[Text('AL SHEIKHA MASSAGE CENTER',style:TextStyle(color:Colors.white70)),SizedBox(height:12),Text('الراحة تبدأ من هنا',style:TextStyle(color:Colors.white,fontSize:26,fontWeight:FontWeight.bold)),Text('عناية وراحة بتجربة مميزة',style:TextStyle(color:Colors.white))])),
-  if(banners.isNotEmpty)...banners.map((b)=>Card(child:Column(children:[imageGallery(b,height:145),ListTile(title:Text('${b['title']??''}'),subtitle:Text('${b['description']??''}'))]))),
+  if(banners.isNotEmpty)SizedBox(height:190,child:ListView(scrollDirection:Axis.horizontal,physics:const BouncingScrollPhysics(),children:banners.map(bannerCard).toList())),
+  if(banners.isEmpty)const SizedBox.shrink(),
   const SizedBox(height:12),const Text('الكادر المتوفر',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
   ...members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).map(memberCard),
   const SizedBox(height:16),const Text('أرشيف الجلسات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
