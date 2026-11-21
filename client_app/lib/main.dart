@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
-import '../../shared/iraq_locations.dart';
+import 'shared/iraq_locations.dart';
 
 void main()=>runApp(const SheikhaClientApp());
 const rose=Color(0xFFE91E63), plum=Color(0xFF6A1B9A), cream=Color(0xFFFFF7FB), teal=Color(0xFF00A6A6), gold=Color(0xFFFFB300);
