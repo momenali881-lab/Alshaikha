@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
+import '../../shared/iraq_locations.dart';
 
 void main()=>runApp(const SheikhaClientApp());
 const rose=Color(0xFFE91E63), plum=Color(0xFF6A1B9A), cream=Color(0xFFFFF7FB), teal=Color(0xFF00A6A6), gold=Color(0xFFFFB300);
@@ -30,6 +31,8 @@ class _ClientHomeState extends State<ClientHome>{
   Map<String,dynamic>? selectedMember=initialMember;
   if(selectedMember==null){for(final candidate in members){if(candidate['available']!=false){selectedMember=candidate;break;}}}
   final name=TextEditingController(),phone=TextEditingController(),notes=TextEditingController();
+  final customNeighborhood=TextEditingController(), landmark=TextEditingController();
+  String? selectedProvince, selectedDistrict, selectedNeighborhood, landmarkType;
   DateTime? selectedDate; TimeOfDay? selectedTime;
   final result=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,ds)=>AlertDialog(
    title:const Text('طلب حجز موعد'),
@@ -37,7 +40,19 @@ class _ClientHomeState extends State<ClientHome>{
     DropdownButtonFormField<String>(value:selectedMember?['id']?.toString(),decoration:const InputDecoration(labelText:'اختيار العضو',prefixIcon:Icon(Icons.spa),border:OutlineInputBorder()),items:members.where((member)=>member['available']!=false).map((member)=>DropdownMenuItem<String>(value:member['id'].toString(),child:Text('${member['name']??'عضو'}'))).toList(),onChanged:(v)=>ds(()=>selectedMember=members.firstWhere((member)=>member['id'].toString()==v)),),
     const SizedBox(height:10),
     TextField(controller:name,decoration:const InputDecoration(labelText:'الاسم الكامل',prefixIcon:Icon(Icons.person))),
-    TextField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'رقم الهاتف',prefixIcon:Icon(Icons.phone))),
+    TextField(controller:phone,keyboardType:TextInputType.phone,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'رقم الهاتف',prefixIcon:Icon(Icons.phone))),
+    const SizedBox(height:12),
+    const Align(alignment:Alignment.centerRight,child:Text('عنوان العميل داخل العراق',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16))),
+    const SizedBox(height:8),
+    DropdownButtonFormField<String>(value:selectedProvince,decoration:const InputDecoration(labelText:'المحافظة',prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((p)=>DropdownMenuItem(value:p,child:Text(p))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedDistrict=null;selectedNeighborhood=null;})),
+    const SizedBox(height:8),
+    DropdownButtonFormField<String>(value:selectedDistrict,decoration:const InputDecoration(labelText:'القضاء / المنطقة'),items:(selectedProvince==null?const <String>[]:iraqGovernorates[selectedProvince]??const <String>[]).map((d)=>DropdownMenuItem(value:d,child:Text(d))).toList(),onChanged:selectedProvince==null?null:(v)=>ds((){selectedDistrict=v;selectedNeighborhood=null;})),
+    const SizedBox(height:8),
+    DropdownButtonFormField<String>(value:selectedNeighborhood,decoration:const InputDecoration(labelText:'الحي / المكان'),items:iraqNeighborhoodChoices.map((n)=>DropdownMenuItem(value:n,child:Text(n))).toList(),onChanged:selectedDistrict==null?null:(v)=>ds(()=>selectedNeighborhood=v)),
+    if(selectedNeighborhood=='منطقة أخرى (اكتب الاسم)')Padding(padding:const EdgeInsets.only(top:8),child:TextField(controller:customNeighborhood,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'اكتب اسم الحي أو المكان'))),
+    const SizedBox(height:8),
+    DropdownButtonFormField<String>(value:landmarkType,decoration:const InputDecoration(labelText:'نوع أقرب نقطة دالة'),items:iraqLandmarkTypes.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>ds(()=>landmarkType=v)),
+    TextField(controller:landmark,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'اسم النقطة الدالة بالتحديد (مثلاً اسم السوق أو الجامع)')),
     const SizedBox(height:10),
     OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:c,initialDate:selectedDate??DateTime.now().add(const Duration(days:1)),firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)ds(()=>selectedDate=d);},icon:const Icon(Icons.calendar_month),label:Text(selectedDate==null?'اختيار تاريخ الحجز':'${selectedDate!.year}/${selectedDate!.month}/${selectedDate!.day}')),
     OutlinedButton.icon(onPressed:()async{final t=await showTimePicker(context:c,initialTime:selectedTime??TimeOfDay.now());if(t!=null)ds(()=>selectedTime=t);},icon:const Icon(Icons.schedule),label:Text(selectedTime==null?'اختيار وقت الحجز':selectedTime!.format(c))),
@@ -45,8 +60,8 @@ class _ClientHomeState extends State<ClientHome>{
    ]))),
    actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))],
   )));
-  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('اختر العضو وأكمل الاسم ورقم الهاتف والتاريخ والوقت');}else{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);await SharedStore.save('bookings',{'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});note('تم إرسال طلب الحجز');await load();}}
-  name.dispose();phone.dispose();notes.dispose();
+  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null||selectedProvince==null||selectedDistrict==null||selectedNeighborhood==null||landmarkType==null||landmark.text.trim().isEmpty||(selectedNeighborhood=='منطقة أخرى (اكتب الاسم)'&&customNeighborhood.text.trim().isEmpty)){note('أكمل بياناتك واختر المحافظة والقضاء والحي وأقرب نقطة دالة');}else{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final neighborhood=selectedNeighborhood=='منطقة أخرى (اكتب الاسم)'?customNeighborhood.text.trim():selectedNeighborhood!;final fullAddress='${selectedProvince!}، ${selectedDistrict!}، $neighborhood، $landmarkType: ${landmark.text.trim()}';await SharedStore.save('bookings',{'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'province':selectedProvince,'district':selectedDistrict,'neighborhood':neighborhood,'landmarkType':landmarkType,'landmark':landmark.text.trim(),'address':fullAddress,'notes':notes.text.trim(),'status':'قيد المراجعة'});note('تم إرسال طلب الحجز');await load();}}
+  name.dispose();phone.dispose();notes.dispose();customNeighborhood.dispose();landmark.dispose();
  }
  Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});messageCtrl.clear();await load(silent:true);}catch(e){note('تعذر إرسال الرسالة: $e');}}
  Future<void> shareMemberProfile()async{
@@ -111,12 +126,13 @@ class _ClientHomeState extends State<ClientHome>{
  Widget chatPage()=>Column(children:[
   const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('التواصل مع الإدارة'),subtitle:Text('يمكنك إرسال الرسائل واستقبال رد الإدارة هنا')),
   Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView(padding:const EdgeInsets.all(12),children:messages.map(chatMessage).toList())),
-  SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,minLines:1,maxLines:4,decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
+  SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
  ]);
  Widget morePage()=>ListView(padding:const EdgeInsets.all(18),children:[const ListTile(leading:Icon(Icons.spa),title:Text('مركز الشيخة'),subtitle:Text('نرحب بكم دائماً')),const ListTile(leading:Icon(Icons.currency_exchange),title:Text('العملة'),subtitle:Text('الدينار العراقي (د.ع)')),ListTile(leading:const Icon(Icons.refresh),title:const Text('تحديث البيانات'),onTap:load)]);
  Widget currentPage()=>switch(tab){1=>bookingsPage(),2=>chatPage(),3=>morePage(),_=>homePage()};
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
   appBar:AppBar(title:const Text('الشيخة',style:TextStyle(fontWeight:FontWeight.bold)),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.14)),icon:const Icon(Icons.favorite,color:rose)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search)),IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),
+  resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
   bottomNavigationBar:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.spa_outlined,color:gold),selectedIcon:Icon(Icons.spa,color:gold),label:'المزيد')])
  ));
