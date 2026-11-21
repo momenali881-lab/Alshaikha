@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
 
 void main()=>runApp(const SheikhaClientApp());
-const rose=Color(0xFFB77D91), plum=Color(0xFF80647F), cream=Color(0xFFFFF9F6);
+const rose=Color(0xFFE91E63), plum=Color(0xFF6A1B9A), cream=Color(0xFFFFF7FB), teal=Color(0xFF00A6A6), gold=Color(0xFFFFB300);
 class SheikhaClientApp extends StatelessWidget{
  const SheikhaClientApp({super.key});
- @override Widget build(BuildContext context)=>MaterialApp(debugShowCheckedModeBanner:false,title:'الشيخة',theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:rose),scaffoldBackgroundColor:cream),darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:rose,brightness:Brightness.dark)),themeMode:ThemeMode.system,home:const ClientHome());
+ @override Widget build(BuildContext context)=>MaterialApp(debugShowCheckedModeBanner:false,title:'الشيخة',theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:plum,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.arefRuqaaTextTheme(),appBarTheme:const AppBarTheme(backgroundColor:plum,foregroundColor:Colors.white,elevation:0),cardTheme:CardThemeData(color:Colors.white,elevation:2,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:rose,foregroundColor:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(14)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:teal,foregroundColor:Colors.white)),darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:rose,brightness:Brightness.dark),textTheme:GoogleFonts.arefRuqaaTextTheme(ThemeData.dark().textTheme)),themeMode:ThemeMode.system,home:const ClientHome());
 }
 class ClientHome extends StatefulWidget{const ClientHome({super.key});@override State<ClientHome> createState()=>_ClientHomeState();}
 class _ClientHomeState extends State<ClientHome>{
@@ -25,12 +26,15 @@ class _ClientHomeState extends State<ClientHome>{
  }
  bool isFav(Map<String,dynamic> m)=>favorites.any((f)=>f['memberId']==m['id']);
  Future<void> toggleFav(Map<String,dynamic> m)async{final old=favorites.where((f)=>f['memberId']==m['id']).toList();if(old.isNotEmpty){await SharedStore.delete('favorites',old.first['id']);}else{await SharedStore.save('favorites',{'memberId':m['id'],'memberName':m['name']});}await load(silent:true);}
- Future<void> book(Map<String,dynamic> m)async{
+ Future<void> book([Map<String,dynamic>? initialMember])async{
+  Map<String,dynamic>? selectedMember=initialMember??(members.isNotEmpty?members.first:null);
   final name=TextEditingController(),phone=TextEditingController(),notes=TextEditingController();
   DateTime? selectedDate; TimeOfDay? selectedTime;
   final result=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,ds)=>AlertDialog(
-   title:Text('طلب حجز - ${m['name']}'),
+   title:const Text('طلب حجز موعد'),
    content:SizedBox(width:420,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+    DropdownButtonFormField<String>(value:selectedMember?['id']?.toString(),decoration:const InputDecoration(labelText:'اختيار العضو',prefixIcon:Icon(Icons.spa),border:OutlineInputBorder()),items:members.map((member)=>DropdownMenuItem<String>(value:member['id'].toString(),child:Text('${member['name']??'عضو'}'))).toList(),onChanged:(v)=>ds(()=>selectedMember=members.firstWhere((member)=>member['id'].toString()==v)),),
+    const SizedBox(height:10),
     TextField(controller:name,decoration:const InputDecoration(labelText:'الاسم الكامل',prefixIcon:Icon(Icons.person))),
     TextField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'رقم الهاتف',prefixIcon:Icon(Icons.phone))),
     const SizedBox(height:10),
@@ -40,10 +44,27 @@ class _ClientHomeState extends State<ClientHome>{
    ]))),
    actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))],
   )));
-  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والتاريخ والوقت');}else{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);await SharedStore.save('bookings',{'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':m['id'],'memberName':m['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});note('تم إرسال طلب الحجز');await load();}}
+  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('اختر العضو وأكمل الاسم ورقم الهاتف والتاريخ والوقت');}else{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);await SharedStore.save('bookings',{'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});note('تم إرسال طلب الحجز');await load();}}
   name.dispose();phone.dispose();notes.dispose();
  }
- Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'sender':'عميل','text':value,'createdAt':DateTime.now().toIso8601String()});messageCtrl.clear();await load(silent:true);}catch(e){note('تعذر إرسال الرسالة: $e');}}
+ Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});messageCtrl.clear();await load(silent:true);}catch(e){note('تعذر إرسال الرسالة: $e');}}
+ Future<void> shareMemberProfile()async{
+  if(members.isEmpty){note('لا يوجد أعضاء متاحون للمشاركة');return;}
+  final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...members.map((m)=>ListTile(leading:photo(m,size:48),title:Text('${m['name']??''}'),subtitle:Text('ملف العضو'),onTap:()=>Navigator.pop(ctx,m)))]))));
+  if(chosen==null)return;
+  await SharedStore.save('messages',{'conversationId':conversationId,'sender':'عميل','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
+  await load(silent:true);note('تم إرسال ملف العضو داخل المحادثة');
+ }
+ Widget chatMessage(Map<String,dynamic> msg){
+  final mine=msg['sender']=='عميل';
+  final member=msg['type']=='memberProfile'?members.where((m)=>m['id']==msg['memberId']).firstOrNull:null;
+  return Align(alignment:mine?Alignment.centerRight:Alignment.centerLeft,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?rose.withOpacity(.13):teal.withOpacity(.12),borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+   Text('${msg['sender']??'الإدارة'}',style:const TextStyle(fontSize:12,fontWeight:FontWeight.bold,color:plum)),
+   if(member!=null)InkWell(onTap:()=>openMember(member),child:Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[photo(member,size:58),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('اضغط لفتح الملف الكامل') ])),const Icon(Icons.open_in_new,color:rose)])))),
+   if(msg['type']!='memberProfile'||member==null)Text('${msg['text']??'تعذر العثور على ملف العضو'}'),
+   Text('${msg['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))
+  ])));
+ }
  Widget photo(Map<String,dynamic> m,{double size=66}){final images=List<String>.from(m['images']??[]);if(images.isEmpty)return CircleAvatar(radius:size/2,child:const Icon(Icons.spa_outlined));try{return ClipRRect(borderRadius:BorderRadius.circular(12),child:Image.memory(base64Decode(images.first),width:size,height:size,fit:BoxFit.cover));}catch(_){return CircleAvatar(radius:size/2,child:const Icon(Icons.spa));}}
  void openMember(Map<String,dynamic> m){Navigator.push(context,MaterialPageRoute(builder:(_)=>Scaffold(backgroundColor:cream,appBar:AppBar(title:Text('${m['name']??'الملف الشخصي'}')),body:Directionality(textDirection:TextDirection.rtl,child:memberProfilePage(m)))));}
  void previewMember(Map<String,dynamic> m){showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,shape:const RoundedRectangleBorder(borderRadius:BorderRadius.vertical(top:Radius.circular(26))),builder:(c)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:Padding(padding:const EdgeInsets.fromLTRB(18,12,18,22),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
@@ -65,7 +86,7 @@ class _ClientHomeState extends State<ClientHome>{
  ]);
  Widget memberCard(Map<String,dynamic> m)=>Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
   photo(m,size:76),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',style:const TextStyle(color:plum))])),
-  IconButton(onPressed:()=>toggleFav(m),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?Colors.pink:null)),
+  IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
  ])))));
  Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
@@ -77,11 +98,11 @@ class _ClientHomeState extends State<ClientHome>{
   ...sessions.map((s)=>Card(child:Column(children:[if((s['images'] as List? ?? []).isNotEmpty)Image.memory(base64Decode((s['images'] as List).first),height:150,width:double.infinity,fit:BoxFit.cover),ListTile(title:Text('${s['title']??'جلسة'}'),subtitle:Text('${s['date']??''} • ${s['description']??''}'))]))),
  ]);
  Widget favoritesPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('المفضلة',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),...members.where(isFav).map(memberCard),if(!favorites.any((f)=>members.any((m)=>m['id']==f['memberId'])))const Padding(padding:EdgeInsets.all(18),child:Text('لم تضف أي عضو إلى المفضلة بعد.'))]);
- Widget bookingsPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),...bookings.map((b)=>Card(child:ListTile(leading:const Icon(Icons.event_available),title:Text('${b['memberName']??'حجز'}'),subtitle:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')))),if(bookings.isEmpty)const Text('لا توجد حجوزات حتى الآن.')]);
+ Widget bookingsPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),FilledButton.icon(onPressed:()=>book(),icon:const Icon(Icons.add_circle_outline),label:const Text('حجز موعد جديد')),const SizedBox(height:10),...bookings.map((b)=>Card(child:ListTile(leading:const Icon(Icons.event_available),title:Text('${b['memberName']??'حجز'}'),subtitle:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')))),if(bookings.isEmpty)const Text('لا توجد حجوزات حتى الآن.')]);
  Widget chatPage()=>Column(children:[
   const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('التواصل مع الإدارة'),subtitle:Text('يمكنك إرسال الرسائل واستقبال رد الإدارة هنا')),
-  Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView(padding:const EdgeInsets.all(12),children:messages.map((m){final mine=m['sender']=='عميل';return Align(alignment:mine?Alignment.centerRight:Alignment.centerLeft,child:Container(constraints:const BoxConstraints(maxWidth:320),margin:const EdgeInsets.symmetric(vertical:5),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?rose.withOpacity(.18):plum.withOpacity(.16),borderRadius:BorderRadius.circular(14)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['sender']??'الإدارة'}',style:const TextStyle(fontSize:12,fontWeight:FontWeight.bold)),const SizedBox(height:4),Text('${m['text']??''}'),const SizedBox(height:3),Text('${m['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))])));}).toList())),
-  SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[Expanded(child:TextField(controller:messageCtrl,minLines:1,maxLines:4,decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send))]))),
+  Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView(padding:const EdgeInsets.all(12),children:messages.map(chatMessage).toList())),
+  SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,minLines:1,maxLines:4,decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
  ]);
  Widget morePage()=>ListView(padding:const EdgeInsets.all(18),children:[const ListTile(leading:Icon(Icons.spa),title:Text('مركز الشيخة'),subtitle:Text('نرحب بكم دائماً')),const ListTile(leading:Icon(Icons.currency_exchange),title:Text('العملة'),subtitle:Text('الدينار العراقي (د.ع)')),ListTile(leading:const Icon(Icons.refresh),title:const Text('تحديث البيانات'),onTap:load)]);
  Widget currentPage()=>switch(tab){1=>favoritesPage(),2=>bookingsPage(),3=>chatPage(),4=>morePage(),_=>homePage()};
