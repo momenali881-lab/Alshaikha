@@ -20,7 +20,7 @@ for app, (package, activity_file) in apps.items():
 
     manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
     text = manifest.read_text()
-    internet = '<uses-permission android:name="android.permission.INTERNET" />\\n'
+    internet = '<uses-permission android:name="android.permission.INTERNET" />\n'
     if 'android.permission.INTERNET' not in text:
         text = text.replace('<manifest', '<manifest', 1)
         close = text.find('>')
