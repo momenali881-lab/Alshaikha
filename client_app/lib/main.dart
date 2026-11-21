@@ -39,7 +39,7 @@ class _ClientHomeState extends State<ClientHome>{
    content:SizedBox(width:420,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
     DropdownButtonFormField<String>(value:selectedMember?['id']?.toString(),decoration:const InputDecoration(labelText:'اختيار العضو',prefixIcon:Icon(Icons.spa),border:OutlineInputBorder()),items:members.where((member)=>member['available']!=false).map((member)=>DropdownMenuItem<String>(value:member['id'].toString(),child:Text('${member['name']??'عضو'}'))).toList(),onChanged:(v)=>ds(()=>selectedMember=members.firstWhere((member)=>member['id'].toString()==v)),),
     const SizedBox(height:10),
-    TextField(controller:name,decoration:const InputDecoration(labelText:'الاسم الكامل',prefixIcon:Icon(Icons.person))),
+    TextField(controller:name,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'الاسم الكامل',prefixIcon:Icon(Icons.person))),
     TextField(controller:phone,keyboardType:TextInputType.phone,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'رقم الهاتف',prefixIcon:Icon(Icons.phone))),
     const SizedBox(height:12),
     const Align(alignment:Alignment.centerRight,child:Text('عنوان العميل داخل العراق',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16))),
@@ -56,7 +56,7 @@ class _ClientHomeState extends State<ClientHome>{
     const SizedBox(height:10),
     OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:c,initialDate:selectedDate??DateTime.now().add(const Duration(days:1)),firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)ds(()=>selectedDate=d);},icon:const Icon(Icons.calendar_month),label:Text(selectedDate==null?'اختيار تاريخ الحجز':'${selectedDate!.year}/${selectedDate!.month}/${selectedDate!.day}')),
     OutlinedButton.icon(onPressed:()async{final t=await showTimePicker(context:c,initialTime:selectedTime??TimeOfDay.now());if(t!=null)ds(()=>selectedTime=t);},icon:const Icon(Icons.schedule),label:Text(selectedTime==null?'اختيار وقت الحجز':selectedTime!.format(c))),
-    TextField(controller:notes,maxLines:2,decoration:const InputDecoration(labelText:'ملاحظات إضافية')),
+    TextField(controller:notes,maxLines:2,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'ملاحظات إضافية')),
    ]))),
    actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))],
   )));
@@ -134,7 +134,7 @@ class _ClientHomeState extends State<ClientHome>{
   appBar:AppBar(title:const Text('الشيخة',style:TextStyle(fontWeight:FontWeight.bold)),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.14)),icon:const Icon(Icons.favorite,color:rose)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search)),IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
-  bottomNavigationBar:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.spa_outlined,color:gold),selectedIcon:Icon(Icons.spa,color:gold),label:'المزيد')])
+  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.spa_outlined,color:gold),selectedIcon:Icon(Icons.spa,color:gold),label:'المزيد')])
  ));
 }
 class MemberSearch extends SearchDelegate<String>{
