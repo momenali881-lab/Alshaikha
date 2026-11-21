@@ -231,8 +231,7 @@ class _AdminHomeState extends State<AdminHome> {
     body:Column(children:[
       SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(()=>section=e.key);refresh();}))).toList())),
       Expanded(child:section=='messages'?adminChat():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
-        Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}
-${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
+        Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
         if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
         if(rows.isEmpty)const Card(child:Padding(padding:EdgeInsets.all(20),child:Text('لا توجد بيانات بعد. استخدم زر الإضافة للبدء.'))),
         ...rows.map(recordCard),const SizedBox(height:90)
