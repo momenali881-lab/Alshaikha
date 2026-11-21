@@ -12,9 +12,9 @@ const plum = Color(0xFF6A1B9A);
 const cream = Color(0xFFFFF7FB);
 const teal = Color(0xFF00A6A6);
 const gold = Color(0xFFFFB300);
-const sections = <String,String>{'members':'الكادر','sessions':'أرشيف الجلسات','banners':'البانرات','bookings':'الحجوزات','messages':'الدردشة'};
-const sectionIcons=<String,IconData>{'members':Icons.groups_rounded,'sessions':Icons.photo_library_rounded,'banners':Icons.campaign_rounded,'bookings':Icons.event_available_rounded,'messages':Icons.forum_rounded};
-const sectionColors=<String,Color>{'members':teal,'sessions':plum,'banners':gold,'bookings':rose,'messages':Color(0xFF3F51B5)};
+const sections = <String,String>{'members':'الكادر','sessions':'أرشيف الجلسات','banners':'البانرات','bookings':'الحجوزات','messages':'الدردشة','announcements':'الإعلانات'};
+const sectionIcons=<String,IconData>{'members':Icons.groups_rounded,'sessions':Icons.photo_library_rounded,'banners':Icons.campaign_rounded,'bookings':Icons.event_available_rounded,'messages':Icons.forum_rounded,'announcements':Icons.notifications_active_rounded};
+const sectionColors=<String,Color>{'members':teal,'sessions':plum,'banners':gold,'bookings':rose,'messages':Color(0xFF3F51B5),'announcements':teal};
 
 class SheikhaAdminApp extends StatelessWidget {
   const SheikhaAdminApp({super.key});
@@ -41,7 +41,8 @@ class _AdminHomeState extends State<AdminHome> {
   Map<String,String> fieldsFor(String s)=>switch(s){
     'members'=>{'name':'الاسم','age':'العمر','address':'العنوان','hourlyPrice':'سعر الساعة بالدينار','nightlyPrice':'سعر الليلة بالدينار','description':'نبذة وتعريف','hasPlace':'يوجد مكان؟','available':'متاح للحجز؟'},
     'sessions'=>{'title':'عنوان الجلسة','memberId':'معرّف عضو الكادر (اختياري)','date':'التاريخ','description':'الوصف'},
-    'banners'=>{'title':'عنوان البانر','description':'النص الظاهر','targetType':'الربط (member أو session)','targetId':'معرّف العنصر المرتبط'},
+    'banners'=>{'title':'عنوان البانر','description':'النص الظاهر'},
+    'announcements'=>{'title':'عنوان الإعلان','body':'نص الإعلان'},
     'bookings'=>{'customerName':'اسم العميل','phone':'رقم الهاتف','province':'المحافظة','district':'القضاء / المنطقة','neighborhood':'الحي / المكان','landmarkType':'نوع النقطة الدالة','landmark':'أقرب نقطة دالة بالتحديد','address':'العنوان الكامل','memberId':'العضو','date':'الموعد المطلوب','notes':'ملاحظات','status':'الحالة'},
     _=>{'conversationId':'رقم المحادثة','sender':'المرسل','text':'نص الرسالة','createdAt':'وقت الإرسال'}
   };
@@ -57,6 +58,8 @@ class _AdminHomeState extends State<AdminHome> {
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
     for(final e in fields.entries){ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}
     final bookingMembers=section=='bookings'?await SharedStore.list('members'):<Map<String,dynamic>>[];
+    final bannerMembers=section=='banners'?await SharedStore.list('members'):<Map<String,dynamic>>[];
+    String? linkedMemberId=old?['linkedMemberId']?.toString();
     String? selectedMemberId=old?['memberId']?.toString()??(bookingMembers.isNotEmpty?bookingMembers.first['id']?.toString():null);
     DateTime? bookingDate=DateTime.tryParse('${old?['date']??''}');
     bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, active=old?['active']!=false;
@@ -77,7 +80,11 @@ class _AdminHomeState extends State<AdminHome> {
           SwitchListTile(value:available,onChanged:(v)=>ds(()=>available=v),title:const Text('متاح للحجز')),
         ],
         if(section=='banners')SwitchListTile(value:active,onChanged:(v)=>ds(()=>active=v),title:const Text('عرض البانر للعملاء')),
-        if(['members','sessions','banners'].contains(section))...[
+        if(section=='banners')...[
+          DropdownButtonFormField<String>(value:bannerMembers.any((m)=>m['id']?.toString()==linkedMemberId)?linkedMemberId:'',decoration:const InputDecoration(labelText:'ربط البانر بملف عضو (اختياري)'),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط')), ...bannerMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']??'عضو'}')))],onChanged:(v)=>ds(()=>linkedMemberId=v)),
+          const SizedBox(height:8),
+        ],
+        if(['members','sessions','banners','announcements'].contains(section))...[
           Align(alignment:Alignment.centerRight,child:Text('الصور ${images.length}/10')),
           Wrap(spacing:6,children:images.asMap().entries.map((e)=>Stack(children:[
             ClipRRect(borderRadius:BorderRadius.circular(8),child:Image.memory(base64Decode(e.value),width:62,height:62,fit:BoxFit.cover)),
@@ -94,8 +101,10 @@ class _AdminHomeState extends State<AdminHome> {
       if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];}
       if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;}
       if(section=='banners')data['active']=active;
-      if(['members','sessions','banners'].contains(section))data['images']=images;
-      if(section=='bookings'&&(selectedMemberId==null||bookingDate==null)){note('اختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{await SharedStore.save(section,data);await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
+      if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
+      if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['targetType']=(linkedMemberId==null||linkedMemberId!.isEmpty)?'none':'member';data['targetId']=data['linkedMemberId'];}
+      if(section=='announcements'){data['createdAt']=DateTime.now().toIso8601String();}
+      if(section=='bookings'&&(selectedMemberId==null||bookingDate==null)){note('اختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{await SharedStore.save(section,data);if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
     for(final c in ctrls.values){c.dispose();}
   }
@@ -103,7 +112,7 @@ class _AdminHomeState extends State<AdminHome> {
     final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('حذف السجل؟'),content:const Text('لا يمكن التراجع عن الحذف.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('حذف'))]));
     if(yes==true){await SharedStore.delete(section,item['id']);await refresh();}
   }
-  Future<void> updateBooking(Map<String,dynamic> b,String status)async{final d={...b,'status':status};await SharedStore.save('bookings',d);await refresh();}
+  Future<void> updateBooking(Map<String,dynamic> b,String status)async{if((b['status']??'قيد المراجعة')!=status){final d={...b,'status':status};await SharedStore.save('bookings',d);await SharedStore.save('notifications',{'target':'customer','type':'booking','title':'تحديث طلب الحجز','body':'تم تحديث حالة حجز ${b['memberName']??''} إلى $status','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':b['id']});}await refresh();}
   Widget recordCard(Map<String,dynamic> m){
     final title=m['name']??m['title']??m['customerName']??m['sender']??'سجل';
     final subtitle=[m['description'],m['date'],m['status'],if(section=='bookings'&&m['address']!=null)m['address'],if(section=='members')'${m['hourlyPrice']??0} د.ع/ساعة',if(section=='members')'${m['nightlyPrice']??0} د.ع/ليلة'].where((x)=>x!=null&&x.toString().isNotEmpty).join(' • ');
@@ -116,6 +125,7 @@ class _AdminHomeState extends State<AdminHome> {
         const PopupMenuItem(value:'delete',child:Text('حذف')),
       ])),
       if(section=='messages')Align(alignment:Alignment.centerRight,child:Text('المحادثة: ${m['conversationId']??'-'}')),
+      if(section=='bookings'&&(m['address']??'').toString().isNotEmpty)Align(alignment:Alignment.centerRight,child:Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),child:Text('العنوان: ${m['address']}',style:const TextStyle(color:plum)))),
     ])));
   }
   Future<void> shareMemberProfile() async {
@@ -124,6 +134,7 @@ class _AdminHomeState extends State<AdminHome> {
     final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله للعميل',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...chatMembers.map((m){final imgs=List<String>.from(m['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(9),child:Image.memory(base64Decode(imgs.first),width:48,height:48,fit:BoxFit.cover));}catch(_){}}return ListTile(leading:avatar,title:Text('${m['name']??'عضو'}'),subtitle:const Text('إرسال بطاقة الملف الشخصي'),onTap:()=>Navigator.pop(ctx,m));})]))));
     if(chosen==null)return;
     await SharedStore.save('messages',{'conversationId':'customer-main','sender':'الإدارة','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
+    await SharedStore.save('notifications',{'target':'customer','type':'message','title':'رسالة جديدة من الإدارة','body':'تم إرسال ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
     await refresh(silent:true);note('تم إرسال ملف العضو للعميل');
   }
   Map<String,dynamic>? findChatMember(dynamic id){for(final member in chatMembers){if(member['id']==id)return member;}return null;}
@@ -140,6 +151,7 @@ class _AdminHomeState extends State<AdminHome> {
     if(value.isEmpty)return;
     try {
       await SharedStore.save('messages', {'conversationId':'customer-main','sender':'الإدارة','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});
+      await SharedStore.save('notifications',{'target':'customer','type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
       chatController.clear();
       await refresh(silent:true);
     } catch(e) { note('تعذر إرسال الرد: $e'); }
