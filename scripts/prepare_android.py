@@ -22,8 +22,8 @@ for app, (package, activity_file) in apps.items():
     text = manifest.read_text()
     internet = '<uses-permission android:name="android.permission.INTERNET" />\n'
     if 'android.permission.INTERNET' not in text:
-        text = text.replace('<manifest', '<manifest', 1)
-        close = text.find('>')
+        manifest_start = text.find('<manifest')
+        close = text.find('>', manifest_start)
         text = text[:close + 1] + '\n    ' + internet + text[close + 1:]
     if app == "admin_app":
         marker = '<application'
