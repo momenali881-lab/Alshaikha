@@ -15,9 +15,9 @@ class ClientHome extends StatefulWidget{const ClientHome({super.key});@override 
 class _ClientHomeState extends State<ClientHome>{
  int tab=0;bool busy=true;String search='';String conversationId='customer-main';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];
- final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();Timer? poll;
- @override void initState(){super.initState();load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));}
- @override void dispose(){poll?.cancel();searchCtrl.dispose();messageCtrl.dispose();super.dispose();}
+ final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();Timer? poll;Timer? bannerAuto;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
+ @override void initState(){super.initState();load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
+ @override void dispose(){poll?.cancel();bannerAuto?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();super.dispose();}
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
  Future<void> openNotifications()async{await load(silent:true);if(!mounted)return;showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),onTap:()async{await SharedStore.save('notifications',{...n,'read':true});await load(silent:true);})).toList()))])))));}
  Future<void> load({bool silent=false})async{
@@ -112,12 +112,16 @@ class _ClientHomeState extends State<ClientHome>{
   const Icon(Icons.chevron_left)
   ]))));
  void openBanner(Map<String,dynamic> b){final member=findMemberById(b['linkedMemberId']??b['targetId']);if(member!=null){openMember(member);return;}final imgs=imageList(b);if(imgs.isNotEmpty){viewImages(imgs,0);return;}showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('${b['title']??'إعلان'}'),content:Text('${b['description']??''}'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]));}
- Widget bannerCard(Map<String,dynamic> b)=>SizedBox(width:310,child:Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openBanner(b),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-  Expanded(child:imageList(b).isNotEmpty?Image.memory(base64Decode(imageList(b).first),fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.broken_image))):Container(color:plum.withOpacity(.08),child:const Center(child:Icon(Icons.image_outlined,size:42,color:plum)))),
-  if('${b['title']??''}'.toString().isNotEmpty||'${b['description']??''}'.toString().isNotEmpty)Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[if('${b['title']??''}'.isNotEmpty)Text('${b['title']}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.bold)),if('${b['description']??''}'.isNotEmpty)Text('${b['description']}',maxLines:2,overflow:TextOverflow.ellipsis)]))
- ]))));
- Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
-  if(banners.isNotEmpty)SizedBox(height:190,child:ListView(scrollDirection:Axis.horizontal,physics:const BouncingScrollPhysics(),children:banners.map(bannerCard).toList())),
+ Widget bannerCard(Map<String,dynamic> b)=>Card(clipBehavior:Clip.antiAlias,margin:const EdgeInsets.symmetric(horizontal:3,vertical:2),child:InkWell(onTap:()=>openBanner(b),child:Stack(fit:StackFit.expand,children:[
+ if(imageList(b).isNotEmpty)Image.memory(base64Decode(imageList(b).first),fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:plum,child:const Icon(Icons.broken_image,color:Colors.white,size:40))) else Container(color:plum,child:const Icon(Icons.image_outlined,color:Colors.white,size:42)),
+ const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xCC180A25)],stops:[.28,1]))),
+ Positioned(right:18,left:18,bottom:15,child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisSize:MainAxisSize.min,children:[
+  if('${b['title']??''}'.toString().trim().isNotEmpty)Text('${b['title']}',maxLines:2,overflow:TextOverflow.ellipsis,style:GoogleFonts.cairo(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800,shadows:[const Shadow(color:Colors.black54,blurRadius:8,offset:Offset(0,2))])),
+  if('${b['description']??''}'.toString().trim().isNotEmpty)Padding(padding:const EdgeInsets.only(top:3),child:Text('${b['description']}',maxLines:2,overflow:TextOverflow.ellipsis,style:GoogleFonts.cairo(color:Colors.white,fontSize:13,fontWeight:FontWeight.w600,shadows:[const Shadow(color:Colors.black54,blurRadius:6)])))
+ ]))
+])));
+Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
+  if(banners.isNotEmpty)...[SizedBox(height:190,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
   if(banners.isEmpty)const SizedBox.shrink(),
   if(announcements.isNotEmpty)const Padding(padding:EdgeInsets.only(top:12,bottom:6),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),
   ...announcements.map((a)=>Card(child:ListTile(leading:const Icon(Icons.campaign,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}')))),
