@@ -128,7 +128,38 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   const SizedBox(height:12),const Text('الكادر المتوفر',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
   ...members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).map(memberCard),
  ]);
- void openSessionArchive(){Navigator.push(context,MaterialPageRoute(builder:(_)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(backgroundColor:cream,appBar:AppBar(title:const Text('أرشيف الجلسات')),body:sessions.isEmpty?const Center(child:Text('لا توجد جلسات في الأرشيف حالياً')):ListView(padding:const EdgeInsets.all(14),children:sessions.map((session)=>Card(clipBehavior:Clip.antiAlias,child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[imageGallery(session,height:190),ListTile(title:Text('${session['title']??'جلسة'}'),subtitle:Text('${session['date']??''} • ${session['description']??''}'))]))).toList()))));}
+ void openSessionArchive() {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: cream,
+          appBar: AppBar(title: const Text('أرشيف الجلسات')),
+          body: sessions.isEmpty
+              ? const Center(child: Text('لا توجد جلسات في الأرشيف حالياً'))
+              : ListView(
+                  padding: const EdgeInsets.all(14),
+                  children: sessions.map((session) => Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        imageGallery(session, height: 190),
+                        ListTile(
+                          title: Text('${session['title'] ?? 'جلسة'}'),
+                          subtitle: Text('${session['date'] ?? ''} • ${session['description'] ?? ''}'),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ),
+        ),
+      ),
+    ),
+  );
+}
  Widget bookingsPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),FilledButton.icon(onPressed:()=>book(),icon:const Icon(Icons.add_circle_outline),label:const Text('حجز موعد جديد')),const SizedBox(height:10),...bookings.map((b)=>Card(child:ListTile(leading:const Icon(Icons.event_available),title:Text('${b['memberName']??'حجز'}'),subtitle:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')))),if(bookings.isEmpty)const Text('لا توجد حجوزات حتى الآن.')]);
  Widget chatPage()=>Column(children:[
   const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('التواصل مع الإدارة'),subtitle:Text('يمكنك إرسال الرسائل واستقبال رد الإدارة هنا')),
