@@ -46,7 +46,7 @@ for app, (package, activity_file) in apps.items():
         text = text.replace(marker, permission + marker, 1)
     # Ensure Android resizes the Flutter window instead of panning content
     # behind the soft keyboard. This applies to both generated Android apps.
-    activity_pattern = r'(<activity\\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)'
+    activity_pattern = r'(<activity\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)'
     match = re.search(activity_pattern, text, flags=re.DOTALL)
     if match:
         activity_tag = match.group(1)
