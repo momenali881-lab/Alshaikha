@@ -65,10 +65,19 @@ class _ClientHomeState extends State<ClientHome>{
   return Align(alignment:mine?Alignment.centerRight:Alignment.centerLeft,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?rose.withOpacity(.13):teal.withOpacity(.12),borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
    Text('${msg['sender']??'الإدارة'}',style:const TextStyle(fontSize:12,fontWeight:FontWeight.bold,color:plum)),
    if(member!=null)InkWell(onTap:()=>openMember(member),child:Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[photo(member,size:58),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('اضغط لفتح الملف الكامل') ])),const Icon(Icons.open_in_new,color:rose)])))),
-   if(msg['type']!='memberProfile'||member==null)Text('${msg['text']??'تعذر العثور على ملف العضو'}'),
+   if(msg['type']=='bookingCard')bookingMessageCard(msg),
+   if(msg['type']!='memberProfile'&&msg['type']!='bookingCard'||member==null&&msg['type']=='memberProfile')Text('${msg['text']??'تعذر العثور على ملف العضو'}'),
    Text('${msg['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))
   ])));
  }
+ Widget bookingMessageCard(Map<String,dynamic> msg)=>Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+  const Row(children:[Icon(Icons.event_available,color:teal),SizedBox(width:7),Text('بطاقة حجز',style:TextStyle(fontWeight:FontWeight.bold,color:plum))]),
+  const SizedBox(height:6),
+  Text('العميل: ${msg['customerName']??'-'}'),
+  Text('عضو الكادر: ${msg['memberName']??'-'}'),
+  Text('الموعد: ${msg['date']??'-'}'),
+  Text('الحالة: ${msg['status']??'قيد المراجعة'}',style:const TextStyle(fontWeight:FontWeight.bold,color:teal)),
+ ])));
  List<String> imageList(Map<String,dynamic> item){final raw=item['images'];if(raw is List)return raw.whereType<String>().where((v)=>v.isNotEmpty).toList();return <String>[];}
  void viewImages(List<String> images,int initial){if(images.isEmpty)return;showDialog(context:context,barrierColor:Colors.black,builder:(ctx)=>Dialog(insetPadding:EdgeInsets.zero,backgroundColor:Colors.black,child:Stack(children:[PageView.builder(controller:PageController(initialPage:initial),itemCount:images.length,itemBuilder:(ctx,i){try{return Center(child:InteractiveViewer(minScale:0.8,maxScale:4,child:Image.memory(base64Decode(images[i]),fit:BoxFit.contain,width:double.infinity,height:double.infinity,errorBuilder:(_,__,___)=>const Icon(Icons.broken_image,color:Colors.white,size:50))));}catch(_){return const Center(child:Icon(Icons.broken_image,color:Colors.white,size:50));}}),Positioned(top:18,right:18,child:IconButton(onPressed:()=>Navigator.pop(ctx),icon:const Icon(Icons.close,color:Colors.white,size:30))),Positioned(bottom:18,left:0,right:0,child:Center(child:Text('اسحب للتنقل بين الصور',style:const TextStyle(color:Colors.white,fontSize:13))))])));}
  Widget imageGallery(Map<String,dynamic> item,{double height=190}){final imgs=imageList(item);if(imgs.isEmpty)return const SizedBox.shrink();return SizedBox(height:height,child:PageView.builder(itemCount:imgs.length,itemBuilder:(ctx,i)=>GestureDetector(onTap:()=>viewImages(imgs,i),child:Stack(fit:StackFit.expand,children:[Image.memory(base64Decode(imgs[i]),fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.broken_image))),if(imgs.length>1)Positioned(top:9,left:9,child:Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:Colors.black54,borderRadius:BorderRadius.circular(20)),child:Text('${i+1}/${imgs.length}',style:const TextStyle(color:Colors.white))))]))));}
@@ -97,6 +106,14 @@ class _ClientHomeState extends State<ClientHome>{
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
   ]))));
+ Widget memberGridCard(Map<String,dynamic> m)=>Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  Expanded(child:Stack(fit:StackFit.expand,children:[photo(m,size:180),Positioned(left:5,top:5,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(34,34),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19)))])),
+  Padding(padding:const EdgeInsets.fromLTRB(8,6,8,8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+   Text('${m['name']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:15)),
+   Text('${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,color:plum)),
+   Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',maxLines:1,style:const TextStyle(fontSize:11,color:Colors.black54))
+  ]))
+ ])));
  void openBanner(Map<String,dynamic> b){final member=findMemberById(b['linkedMemberId']??b['targetId']);if(member!=null){openMember(member);return;}final imgs=imageList(b);if(imgs.isNotEmpty){viewImages(imgs,0);return;}showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('${b['title']??'إعلان'}'),content:Text('${b['description']??''}'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]));}
  Widget bannerCard(Map<String,dynamic> b)=>Card(clipBehavior:Clip.antiAlias,margin:const EdgeInsets.symmetric(horizontal:3,vertical:2),child:InkWell(onTap:()=>openBanner(b),child:Stack(fit:StackFit.expand,children:[
  if(imageList(b).isNotEmpty)Image.memory(base64Decode(imageList(b).first),fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:plum,child:const Icon(Icons.broken_image,color:Colors.white,size:40))) else Container(color:plum,child:const Icon(Icons.image_outlined,color:Colors.white,size:42)),
@@ -112,7 +129,16 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   if(announcements.isNotEmpty)const Padding(padding:EdgeInsets.only(top:12,bottom:6),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),
   ...announcements.map((a)=>Card(child:ListTile(leading:const Icon(Icons.campaign,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}')))),
   const SizedBox(height:12),const Text('الكادر المتوفر',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
-  ...members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).map(memberCard),
+  GridView.builder(
+    shrinkWrap:true,
+    physics:const NeverScrollableScrollPhysics(),
+    itemCount:members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).length,
+    gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,crossAxisSpacing:9,mainAxisSpacing:9,childAspectRatio:.72),
+    itemBuilder:(context,index){
+      final visible=members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
+      return memberGridCard(visible[index]);
+    },
+  ),
  ]);
  Widget sessionsPage()=>ListView(padding:const EdgeInsets.all(14),children:[
   const Text('الجلسات',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),
