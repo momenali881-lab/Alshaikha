@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'shared_store.dart';
+import 'shared/iraq_locations.dart';
 
 void main() => runApp(const SheikhaAdminApp());
 
@@ -65,7 +66,10 @@ class _AdminHomeState extends State<AdminHome> {
   }
   Future<void> edit([Map<String,dynamic>? old]) async {
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
-    for(final e in fields.entries){ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}
+    for(final e in fields.entries){if(section=='members'&&e.key=='address')continue;ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}
+    final customNeighborhood=TextEditingController();final landmark=TextEditingController(text:'${old?['landmark']??''}');
+    String? selectedProvince=old?['province']?.toString(),selectedDistrict=old?['district']?.toString(),selectedNeighborhood=old?['neighborhood']?.toString(),landmarkType=old?['landmarkType']?.toString();
+    if(selectedNeighborhood!=null&&!iraqNeighborhoodChoices.contains(selectedNeighborhood)){customNeighborhood.text=selectedNeighborhood;selectedNeighborhood='منطقة أخرى (اكتب الاسم)';}
     final bookingMembers=section=='bookings'?await SharedStore.list('members'):<Map<String,dynamic>>[];
     final bannerMembers=section=='banners'?await SharedStore.list('members'):<Map<String,dynamic>>[];
     String? linkedMemberId=old?['linkedMemberId']?.toString();
@@ -83,6 +87,19 @@ class _AdminHomeState extends State<AdminHome> {
           OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:ctx,initialDate:bookingDate??DateTime.now().add(const Duration(days:1)),firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)ds(()=>bookingDate=DateTime(d.year,d.month,d.day,bookingDate?.hour??12,bookingDate?.minute??0));},icon:const Icon(Icons.calendar_month),label:Text(bookingDate==null?'تحديد تاريخ الحجز':'${bookingDate!.year}/${bookingDate!.month}/${bookingDate!.day}')),
           OutlinedButton.icon(onPressed:()async{final t=await showTimePicker(context:ctx,initialTime:TimeOfDay.fromDateTime(bookingDate??DateTime.now()));if(t!=null)ds(()=>bookingDate=DateTime(bookingDate?.year??DateTime.now().year,bookingDate?.month??DateTime.now().month,bookingDate?.day??DateTime.now().day,t.hour,t.minute));},icon:const Icon(Icons.schedule),label:Text(bookingDate==null?'تحديد وقت الحجز':TimeOfDay.fromDateTime(bookingDate!).format(ctx))),
           if(bookingMembers.isEmpty)const Text('أضف أعضاء الكادر أولاً لتتمكن من ربط الحجز بعضو.'),
+        ],
+        if(section=='members')...[
+          const Align(alignment:Alignment.centerRight,child:Padding(padding:EdgeInsets.only(top:6,bottom:8),child:Text('عنوان العضو داخل العراق',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16)))),
+          DropdownButtonFormField<String>(value:iraqGovernorates.containsKey(selectedProvince)?selectedProvince:null,decoration:const InputDecoration(labelText:'المحافظة',border:OutlineInputBorder(),prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedDistrict=null;selectedNeighborhood=null;})),
+          const SizedBox(height:9),
+          DropdownButtonFormField<String>(value:selectedProvince!=null&&(iraqGovernorates[selectedProvince]??[]).contains(selectedDistrict)?selectedDistrict:null,decoration:const InputDecoration(labelText:'القضاء / المنطقة',border:OutlineInputBorder()),items:(selectedProvince==null?const <String>[]:iraqGovernorates[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds((){selectedDistrict=v;selectedNeighborhood=null;})),
+          const SizedBox(height:9),
+          DropdownButtonFormField<String>(value:iraqNeighborhoodChoices.contains(selectedNeighborhood)?selectedNeighborhood:null,decoration:const InputDecoration(labelText:'الحي / المكان',border:OutlineInputBorder()),items:iraqNeighborhoodChoices.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedDistrict==null?null:(v)=>ds(()=>selectedNeighborhood=v)),
+          if(selectedNeighborhood=='منطقة أخرى (اكتب الاسم)')Padding(padding:const EdgeInsets.only(top:9),child:TextField(controller:customNeighborhood,decoration:const InputDecoration(labelText:'اكتب اسم الحي أو المنطقة',border:OutlineInputBorder()))),
+          const SizedBox(height:9),
+          DropdownButtonFormField<String>(value:iraqLandmarkTypes.contains(landmarkType)?landmarkType:null,decoration:const InputDecoration(labelText:'نوع أقرب نقطة دالة',border:OutlineInputBorder()),items:iraqLandmarkTypes.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>ds(()=>landmarkType=v)),
+          const SizedBox(height:9),
+          TextField(controller:landmark,decoration:const InputDecoration(labelText:'اسم النقطة الدالة بالتحديد',hintText:'مثلاً اسم السوق أو الجامع',border:OutlineInputBorder())),
         ],
         if(section=='members')...[
           SwitchListTile(value:hasPlace,onChanged:(v)=>ds(()=>hasPlace=v),title:const Text('يوجد مكان')),
@@ -106,16 +123,16 @@ class _AdminHomeState extends State<AdminHome> {
     )));
     if(result==true){
       final data=<String,dynamic>{'id':old?['id']};
-      for(final key in fields.keys){if(key=='available'||key=='hasPlace')continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=key=='age'?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
+      for(final key in fields.keys){if(key=='available'||key=='hasPlace'||(section=='members'&&key=='address'))continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=key=='age'?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
       if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];}
-      if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;}
+      if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;final neighborhood=selectedNeighborhood=='منطقة أخرى (اكتب الاسم)'?customNeighborhood.text.trim():(selectedNeighborhood??'');data['province']=selectedProvince??'';data['district']=selectedDistrict??'';data['neighborhood']=neighborhood;data['landmarkType']=landmarkType??'';data['landmark']=landmark.text.trim();data['address']=[selectedProvince,selectedDistrict,neighborhood,landmarkType,landmark.text.trim()].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
       if(section=='banners')data['active']=active;
       if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
       if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['targetType']=(linkedMemberId==null||linkedMemberId!.isEmpty)?'none':'member';data['targetId']=data['linkedMemberId'];}
       if(section=='announcements'){data['createdAt']=DateTime.now().toIso8601String();}
-      if(section=='bookings'&&(selectedMemberId==null||bookingDate==null)){note('اختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{await SharedStore.save(section,data);if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
+      if(section=='members'&&(selectedProvince==null||selectedDistrict==null||selectedNeighborhood==null||(selectedNeighborhood=='منطقة أخرى (اكتب الاسم)'&&customNeighborhood.text.trim().isEmpty)||landmarkType==null||landmark.text.trim().isEmpty)){note('أكمل المحافظة والقضاء والحي ونوع واسم النقطة الدالة');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null)){note('اختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{await SharedStore.save(section,data);if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
-    for(final c in ctrls.values){c.dispose();}
+    for(final c in ctrls.values){c.dispose();}customNeighborhood.dispose();landmark.dispose();
   }
   Future<void> remove(Map<String,dynamic> item) async {
     final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('حذف السجل؟'),content:const Text('لا يمكن التراجع عن الحذف.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('حذف'))]));
