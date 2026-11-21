@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
-import 'shared/iraq_locations.dart';
 
 void main()=>runApp(const SheikhaClientApp());
 const rose=Color(0xFFE91E63), plum=Color(0xFF6A1B9A), cream=Color(0xFFFFF7FB), teal=Color(0xFF00A6A6), gold=Color(0xFFFFB300);
@@ -32,8 +31,6 @@ class _ClientHomeState extends State<ClientHome>{
   Map<String,dynamic>? selectedMember=initialMember;
   if(selectedMember==null){for(final candidate in members){if(candidate['available']!=false){selectedMember=candidate;break;}}}
   final name=TextEditingController(),phone=TextEditingController(),notes=TextEditingController();
-  final landmark=TextEditingController();
-  String? selectedProvince, selectedArea, selectedLandmark;List<String> liveLandmarks=[];bool loadingLandmarks=false;
   DateTime? selectedDate; TimeOfDay? selectedTime;
   final result=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,ds)=>AlertDialog(
    title:const Text('طلب حجز موعد'),
@@ -43,17 +40,6 @@ class _ClientHomeState extends State<ClientHome>{
     TextField(controller:name,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'الاسم الكامل',prefixIcon:Icon(Icons.person))),
     TextField(controller:phone,keyboardType:TextInputType.phone,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'رقم الهاتف',prefixIcon:Icon(Icons.phone))),
     const SizedBox(height:12),
-    const Align(alignment:Alignment.centerRight,child:Text('عنوان العميل داخل العراق',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16))),
-    const SizedBox(height:8),
-    DropdownButtonFormField<String>(value:selectedProvince,decoration:const InputDecoration(labelText:'المحافظة',prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((p)=>DropdownMenuItem(value:p,child:Text(p))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedArea=null;selectedLandmark=null;liveLandmarks=[];})),
-    const SizedBox(height:8),
-    DropdownButtonFormField<String>(value:selectedArea,decoration:const InputDecoration(labelText:'المنطقة / القضاء / الناحية / الحي'),items:(iraqGovernorates[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds(()=>selectedArea=v)),
-    const SizedBox(height:8),
-    DropdownButtonFormField<String>(value:selectedLandmark,decoration:const InputDecoration(labelText:'اختر نقطة دالة باسمها الحقيقي'),items:<String>{...(iraqVerifiedLandmarks[selectedProvince]??const <String>[]),...liveLandmarks}.toList().map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds((){selectedLandmark=v;landmark.clear();})),
-    OutlinedButton.icon(onPressed:selectedProvince==null||selectedArea==null||loadingLandmarks?null:()async{ds(()=>loadingLandmarks=true);final found=await searchRealLandmarks(selectedProvince!,selectedArea!);if(!mounted)return;ds((){liveLandmarks=found;loadingLandmarks=false;if(found.isNotEmpty)selectedLandmark=found.first;});note(found.isEmpty?'لم يعثر OpenStreetMap على نقاط مسماة داخل هذه المنطقة. لا توجد أسماء مختلقة.':'تم العثور على ${found.length} نقطة دالة مسماة داخل المنطقة');},icon:loadingLandmarks?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.travel_explore),label:Text(loadingLandmarks?'جارٍ البحث عن نقاط حقيقية...':'جلب نقاط دالة حقيقية داخل المنطقة من OpenStreetMap')),
-    const Align(alignment:Alignment.centerRight,child:Text('المصدر: OpenStreetMap contributors. النتائج مرتبطة بالمنطقة المختارة وقد تختلف حسب تغطية الخرائط.',style:TextStyle(fontSize:11,color:Colors.black54))),
-    const Align(alignment:Alignment.centerRight,child:Text('القائمة تعرض المعالم والمرافق ذات الأسماء المنشورة في قاعدة البيانات. إذا لم يظهر اسم منطقتك، أدخل الاسم الكامل المعروف محلياً.',style:TextStyle(fontSize:12,color:Colors.black54))),
-    TextField(controller:landmark,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'اسم النقطة الدالة الكامل عند عدم وجودها بالقائمة',hintText:'لا تكتب نوع المكان فقط؛ اكتب اسمه المحدد')),
     const SizedBox(height:10),
     OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:c,initialDate:selectedDate??DateTime.now().add(const Duration(days:1)),firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)ds(()=>selectedDate=d);},icon:const Icon(Icons.calendar_month),label:Text(selectedDate==null?'اختيار تاريخ الحجز':'${selectedDate!.year}/${selectedDate!.month}/${selectedDate!.day}')),
     OutlinedButton.icon(onPressed:()async{final t=await showTimePicker(context:c,initialTime:selectedTime??TimeOfDay.now());if(t!=null)ds(()=>selectedTime=t);},icon:const Icon(Icons.schedule),label:Text(selectedTime==null?'اختيار وقت الحجز':selectedTime!.format(c))),
@@ -61,8 +47,8 @@ class _ClientHomeState extends State<ClientHome>{
    ]))),
    actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))],
   )));
-  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null||selectedProvince==null||selectedArea==null||(selectedLandmark==null&&landmark.text.trim().isEmpty)){note('أكمل بياناتك واختر المحافظة والقضاء والحي وأقرب نقطة دالة');}else{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final point=landmark.text.trim().isNotEmpty?landmark.text.trim():selectedLandmark!;final fullAddress='${selectedProvince!}، ${selectedArea!}، $point';final bookingId=await SharedStore.save('bookings',{'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'province':selectedProvince,'area':selectedArea,'district':selectedArea,'neighborhood':'','landmark':point,'landmarkSource':landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset','address':fullAddress,'notes':notes.text.trim(),'status':'قيد المراجعة'});await SharedStore.save('notifications',{'target':'admin','type':'booking','title':'طلب حجز جديد','body':'${name.text.trim()} طلب حجزاً مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});note('تم إرسال طلب الحجز');await load();}}
-  name.dispose();phone.dispose();notes.dispose();landmark.dispose();
+  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والعضو والتاريخ والوقت');}else{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});await SharedStore.save('notifications',{'target':'admin','type':'booking','title':'طلب حجز جديد','body':'${name.text.trim()} طلب حجزاً مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});note('تم إرسال طلب الحجز');await load();}}
+  name.dispose();phone.dispose();notes.dispose();
  }
  Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});await SharedStore.save('notifications',{'target':'admin','type':'message','title':'رسالة جديدة من العميل','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});messageCtrl.clear();await load(silent:true);}catch(e){note('تعذر إرسال الرسالة: $e');}}
  Future<void> shareMemberProfile()async{
@@ -128,51 +114,29 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   const SizedBox(height:12),const Text('الكادر المتوفر',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
   ...members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).map(memberCard),
  ]);
- void openSessionArchive() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          backgroundColor: cream,
-          appBar: AppBar(title: const Text('أرشيف الجلسات')),
-          body: sessions.isEmpty
-              ? const Center(child: Text('لا توجد جلسات في الأرشيف حالياً'))
-              : ListView(
-                  padding: const EdgeInsets.all(14),
-                  children: sessions.map((session) => Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        imageGallery(session, height: 190),
-                        ListTile(
-                          title: Text('${session['title'] ?? 'جلسة'}'),
-                          subtitle: Text('${session['date'] ?? ''} • ${session['description'] ?? ''}'),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
-                ),
-        ),
-      ),
-    ),
-  );
-}
+ Widget sessionsPage()=>ListView(padding:const EdgeInsets.all(14),children:[
+  const Text('الجلسات',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),
+  const SizedBox(height:10),
+  if(sessions.isEmpty)const Center(child:Padding(padding:EdgeInsets.all(30),child:Text('لا توجد جلسات في الأرشيف حالياً'))),
+  ...sessions.map((session)=>Card(clipBehavior:Clip.antiAlias,child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+   imageGallery(session,height:190),
+   ListTile(title:Text('${session['title']??'جلسة'}'),subtitle:Text('${session['date']??''} • ${session['description']??''}')),
+  ]))),
+ ]);
+
  Widget bookingsPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),FilledButton.icon(onPressed:()=>book(),icon:const Icon(Icons.add_circle_outline),label:const Text('حجز موعد جديد')),const SizedBox(height:10),...bookings.map((b)=>Card(child:ListTile(leading:const Icon(Icons.event_available),title:Text('${b['memberName']??'حجز'}'),subtitle:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')))),if(bookings.isEmpty)const Text('لا توجد حجوزات حتى الآن.')]);
  Widget chatPage()=>Column(children:[
   const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('التواصل مع الإدارة'),subtitle:Text('يمكنك إرسال الرسائل واستقبال رد الإدارة هنا')),
   Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView(padding:const EdgeInsets.all(12),children:messages.map(chatMessage).toList())),
   SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
  ]);
- Widget morePage()=>ListView(padding:const EdgeInsets.all(18),children:[const ListTile(leading:Icon(Icons.spa),title:Text('مركز الشيخة'),subtitle:Text('نرحب بكم دائماً')),ListTile(leading:const Icon(Icons.photo_library_outlined,color:plum),title:const Text('أرشيف الجلسات'),subtitle:Text('${sessions.length} جلسة'),onTap:openSessionArchive),const ListTile(leading:Icon(Icons.currency_exchange),title:Text('العملة'),subtitle:Text('الدينار العراقي (د.ع)')),ListTile(leading:const Icon(Icons.refresh),title:const Text('تحديث البيانات'),onTap:load)]);
- Widget currentPage()=>switch(tab){1=>bookingsPage(),2=>chatPage(),3=>morePage(),_=>homePage()};
+ Widget morePage()=>ListView(padding:const EdgeInsets.all(18),children:[const ListTile(leading:Icon(Icons.spa),title:Text('مركز الشيخة'),subtitle:Text('نرحب بكم دائماً')),const ListTile(leading:Icon(Icons.currency_exchange),title:Text('العملة'),subtitle:Text('الدينار العراقي (د.ع)')),ListTile(leading:const Icon(Icons.refresh),title:const Text('تحديث البيانات'),onTap:load)]);
+ Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>morePage(),_=>homePage()};
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
   appBar:AppBar(title:const Text('الشيخة',style:TextStyle(fontWeight:FontWeight.bold)),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.14)),icon:const Icon(Icons.favorite,color:rose)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active)))]),
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
-  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.spa_outlined,color:gold),selectedIcon:Icon(Icons.spa,color:gold),label:'المزيد')])
+  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.more_horiz,color:plum),selectedIcon:Icon(Icons.more,color:plum),label:'المزيد')])
  ));
 }
 class MemberSearch extends SearchDelegate<String>{

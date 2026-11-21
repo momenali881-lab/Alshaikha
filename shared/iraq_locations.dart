@@ -26,6 +26,77 @@ const Map<String, List<String>> iraqGovernorates = {
   "القادسية": ["البدير — ناحية", "الحمزة — قضاء", "الدغارة — ناحية", "الديوانية — قضاء", "الديوانية المركز — منطقة بريدية", "السدير — ناحية", "السنية — ناحية", "الشافعية — ناحية", "الشامية — قضاء", "الشنافية — ناحية", "الفوار — ناحية", "المهناوية — ناحية", "سومر — ناحية", "عفك — قضاء", "غماس — ناحية", "مركز الحمزة — ناحية", "مركز الديوانية — ناحية", "مركز عفك — ناحية"],
 };
 
+
+const Map<String, List<String>> iraqNeighborhoods = {
+  "بغداد": ["البلديات","المشتل","البياع","زيونة","السيدية","العامرية","الدورة","حي الجامعة","حي العامل","الغزالية","المنصور","اليرموك","القادسية","الحارثية","الكرادة","الجادرية","الأعظمية","الكاظمية","الشعب","مدينة الصدر","جميلة","حي أور","بغداد الجديدة","الزعفرانية","الكمالية","العبيدي","البنوك","القاهرة","الوزيرية","الصليخ","العطيفية","الحرية","الشعلة","العدل","حي الخضراء","حي الفرات","حي الشرطة","حي الجهاد","حي الرسالة","حي التراث"],
+};
+List<String> iraqAreaChoices(String? governorate) {
+  if (governorate == null) return const [];
+  final values = <String>{
+    ...(iraqGovernorates[governorate] ?? const <String>[])
+      .map((v) => v.split(' — ').first.trim())
+      .where((v) => v.isNotEmpty && !v.startsWith('مركز ') && !v.contains('المركز')),
+    ...(iraqNeighborhoods[governorate] ?? const <String>[]),
+  };
+  return values.toList()..sort((a,b)=>a.compareTo(b));
+}
+Future<List<String>> searchRealAreas(String governorate) async {
+  final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
+  const userAgent = 'AL-SHEIKHA-MASSAGE-CENTER/1.0 (https://github.com/momenali881-lab/Alshaikha)';
+  final found = <String>{};
+  try {
+    Map<String,dynamic>? boundary;
+    for (final q in ['$governorate, Iraq','محافظة $governorate، العراق']) {
+      if (boundary != null) break;
+      final uri=Uri.https('nominatim.openstreetmap.org','/search',{'q':q,'format':'jsonv2','limit':'5','addressdetails':'1','featuretype':'state'});
+      final req=await client.getUrl(uri).timeout(const Duration(seconds:15));
+      req.headers.set(HttpHeaders.userAgentHeader,userAgent);req.headers.set(HttpHeaders.acceptLanguageHeader,'ar');
+      final res=await req.close().timeout(const Duration(seconds:15));
+      if(res.statusCode!=HttpStatus.ok)continue;
+      final rows=jsonDecode(await utf8.decodeStream(res).timeout(const Duration(seconds:15))) as List<dynamic>;
+      if(rows.isNotEmpty){boundary=Map<String,dynamic>.from(rows.first as Map);break;}
+      await Future.delayed(const Duration(seconds:1));
+    }
+    if(boundary!=null){
+      final type=boundary['osm_type']?.toString(), id=int.tryParse('${boundary['osm_id']??''}');
+      if(id!=null&&(type=='relation'||type=='way')){
+        final areaId=(type=='relation'?3600000000:2400000000)+id;
+        final q='''
+[out:json][timeout:25];
+area($areaId)->.selectedArea;
+nwr(area.selectedArea)["name"]["place"~"suburb|neighbourhood|quarter|district|borough|city_block"];
+out tags center 300;
+''';
+        final uri=Uri.https('overpass-api.de','/api/interpreter',{'data':q});
+        final req=await client.getUrl(uri).timeout(const Duration(seconds:20));req.headers.set(HttpHeaders.userAgentHeader,userAgent);
+        final res=await req.close().timeout(const Duration(seconds:30));
+        if(res.statusCode==HttpStatus.ok){
+          final payload=jsonDecode(await utf8.decodeStream(res).timeout(const Duration(seconds:30))) as Map<String,dynamic>;
+          for(final raw in (payload['elements'] as List? ?? const [])){
+            final tags=Map<String,dynamic>.from((raw as Map)['tags'] as Map? ?? const {});
+            final name=(tags['name:ar']??tags['name']??tags['official_name'])?.toString().trim()??'';
+            if(name.isNotEmpty)found.add(name);
+          }
+        }
+      }
+    }
+    if(found.isEmpty){
+      final uri=Uri.https('photon.komoot.io','/api/',{'q':'$governorate, Iraq','limit':'100','lang':'ar'});
+      final req=await client.getUrl(uri).timeout(const Duration(seconds:15));req.headers.set(HttpHeaders.userAgentHeader,userAgent);
+      final res=await req.close().timeout(const Duration(seconds:20));
+      if(res.statusCode==HttpStatus.ok){
+        final payload=jsonDecode(await utf8.decodeStream(res).timeout(const Duration(seconds:20))) as Map<String,dynamic>;
+        for(final raw in (payload['features'] as List? ?? const [])){
+          final props=Map<String,dynamic>.from((raw as Map)['properties'] as Map? ?? const {});
+          final name=(props['name']??props['district']??props['suburb']??props['locality'])?.toString().trim()??'';
+          if(name.isNotEmpty)found.add(name);
+        }
+      }
+    }
+    final result=found.toList()..sort((a,b)=>a.compareTo(b));return result.take(300).toList();
+  }catch(_){return const [];}finally{client.close(force:true);}
+}
+
 const Map<String, List<String>> iraqVerifiedLandmarks = {
   "بغداد": ["الجامعة التكنولوجية — جامعة", "الجامعة المستنصرية — جامعة", "المتحف العراقي — معلم", "المدرسة المستنصرية — معلم", "المنطقة الخضراء — معلم", "إيوان كسرى (طاق كسرى) — معلم", "جامع أبو حنيفة النعمان — موقع ديني", "جامع أم القرى — موقع ديني", "جامعة النهرين — جامعة", "جامعة بغداد — جامعة", "قوس النصر (يدا النصر) — معلم", "مدينة الطب (مستشفى بغداد التعليمي) — مستشفى", "مرقد الإمام الكاظم — موقع ديني", "مطار بغداد الدولي — مطار", "نصب الحرية — معلم"],
   "البصرة": ["أهوار جنوب العراق — معلم", "جامعة البصرة — جامعة", "شط العرب — معلم", "مطار البصرة الدولي — مطار", "ميناء الفاو الكبير — ميناء", "ميناء أم قصر — ميناء"],
@@ -103,6 +174,21 @@ out center tags 100;
       final tags = Map<String, dynamic>.from((raw as Map)['tags'] as Map? ?? const {});
       final name = (tags['name:ar'] ?? tags['name'] ?? tags['official_name'])?.toString().trim() ?? '';
       if (name.isNotEmpty) found.add(name);
+    }
+    if (found.isEmpty) {
+      final uri = Uri.https('photon.komoot.io', '/api/', {'q':'$areaName, $governorate, Iraq','limit':'100','lang':'ar'});
+      final req = await client.getUrl(uri).timeout(const Duration(seconds:15));
+      req.headers.set(HttpHeaders.userAgentHeader,userAgent);
+      final res = await req.close().timeout(const Duration(seconds:20));
+      if (res.statusCode == HttpStatus.ok) {
+        final payload = jsonDecode(await utf8.decodeStream(res).timeout(const Duration(seconds:20))) as Map<String,dynamic>;
+        for (final raw in (payload['features'] as List? ?? const [])) {
+          final props = Map<String,dynamic>.from((raw as Map)['properties'] as Map? ?? const {});
+          final name = (props['name'] ?? props['street'] ?? props['locality'])?.toString().trim() ?? '';
+          final key = props['osm_key']?.toString() ?? '';
+          if (name.isNotEmpty && (key.isEmpty || const {'amenity','shop','tourism','historic','leisure','public_transport'}.contains(key))) found.add(name);
+        }
+      }
     }
     final result = found.toList()..sort((a, b) => a.compareTo(b));
     return result.take(100).toList();
