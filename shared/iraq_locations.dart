@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 // Iraq administrative places and named points sourced from public reference datasets.
 // Administrative areas: Open Admin Data Iraq (CC-BY-4.0), plus the 19-governorate community reference dataset.
 // Named points: Official Iraqi Governorates reference dataset (community-maintained; coverage varies by governorate).
@@ -48,3 +51,64 @@ const Map<String, List<String>> iraqVerifiedLandmarks = {
 // Kept empty intentionally: generic, non-local neighborhood placeholders are not valid address data.
 const List<String> iraqNeighborhoodChoices = [];
 const List<String> iraqLandmarkTypes = [];
+
+/// Fetches named, mapped places inside the selected administrative area from OpenStreetMap.
+/// Results are real OSM objects, not generated category placeholders.
+Future<List<String>> searchRealLandmarks(String governorate, String areaLabel) async {
+  final areaName = areaLabel.split(' — ').first.trim();
+  final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
+  const userAgent = 'AL-SHEIKHA-MASSAGE-CENTER/1.0 (https://github.com/momenali881-lab/Alshaikha)';
+  try {
+    final geocodeUri = Uri.https('nominatim.openstreetmap.org', '/search', {
+      'q': '$areaName, $governorate, Iraq',
+      'format': 'jsonv2',
+      'limit': '1',
+      'addressdetails': '1',
+    });
+    final geoRequest = await client.getUrl(geocodeUri).timeout(const Duration(seconds: 15));
+    geoRequest.headers.set(HttpHeaders.userAgentHeader, userAgent);
+    geoRequest.headers.set(HttpHeaders.acceptLanguageHeader, 'ar');
+    final geoResponse = await geoRequest.close().timeout(const Duration(seconds: 15));
+    if (geoResponse.statusCode != HttpStatus.ok) return const [];
+    final geoRows = jsonDecode(await utf8.decodeStream(geoResponse).timeout(const Duration(seconds: 15))) as List<dynamic>;
+    if (geoRows.isEmpty) return const [];
+    final place = Map<String, dynamic>.from(geoRows.first as Map);
+    final osmType = place['osm_type']?.toString();
+    final osmId = int.tryParse('${place['osm_id'] ?? ''}');
+    if (osmId == null || (osmType != 'relation' && osmType != 'way')) return const [];
+    final areaId = (osmType == 'relation' ? 3600000000 : 2400000000) + osmId;
+    final query = '''
+[out:json][timeout:25];
+area($areaId)->.selectedArea;
+(
+  nwr(area.selectedArea)["name"]["amenity"];
+  nwr(area.selectedArea)["name"]["shop"];
+  nwr(area.selectedArea)["name"]["tourism"];
+  nwr(area.selectedArea)["name"]["historic"];
+  nwr(area.selectedArea)["name"]["leisure"];
+  nwr(area.selectedArea)["name"]["public_transport"];
+  nwr(area.selectedArea)["name"]["man_made"];
+  nwr(area.selectedArea)["name"]["place"];
+);
+out center tags 100;
+''';
+    final overpassUri = Uri.https('overpass-api.de', '/api/interpreter', {'data': query});
+    final osmRequest = await client.getUrl(overpassUri).timeout(const Duration(seconds: 20));
+    osmRequest.headers.set(HttpHeaders.userAgentHeader, userAgent);
+    final osmResponse = await osmRequest.close().timeout(const Duration(seconds: 30));
+    if (osmResponse.statusCode != HttpStatus.ok) return const [];
+    final payload = jsonDecode(await utf8.decodeStream(osmResponse).timeout(const Duration(seconds: 30))) as Map<String, dynamic>;
+    final found = <String>{};
+    for (final raw in (payload['elements'] as List? ?? const [])) {
+      final tags = Map<String, dynamic>.from((raw as Map)['tags'] as Map? ?? const {});
+      final name = (tags['name:ar'] ?? tags['name'] ?? tags['official_name'])?.toString().trim() ?? '';
+      if (name.isNotEmpty) found.add(name);
+    }
+    final result = found.toList()..sort((a, b) => a.compareTo(b));
+    return result.take(100).toList();
+  } catch (_) {
+    return const [];
+  } finally {
+    client.close(force: true);
+  }
+}
