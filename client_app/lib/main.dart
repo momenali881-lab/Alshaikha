@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
 
-void main()=>runApp(const SheikhaClientApp());
+Future<void> main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n  await Firebase.initializeApp(options: DefaultFirebaseOptions.android);\n  runApp(const SheikhaClientApp());\n}
 const rose=Color(0xFFE91E63), plum=Color(0xFF6A1B9A), cream=Color(0xFFFFF7FB), teal=Color(0xFF00A6A6), gold=Color(0xFFFFB300);
 class SheikhaClientApp extends StatelessWidget{
  const SheikhaClientApp({super.key});

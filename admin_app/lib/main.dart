@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'shared_store.dart';
 import 'shared/iraq_locations.dart';
 
-void main() => runApp(const SheikhaAdminApp());
+Future<void> main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n  await Firebase.initializeApp(options: DefaultFirebaseOptions.android);\n  runApp(const SheikhaAdminApp());\n}
 
 const rose = Color(0xFFE91E63);
 const plum = Color(0xFF6A1B9A);
