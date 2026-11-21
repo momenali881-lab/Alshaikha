@@ -27,7 +27,8 @@ class _ClientHomeState extends State<ClientHome>{
  bool isFav(Map<String,dynamic> m)=>favorites.any((f)=>f['memberId']==m['id']);
  Future<void> toggleFav(Map<String,dynamic> m)async{final old=favorites.where((f)=>f['memberId']==m['id']).toList();if(old.isNotEmpty){await SharedStore.delete('favorites',old.first['id']);}else{await SharedStore.save('favorites',{'memberId':m['id'],'memberName':m['name']});}await load(silent:true);}
  Future<void> book([Map<String,dynamic>? initialMember])async{
-  Map<String,dynamic>? selectedMember=initialMember??(members.isNotEmpty?members.first:null);
+  Map<String,dynamic>? selectedMember=initialMember;
+  if(selectedMember==null){for(final candidate in members){if(candidate['available']!=false){selectedMember=candidate;break;}}}
   final name=TextEditingController(),phone=TextEditingController(),notes=TextEditingController();
   DateTime? selectedDate; TimeOfDay? selectedTime;
   final result=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,ds)=>AlertDialog(
