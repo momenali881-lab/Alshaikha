@@ -7,6 +7,12 @@ apps = {
     "admin_app": ("com.example.al_sheikha_admin", "AdminMainActivity.kt"),
     "client_app": ("com.example.al_sheikha_client", "ClientMainActivity.kt"),
 }
+# Dart source shared by the client app must live inside its lib tree.
+client_shared = root / "client_app" / "lib" / "shared"
+client_shared.mkdir(parents=True, exist_ok=True)
+shutil.copyfile(root / "shared" / "iraq_locations.dart",
+                client_shared / "iraq_locations.dart")
+
 for app, (package, activity_file) in apps.items():
     android = root / app / "android"
     source = root / "shared" / "android"
