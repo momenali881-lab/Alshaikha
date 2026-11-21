@@ -115,7 +115,7 @@ class _ClientHomeState extends State<ClientHome>{
  Widget bannerCard(Map<String,dynamic> b)=>SizedBox(width:310,child:Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openBanner(b),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
   Expanded(child:imageList(b).isNotEmpty?Image.memory(base64Decode(imageList(b).first),fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.broken_image))):Container(color:plum.withOpacity(.08),child:const Center(child:Icon(Icons.image_outlined,size:42,color:plum)))),
   if('${b['title']??''}'.toString().isNotEmpty||'${b['description']??''}'.toString().isNotEmpty)Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[if('${b['title']??''}'.isNotEmpty)Text('${b['title']}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.bold)),if('${b['description']??''}'.isNotEmpty)Text('${b['description']}',maxLines:2,overflow:TextOverflow.ellipsis)]))
- ])));
+ ]))));
  Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   if(banners.isNotEmpty)SizedBox(height:190,child:ListView(scrollDirection:Axis.horizontal,physics:const BouncingScrollPhysics(),children:banners.map(bannerCard).toList())),
   if(banners.isEmpty)const SizedBox.shrink(),
