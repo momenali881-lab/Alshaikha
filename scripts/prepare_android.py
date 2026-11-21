@@ -83,3 +83,5 @@ if app == "client_app":
     <path android:fillColor="#D7A84B" android:pathData="M54,75c-6,-8 -13,-8 -18,0 7,-2 12,1 18,8 6,-7 11,-10 18,-8 -5,-8 -12,-8 -18,0z"/>
 </vector>
 """, encoding="utf-8")
+
+    manifest.write_text(text, encoding="utf-8")
