@@ -53,7 +53,7 @@ class _AdminHomeState extends State<AdminHome> {
     'sessions'=>{'title':'عنوان الجلسة','memberId':'معرّف عضو الكادر (اختياري)','date':'التاريخ','description':'الوصف'},
     'banners'=>{'title':'عنوان البانر','description':'النص الظاهر'},
     'announcements'=>{'title':'عنوان الإعلان','body':'نص الإعلان'},
-    'bookings'=>{'customerName':'اسم العميل','phone':'رقم الهاتف','province':'المحافظة','district':'القضاء / المنطقة','neighborhood':'الحي / المكان','landmarkType':'نوع النقطة الدالة','landmark':'أقرب نقطة دالة بالتحديد','address':'العنوان الكامل','memberId':'العضو','date':'الموعد المطلوب','notes':'ملاحظات','status':'الحالة'},
+    'bookings'=>{'customerName':'اسم العميل','phone':'رقم الهاتف','province':'المحافظة','district':'القضاء / المنطقة','neighborhood':'الحي / المكان','landmarkType':'نوع النقطة الدالة','landmark':'أقرب نقطة دالة بالتحديد','address':'العنوان الكامل','memberId':'العضو','date':'الموعد المطلوب','durationMinutes':'مدة الجلسة بالدقائق','notes':'ملاحظات','status':'الحالة'},
     _=>{'conversationId':'رقم المحادثة','sender':'المرسل','text':'نص الرسالة','createdAt':'وقت الإرسال'}
   };
   Future<List<String>> pickImages([List<String> existing=const[]]) async {
@@ -67,9 +67,10 @@ class _AdminHomeState extends State<AdminHome> {
   Future<void> edit([Map<String,dynamic>? old]) async {
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
     for(final e in fields.entries){if(section=='members'&&e.key=='address')continue;ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}
-    final customNeighborhood=TextEditingController();final landmark=TextEditingController(text:'${old?['landmark']??''}');
-    String? selectedProvince=old?['province']?.toString(),selectedDistrict=old?['district']?.toString(),selectedNeighborhood=old?['neighborhood']?.toString(),landmarkType=old?['landmarkType']?.toString();
-    if(selectedNeighborhood!=null&&!iraqNeighborhoodChoices.contains(selectedNeighborhood)){customNeighborhood.text=selectedNeighborhood;selectedNeighborhood='منطقة أخرى (اكتب الاسم)';}
+    final landmark=TextEditingController(text:'${old?['landmark']??''}');
+    String? selectedProvince=old?['province']?.toString(),selectedArea=old?['area']?.toString()??old?['district']?.toString(),selectedLandmark=old?['landmark']?.toString();
+    if(selectedArea!=null&&!((iraqGovernorates[selectedProvince]??const <String>[]).contains(selectedArea)))selectedArea=null;
+    if(selectedLandmark!=null&&!((iraqVerifiedLandmarks[selectedProvince]??const <String>[]).contains(selectedLandmark)))selectedLandmark=null;
     final bookingMembers=section=='bookings'?await SharedStore.list('members'):<Map<String,dynamic>>[];
     final bannerMembers=section=='banners'?await SharedStore.list('members'):<Map<String,dynamic>>[];
     String? linkedMemberId=old?['linkedMemberId']?.toString();
@@ -92,14 +93,12 @@ class _AdminHomeState extends State<AdminHome> {
           const Align(alignment:Alignment.centerRight,child:Padding(padding:EdgeInsets.only(top:6,bottom:8),child:Text('عنوان العضو داخل العراق',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16)))),
           DropdownButtonFormField<String>(value:iraqGovernorates.containsKey(selectedProvince)?selectedProvince:null,decoration:const InputDecoration(labelText:'المحافظة',border:OutlineInputBorder(),prefixIcon:Icon(Icons.location_city)),items:iraqGovernorates.keys.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>ds((){selectedProvince=v;selectedDistrict=null;selectedNeighborhood=null;})),
           const SizedBox(height:9),
-          DropdownButtonFormField<String>(value:selectedProvince!=null&&(iraqGovernorates[selectedProvince]??[]).contains(selectedDistrict)?selectedDistrict:null,decoration:const InputDecoration(labelText:'القضاء / المنطقة',border:OutlineInputBorder()),items:(selectedProvince==null?const <String>[]:iraqGovernorates[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds((){selectedDistrict=v;selectedNeighborhood=null;})),
+          DropdownButtonFormField<String>(value:selectedArea,decoration:const InputDecoration(labelText:'المنطقة / القضاء / الناحية / الحي',border:OutlineInputBorder(),prefixIcon:Icon(Icons.map_outlined)),items:(iraqGovernorates[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds(()=>selectedArea=v)),
           const SizedBox(height:9),
-          DropdownButtonFormField<String>(value:iraqNeighborhoodChoices.contains(selectedNeighborhood)?selectedNeighborhood:null,decoration:const InputDecoration(labelText:'الحي / المكان',border:OutlineInputBorder()),items:iraqNeighborhoodChoices.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedDistrict==null?null:(v)=>ds(()=>selectedNeighborhood=v)),
-          if(selectedNeighborhood=='منطقة أخرى (اكتب الاسم)')Padding(padding:const EdgeInsets.only(top:9),child:TextField(controller:customNeighborhood,decoration:const InputDecoration(labelText:'اكتب اسم الحي أو المنطقة',border:OutlineInputBorder()))),
-          const SizedBox(height:9),
-          DropdownButtonFormField<String>(value:iraqLandmarkTypes.contains(landmarkType)?landmarkType:null,decoration:const InputDecoration(labelText:'نوع أقرب نقطة دالة',border:OutlineInputBorder()),items:iraqLandmarkTypes.map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>ds(()=>landmarkType=v)),
-          const SizedBox(height:9),
-          TextField(controller:landmark,decoration:const InputDecoration(labelText:'اسم النقطة الدالة بالتحديد',hintText:'مثلاً اسم السوق أو الجامع',border:OutlineInputBorder())),
+          DropdownButtonFormField<String>(value:selectedLandmark,decoration:const InputDecoration(labelText:'نقطة دالة مسماة وموثقة في المحافظة',border:OutlineInputBorder(),prefixIcon:Icon(Icons.place_outlined)),items:(iraqVerifiedLandmarks[selectedProvince]??const <String>[]).map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:selectedProvince==null?null:(v)=>ds(()=>selectedLandmark=v)),
+          const SizedBox(height:6),
+          const Align(alignment:Alignment.centerRight,child:Text('تُعرض الأسماء المتاحة من قاعدة المعالم والمرافق المسماة. إذا لم يظهر معلم منطقتك، اكتب اسمه الكامل كما هو معروف محلياً.',style:TextStyle(fontSize:12,color:Colors.black54))),
+          TextField(controller:landmark,decoration:const InputDecoration(labelText:'اسم النقطة الدالة الكامل (عند عدم وجودها بالقائمة)',hintText:'اكتب الاسم الحقيقي المعروف في المنطقة',border:OutlineInputBorder())),
         ],
         if(section=='members')...[
           SwitchListTile(value:hasPlace,onChanged:(v)=>ds(()=>hasPlace=v),title:const Text('يوجد مكان')),
@@ -125,14 +124,14 @@ class _AdminHomeState extends State<AdminHome> {
       final data=<String,dynamic>{'id':old?['id']};
       for(final key in fields.keys){if(key=='available'||key=='hasPlace'||(section=='members'&&key=='address'))continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=key=='age'?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
       if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];}
-      if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;final neighborhood=selectedNeighborhood=='منطقة أخرى (اكتب الاسم)'?customNeighborhood.text.trim():(selectedNeighborhood??'');data['province']=selectedProvince??'';data['district']=selectedDistrict??'';data['neighborhood']=neighborhood;data['landmarkType']=landmarkType??'';data['landmark']=landmark.text.trim();data['address']=[selectedProvince,selectedDistrict,neighborhood,landmarkType,landmark.text.trim()].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
+      if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;data['province']=selectedProvince??'';data['area']=selectedArea??'';data['district']=selectedArea??'';data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,selectedArea,data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
       if(section=='banners')data['active']=active;
       if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
       if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['targetType']=(linkedMemberId==null||linkedMemberId!.isEmpty)?'none':'member';data['targetId']=data['linkedMemberId'];}
       if(section=='announcements'){data['createdAt']=DateTime.now().toIso8601String();}
-      if(section=='members'&&(selectedProvince==null||selectedDistrict==null||selectedNeighborhood==null||(selectedNeighborhood=='منطقة أخرى (اكتب الاسم)'&&customNeighborhood.text.trim().isEmpty)||landmarkType==null||landmark.text.trim().isEmpty)){note('أكمل المحافظة والقضاء والحي ونوع واسم النقطة الدالة');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null)){note('اختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{await SharedStore.save(section,data);if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
+      if(section=='members'&&(selectedProvince==null||selectedArea==null||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||ctrls['customerName']!.text.trim().isEmpty)){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{await SharedStore.save(section,data);if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'){await SharedStore.save('notifications',{'target':'customer','type':'booking','title':'تم تسجيل حجز باسم ${data['customerName']}','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':data['id']});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
-    for(final c in ctrls.values){c.dispose();}customNeighborhood.dispose();landmark.dispose();
+    for(final c in ctrls.values){c.dispose();}landmark.dispose();
   }
   Future<void> remove(Map<String,dynamic> item) async {
     final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('حذف السجل؟'),content:const Text('لا يمكن التراجع عن الحذف.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('حذف'))]));
@@ -182,6 +181,14 @@ class _AdminHomeState extends State<AdminHome> {
       await refresh(silent:true);
     } catch(e) { note('تعذر إرسال الرد: $e'); }
   }
+  Future<void> createBookingFromChat() async {
+    final previous=section;
+    setState(()=>section='bookings');
+    await edit();
+    if(!mounted)return;
+    setState(()=>section=previous);
+    await refresh();
+  }
   Widget adminChat() {
     final messages=[...rows]..sort((a,b)=>('${a['createdAt']??''}').compareTo('${b['createdAt']??''}'));
     return Column(children:[
@@ -189,7 +196,7 @@ class _AdminHomeState extends State<AdminHome> {
       Expanded(child:messages.isEmpty?const Center(child:Text('لا توجد رسائل بعد')):ListView.builder(padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index){
         final m=messages[index]; return adminMessageBubble(m);
       })),
-      SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:chatController,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رد الإدارة...',border:OutlineInputBorder()),onSubmitted:(_)=>sendAdminMessage())),IconButton(onPressed:sendAdminMessage,icon:const Icon(Icons.send,color:plum))]))),
+      SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'تسجيل حجز للعميل',onPressed:createBookingFromChat,icon:const Icon(Icons.event_available,color:teal)),IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:chatController,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رد الإدارة...',border:OutlineInputBorder()),onSubmitted:(_)=>sendAdminMessage())),IconButton(onPressed:sendAdminMessage,icon:const Icon(Icons.send,color:plum))]))),
     ]);
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
