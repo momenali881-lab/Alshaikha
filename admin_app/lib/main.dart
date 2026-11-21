@@ -18,7 +18,7 @@ class SheikhaAdminApp extends StatelessWidget {
   const SheikhaAdminApp({super.key});
   @override Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner:false, title:'الشيخة - الإدارة',
-    theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:plum,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.arefRuqaaTextTheme(),appBarTheme:const AppBarTheme(backgroundColor:plum,foregroundColor:Colors.white,elevation:0),cardTheme:CardThemeData(color:Colors.white,elevation:2,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:rose,foregroundColor:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(14)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:teal,foregroundColor:Colors.white)),
+    theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:plum,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.arefRuqaaTextTheme(),iconTheme:const IconThemeData(color:plum),inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(14)))),appBarTheme:const AppBarTheme(backgroundColor:plum,foregroundColor:Colors.white,elevation:0),cardTheme:CardThemeData(color:Colors.white,elevation:2,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:rose,foregroundColor:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(14)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:teal,foregroundColor:Colors.white)),
     darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:rose,brightness:Brightness.dark),textTheme:GoogleFonts.arefRuqaaTextTheme(ThemeData.dark().textTheme)),
     themeMode:ThemeMode.system, home:const AdminHome());
 }
@@ -26,7 +26,7 @@ class SheikhaAdminApp extends StatelessWidget {
 class AdminHome extends StatefulWidget { const AdminHome({super.key}); @override State<AdminHome> createState()=>_AdminHomeState(); }
 class _AdminHomeState extends State<AdminHome> {
   String section='members'; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; bool busy=true; Timer? poll; final chatController=TextEditingController();
-  @override void initState(){super.initState(); refresh(); poll=Timer.periodic(const Duration(seconds:5),(_)=>refresh(silent:true));}
+  @override void initState(){super.initState(); refresh(); loadChatMembers(); poll=Timer.periodic(const Duration(seconds:5),(_)=>refresh(silent:true));}
   @override void dispose(){poll?.cancel();chatController.dispose();super.dispose();}
   void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
   Future<void> loadChatMembers() async { try { chatMembers=await SharedStore.list('members'); if(mounted)setState((){}); } catch(_){} }
@@ -124,12 +124,14 @@ class _AdminHomeState extends State<AdminHome> {
     await SharedStore.save('messages',{'conversationId':'customer-main','sender':'الإدارة','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
     await refresh(silent:true);note('تم إرسال ملف العضو للعميل');
   }
+  Map<String,dynamic>? findChatMember(dynamic id){for(final member in chatMembers){if(member['id']==id)return member;}return null;}
+  void openSharedMember(Map<String,dynamic> member){showDialog(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(title:Text('${member['name']??'ملف العضو'}'),content:SizedBox(width:360,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[if((member['images'] as List? ?? []).isNotEmpty)ClipRRect(borderRadius:BorderRadius.circular(14),child:Image.memory(base64Decode((member['images'] as List).first),height:180,fit:BoxFit.cover)),ListTile(title:const Text('العمر'),subtitle:Text('${member['age']??'-'}')),ListTile(title:const Text('سعر الساعة'),subtitle:Text('${member['hourlyPrice']??0} د.ع')),ListTile(title:const Text('سعر الليلة'),subtitle:Text('${member['nightlyPrice']??0} د.ع')),if((member['description']??'').toString().isNotEmpty)Text('${member['description']}')]))),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))])));}
   Widget adminMessageBubble(Map<String,dynamic> m){
     final mine=m['sender']=='الإدارة';
-    final member=m['type']=='memberProfile'?chatMembers.where((x)=>x['id']==m['memberId']).firstOrNull:null;
+    final member=m['type']=='memberProfile'?findChatMember(m['memberId']):null;
     Widget? profile;
     if(member!=null){final imgs=List<String>.from(member['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(10),child:Image.memory(base64Decode(imgs.first),width:58,height:58,fit:BoxFit.cover));}catch(_){}}profile=Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[avatar,const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('بطاقة ملف العضو') ])),const Icon(Icons.badge_outlined,color:rose)]))));}
-    return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?teal.withOpacity(.12):rose.withOpacity(.13),borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['sender']??'عميل'}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12,color:plum)),if(profile!=null)profile!,if(m['type']!='memberProfile'||profile==null)Text('${m['text']??'تعذر العثور على ملف العضو'}'),Text('${m['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))])));
+    return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?teal.withOpacity(.12):rose.withOpacity(.13),borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['sender']??'عميل'}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12,color:plum)),if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(m['type']!='memberProfile'||profile==null)Text('${m['text']??'تعذر العثور على ملف العضو'}'),Text('${m['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))])));
   }
   Future<void> sendAdminMessage() async {
     final value=chatController.text.trim();
@@ -141,7 +143,6 @@ class _AdminHomeState extends State<AdminHome> {
     } catch(e) { note('تعذر إرسال الرد: $e'); }
   }
   Widget adminChat() {
-    if(chatMembers.isEmpty)loadChatMembers();
     final messages=[...rows]..sort((a,b)=>('${a['createdAt']??''}').compareTo('${b['createdAt']??''}'));
     return Column(children:[
       const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('محادثة العميل'),subtitle:Text('الرسائل والردود تظهر هنا تلقائياً')),
