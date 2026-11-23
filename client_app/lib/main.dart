@@ -46,7 +46,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   if(!RegExp(r'^[a-z0-9._]{3,24}$').hasMatch(u)){setState(()=>error='اسم المستخدم يجب أن يكون 3 إلى 24 حرفاً إنجليزياً أو رقماً');return;}
   if(p.length<6){setState(()=>error='كلمة المرور يجب ألا تقل عن 6 أحرف');return;}
   if(register&&displayName.text.trim().isEmpty){setState(()=>error='اكتب الاسم الذي سيظهر في الحساب');return;}
-  setState(() { loading=true; error=null; });
+  setState(()=>{loading=true,error=null});
   try {
    final credential=register
     ? await FirebaseAuth.instance.createUserWithEmailAndPassword(email:_accountEmail(u),password:p)
