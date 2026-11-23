@@ -78,11 +78,14 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   finally{if(mounted)setState(()=>loading=false);}
  }
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-  body:Container(
+  backgroundColor:const Color(0xFFFFD8EE),
+   body:Container(
+    constraints:BoxConstraints(minHeight:MediaQuery.of(context).size.height),
    decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFFD9EF),Color(0xFFFFF0F8),Color(0xFFFFD8EE)])),
-   child:SafeArea(child:SingleChildScrollView(child:Column(children:[
-    ClipPath(clipper:LoginWaveClipper(),child:SizedBox(height:250,width:double.infinity,child:Stack(fit:StackFit.expand,children:[
-     Image.asset('assets/login_photo.jpg',fit:BoxFit.cover,alignment:Alignment.topCenter),
+   child:SafeArea(child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+    ClipPath(clipper:LoginWaveClipper(),child:SizedBox(width:double.infinity,child:AspectRatio(aspectRatio:1,child:Stack(fit:StackFit.expand,children:[
+     Container(color:const Color(0xFFFFB8DE)),
+      Image.asset('assets/login_photo.jpg',fit:BoxFit.contain,alignment:Alignment.center),
      Container(decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0x44E91E8B)]))),
      const Positioned(right:24,top:100,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34)),
      const Positioned(left:28,top:150,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30))
