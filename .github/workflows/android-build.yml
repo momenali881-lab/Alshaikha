@@ -19,14 +19,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      # Both APKs are built on the same runner so Flutter's generated debug
-      # signing certificate is identical for the signature-protected provider.
-      - name: Download the original launcher image
-        run: |
-          mkdir -p assets
-          curl --fail --location --retry 3 --retry-delay 2 \
-            "https://dropit.pics/m0e5ddd.png" \
-            --output assets/launcher_icon.jpg
+      # The original launcher artwork is stored in assets/launcher_icon.jpg.
+      # Both apps use this exact repository image; no external image URL is fetched.
       - name: Install image tooling
         run: python3 -m pip install --break-system-packages pillow
       - name: Generate Android projects
