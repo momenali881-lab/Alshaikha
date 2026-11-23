@@ -91,7 +91,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
    if(error!=null) Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
    const SizedBox(height:20),
    SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():Text(register?'إنشاء الحساب':'دخول'))),
-   TextButton(onPressed:loading?null:()=>setState(()=>{register=!register,error=null}),child:Text(register?'لديك حساب؟ سجّل الدخول':'ليس لديك حساب؟ أنشئ حساباً'))
+   TextButton(onPressed:loading?null:()=>setState(() { register=!register; error=null; }),child:Text(register?'لديك حساب؟ سجّل الدخول':'ليس لديك حساب؟ أنشئ حساباً'))
   ])))))));
 }
 }
