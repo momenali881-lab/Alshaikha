@@ -104,7 +104,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
      final h=constraints.maxHeight;
      final keyboard=MediaQuery.viewInsetsOf(context).bottom>0;
      final compact=h<680||keyboard;
-     final imageHeight=math.min(h*(keyboard?.12:.38),keyboard?105.0:300.0);
+     final imageHeight=math.min(h*(keyboard ? .12 : .38),keyboard ? 105.0 : 300.0);
      final fieldHeight=compact?42.0:49.0;
      final buttonHeight=compact?44.0:51.0;
      InputDecoration decoration(String hint,IconData icon,{Widget? trailing})=>InputDecoration(
