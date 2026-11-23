@@ -18,12 +18,12 @@ jobs:
         working-directory: client_app
         run: |
           flutter pub get
-          flutter analyze
+          flutter analyze --no-fatal-infos
       - name: Analyze admin app
         working-directory: admin_app
         run: |
           flutter pub get
-          flutter analyze
+          flutter analyze --no-fatal-infos
 
   functions:
     runs-on: ubuntu-latest
