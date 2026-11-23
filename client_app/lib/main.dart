@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
+import 'account_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,42 @@ class ClientAuthGate extends StatelessWidget {
   builder:(context,snapshot){
    if(snapshot.connectionState==ConnectionState.waiting) return const Scaffold(body:Center(child:CircularProgressIndicator()));
    if(snapshot.data==null) return const ClientAccountScreen();
+   return const ClientProfileGate();
+  });
+}
+
+class ClientProfileGate extends StatefulWidget {
+ const ClientProfileGate({super.key});
+ @override State<ClientProfileGate> createState()=>_ClientProfileGateState();
+}
+class _ClientProfileGateState extends State<ClientProfileGate> {
+ late Future<void> check;
+ @override void initState(){super.initState();check=_ensureCustomerProfile();}
+ Future<void> _ensureCustomerProfile() async {
+  final user=FirebaseAuth.instance.currentUser;
+  if(user==null)return;
+  final ref=FirebaseFirestore.instance.collection('profiles').doc(user.uid);
+  final doc=await ref.get();
+  if(!doc.exists){
+   final username=(user.email??'').split('@').first.toLowerCase();
+   final name=(user.displayName??'').trim().isNotEmpty?user.displayName!.trim():username;
+   await ref.set({'uid':user.uid,'username':username,'displayName':name,'role':'customer','createdAt':FieldValue.serverTimestamp()},SetOptions(merge:true));
+  } else if(doc.data()?['role']!='customer') {
+   await FirebaseAuth.instance.signOut();
+   throw FirebaseAuthException(code:'profile-not-found',message:'هذا الحساب غير مهيأ كحساب عميل');
+  }
+ }
+ @override Widget build(BuildContext context)=>FutureBuilder<void>(
+  future:check,
+  builder:(context,snapshot){
+   if(snapshot.connectionState==ConnectionState.waiting)return const Scaffold(body:Center(child:CircularProgressIndicator()));
+   if(snapshot.hasError)return Scaffold(body:Directionality(textDirection:TextDirection.rtl,child:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[
+    const Icon(Icons.cloud_off_outlined,size:48,color:rose),
+    const SizedBox(height:12),
+    Text('تعذر تهيئة حساب العميل: ${snapshot.error}',textAlign:TextAlign.center),
+    const SizedBox(height:12),
+    FilledButton(onPressed:()async{await FirebaseAuth.instance.signOut();},child:const Text('العودة إلى تسجيل الدخول')),
+   ])))));
    return const ClientHome();
   });
 }
@@ -74,10 +111,16 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
      'createdAt':FieldValue.serverTimestamp()
     });
    } else {
-    final profile=await FirebaseFirestore.instance.collection('profiles').doc(user.uid).get();
-    if(!profile.exists || profile.data()?['role']!='customer'){
+    final profileRef=FirebaseFirestore.instance.collection('profiles').doc(user.uid);
+    final profile=await profileRef.get();
+    if(!profile.exists){
+     // Recover Auth accounts whose profile write failed during an earlier registration.
+     final recoveredName=(user.displayName??'').trim().isNotEmpty?user.displayName!.trim():u;
+     await profileRef.set({'uid':user.uid,'username':u,'displayName':recoveredName,'role':'customer','createdAt':FieldValue.serverTimestamp()},SetOptions(merge:true));
+     await user.updateDisplayName(recoveredName);
+    } else if(profile.data()?['role']!='customer'){
      await FirebaseAuth.instance.signOut();
-     throw FirebaseAuthException(code:'profile-not-found',message:'الحساب غير مهيأ كحساب عميل');
+     throw FirebaseAuthException(code:'profile-not-found',message:'هذا الحساب ليس حساب عميل');
     }
    }
   } on FirebaseAuthException catch(e){
@@ -86,7 +129,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     'invalid-credential'=>'اسم المستخدم أو كلمة المرور غير صحيحة',
     'user-not-found'=>'الحساب غير موجود',
     'weak-password'=>'كلمة المرور ضعيفة',
-    'profile-not-found'=>'هذا الحساب غير مهيأ كحساب عميل',
+    'profile-not-found'=>'هذا الحساب ليس حساب عميل',
+    'permission-denied'=>'تم تسجيل الدخول لكن صلاحية قراءة بيانات الحساب مرفوضة؛ راجع قواعد Firebase',
     _=>'تعذر إكمال العملية: ${e.message??e.code}'
    });
   } catch(e){setState(()=>error='حدث خطأ: $e');}
@@ -227,7 +271,7 @@ class _ClientHomeState extends State<ClientHome>{
  @override void initState(){super.initState();load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
  @override void dispose(){poll?.cancel();bannerAuto?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();super.dispose();}
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
- Future<void> openNotifications()async{await load(silent:true);if(!mounted)return;showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),onTap:()async{await SharedStore.save('notifications',{...n,'read':true});await load(silent:true);})).toList()))])))));}
+ Future<void> openNotifications()async{await load(silent:true);if(!mounted)return;showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),onTap:()async{if(n['customerId']==FirebaseAuth.instance.currentUser?.uid){await SharedStore.save('notifications',{...n,'read':true});}await load(silent:true);})).toList()))])))));}
  Future<void> load({bool silent=false})async{
   if(!silent&&mounted)setState(()=>busy=true);
   try{final r=await Future.wait([SharedStore.list('members'),SharedStore.list('sessions'),SharedStore.list('banners'),SharedStore.list('bookings'),SharedStore.list('favorites'),SharedStore.list('messages'),SharedStore.list('notifications'),SharedStore.list('announcements')]);
@@ -264,7 +308,7 @@ class _ClientHomeState extends State<ClientHome>{
   if(members.isEmpty){note('لا يوجد أعضاء متاحون للمشاركة');return;}
   final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...members.map((m)=>ListTile(leading:photo(m,size:48),title:Text('${m['name']??''}'),subtitle:Text('ملف العضو'),onTap:()=>Navigator.pop(ctx,m)))]))));
   if(chosen==null)return;
-  await SharedStore.save('messages',{'conversationId':conversationId,'sender':'عميل','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
+  await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
   await load(silent:true);note('تم إرسال ملف العضو داخل المحادثة');
  }
   Map<String,dynamic>? findMemberById(dynamic id){for(final member in members){if(member['id'].toString()==id?.toString())return member;}return null;}
@@ -365,13 +409,13 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView(padding:const EdgeInsets.all(12),children:messages.map(chatMessage).toList())),
   SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
  ]);
- Widget morePage()=>ListView(padding:const EdgeInsets.all(18),children:[const ListTile(leading:Icon(Icons.spa),title:Text('مركز الشيخة'),subtitle:Text('نرحب بكم دائماً')),const ListTile(leading:Icon(Icons.currency_exchange),title:Text('العملة'),subtitle:Text('الدينار العراقي (د.ع)')),ListTile(leading:const Icon(Icons.refresh),title:const Text('تحديث البيانات'),onTap:load)]);
- Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>morePage(),_=>homePage()};
+ Widget accountPage()=>const AccountPage();
+ Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
   appBar:AppBar(title:const Text('الشيخة',style:TextStyle(fontWeight:FontWeight.bold)),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.14)),icon:const Icon(Icons.favorite,color:rose)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active)))]),
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
-  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.more_horiz,color:plum),selectedIcon:Icon(Icons.more,color:plum),label:'المزيد')])
+  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
  ));
 }
 class MemberSearch extends SearchDelegate<String>{
