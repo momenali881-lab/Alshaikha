@@ -96,7 +96,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
    if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
    const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():const Text('تسجيل الدخول')))
   ])))))));
- }
 }
 
 class AdminHome extends StatefulWidget {
