@@ -87,9 +87,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     'user-not-found'=>'الحساب غير موجود',
     'weak-password'=>'كلمة المرور ضعيفة',
     'profile-not-found'=>'هذا الحساب غير مهيأ كحساب عميل',
-    _=>'تعذر إكمال العملية: \${e.message??e.code}'
+    _=>'تعذر إكمال العملية: ${e.message??e.code}'
    });
-  } catch(e){setState(()=>error='حدث خطأ: \$e');}
+  } catch(e){setState(()=>error='حدث خطأ: $e');}
   finally{if(mounted)setState(()=>loading=false);}
  }
  @override
