@@ -63,25 +63,31 @@ for app, (package, activity_file) in apps.items():
         else:
             activity_tag += ' android:windowSoftInputMode="adjustResize"'
         text = text[:match.start()] + activity_tag + match.group(2) + text[match.end():]
-    manifest.write_text(text)
-
-# Give the customer app a clean launcher name and a custom faceless spa icon.
-if app == "client_app":
-    text = text.replace('android:label="al_sheikha_client"', 'android:label="الشيخة"')
-    text = text.replace('android:label="Flutter"', 'android:label="الشيخة"')
-    text = text.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/sheikha_icon"')
-    drawable = android / "app" / "src" / "main" / "res" / "drawable"
-    drawable.mkdir(parents=True, exist_ok=True)
-    (drawable / "sheikha_icon.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#3B1028" android:pathData="M0,0h108v108h-108z"/>
-    <path android:strokeColor="#D7A84B" android:strokeWidth="2.4" android:fillColor="#3B1028" android:pathData="M8,54a46,46 0,1 0,92 0a46,46 0,1 0,-92 0"/>
-    <path android:fillColor="#EAD6C2" android:pathData="M54,17c-7,0 -12,7 -12,15v5c-8,4 -14,14 -16,25l-5,24c-1,5 2,8 7,8h52c5,0 8,-3 7,-8l-5,-24c-2,-11 -8,-21 -16,-25v-5c0,-8 -5,-15 -12,-15z"/>
-    <path android:fillColor="#3B1028" android:pathData="M42,38c-9,5 -13,15 -14,25l-5,23c-1,4 1,6 5,6h8l8,-23zM66,38c9,5 13,15 14,25l5,23c1,4 -1,6 -5,6h-8l-8,-23z"/>
-    <path android:fillColor="#D7A84B" android:pathData="M43,44l11,13 11,-13 5,4 -16,20 -16,-20z"/>
-    <path android:fillColor="#D7A84B" android:pathData="M54,75c-6,-8 -13,-8 -18,0 7,-2 12,1 18,8 6,-7 11,-10 18,-8 -5,-8 -12,-8 -18,0z"/>
-</vector>
-""", encoding="utf-8")
+    # Use the user's exact uploaded artwork as the launcher icon in both apps.
+    if app == "client_app":
+        text = text.replace('android:label="al_sheikha_client"', 'android:label="الشيخة"')
+        text = text.replace('android:label="Flutter"', 'android:label="الشيخة"')
+    text = text.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@mipmap/ic_launcher"')
+    icon_source = root / "assets" / "launcher_icon.jpg"
+    if not icon_source.is_file():
+        raise FileNotFoundError(f"Missing original launcher image: {icon_source}")
+    with icon_source.open("rb") as image_file:
+        signature = image_file.read(8)
+    if signature.startswith(b"\\xff\\xd8\\xff"):
+        icon_extension = ".jpg"
+    elif signature.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        icon_extension = ".png"
+    else:
+        raise ValueError("Launcher image must be a JPEG or PNG file")
+    for density, size in (("mdpi", 48), ("hdpi", 72), ("xhdpi", 96),
+                          ("xxhdpi", 144), ("xxxhdpi", 192)):
+        mipmap = android / "app" / "src" / "main" / "res" / f"mipmap-{density}"
+        mipmap.mkdir(parents=True, exist_ok=True)
+        # The source is copied byte-for-byte: only the Android density copies
+        # are resized by the build preparation step.
+        from PIL import Image
+        with Image.open(icon_source) as original:
+            resized = original.convert("RGB").resize((size, size), Image.Resampling.LANCZOS)
+            resized.save(mipmap / f"ic_launcher{icon_extension}", quality=100, subsampling=0)
 
     manifest.write_text(text, encoding="utf-8")
