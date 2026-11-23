@@ -67,7 +67,6 @@ for app, (package, activity_file) in apps.items():
     if app == "client_app":
         text = text.replace('android:label="al_sheikha_client"', 'android:label="الشيخة"')
         text = text.replace('android:label="Flutter"', 'android:label="الشيخة"')
-    text = text.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@mipmap/ic_launcher"')
     icon_source = root / "assets" / "launcher_icon.jpg"
     if not icon_source.is_file():
         raise FileNotFoundError(f"Missing original launcher image: {icon_source}")
@@ -83,8 +82,7 @@ for app, (package, activity_file) in apps.items():
                           ("xxhdpi", 144), ("xxxhdpi", 192)):
         mipmap = android / "app" / "src" / "main" / "res" / f"mipmap-{density}"
         mipmap.mkdir(parents=True, exist_ok=True)
-        # The source is copied byte-for-byte: only the Android density copies
-        # are resized by the build preparation step.
+        # Resize the unchanged artwork to Android launcher density dimensions.
         from PIL import Image
         with Image.open(icon_source) as original:
             resized = original.convert("RGB").resize((size, size), Image.Resampling.LANCZOS)
