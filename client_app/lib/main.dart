@@ -104,7 +104,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
           ),
          );
         },
-        child:Image.asset('assets/login_photo.jpg',fit:BoxFit.contain,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
+        child:Image.asset('file_0000000057e4824695ffe2c5d9ccdde8.png',fit:BoxFit.contain,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
        ),
       ),
      Container(decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0x44E91E8B)]))),
