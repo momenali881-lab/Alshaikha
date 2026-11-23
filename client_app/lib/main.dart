@@ -108,7 +108,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
       ),
      const Positioned(right:24,top:100,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34)),
      const Positioned(left:28,top:150,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30))
-    ])))),
+    ]))),
     const Text('الشيخة',style:TextStyle(fontSize:32,fontWeight:FontWeight.w900,color:Color(0xFFB80D70),height:1.1)),
     Container(width:190,height:2,margin:const EdgeInsets.symmetric(vertical:5),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
     const Text('مرحباً بكِ في عالم الجمال والتميز',style:TextStyle(fontSize:14,color:Color(0xFFB52B79))),
