@@ -142,7 +142,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
       alignment:Alignment.bottomCenter,
       child:Container(
        width:double.infinity,
-       height:h*(compact?.76:.72),
+       height: h * (compact ? 0.76 : 0.72),
        padding:EdgeInsets.fromLTRB(compact?15:19,compact?13:17,compact?15:19,compact?7:10),
        decoration:const BoxDecoration(
         color:Colors.transparent,
