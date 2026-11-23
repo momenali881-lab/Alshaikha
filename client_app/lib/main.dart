@@ -189,6 +189,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     TextButton(onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),child:const Text('نسيت كلمة المرور؟',style:TextStyle(color:Color(0xFFB80D70)))),
      const SizedBox(height:12)
     ])
+    )
    ])))
   )
  ));
