@@ -144,11 +144,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
        width:double.infinity,
        height:h*(compact?.76:.72),
        padding:EdgeInsets.fromLTRB(compact?15:19,compact?13:17,compact?15:19,compact?7:10),
-       decoration:BoxDecoration(
-        color:const Color(0xF7FFF0F8),
-        borderRadius:const BorderRadius.vertical(top:Radius.circular(34)),
-        border:Border.all(color:const Color(0xFFFF8AC9),width:1.6),
-        boxShadow:const [BoxShadow(color:Color(0x55C20B78),blurRadius:22,offset:Offset(0,-5))],
+       decoration:const BoxDecoration(
+        color:Colors.transparent,
        ),
        child:Column(
         mainAxisAlignment:MainAxisAlignment.spaceEvenly,
@@ -168,11 +165,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
          Container(
           width:double.infinity,
           padding:EdgeInsets.all(compact?9:12),
-          decoration:BoxDecoration(
-           color:const Color(0xFFFFE5F3).withOpacity(.88),
-           borderRadius:BorderRadius.circular(25),
-           border:Border.all(color:const Color(0xFFFF91CA),width:1.3),
-           boxShadow:const [BoxShadow(color:Color(0x22D41483),blurRadius:12,offset:Offset(0,4))],
+          decoration:const BoxDecoration(
+           color:Colors.transparent,
           ),
           child:Column(mainAxisSize:MainAxisSize.min,children:[
            if(register) ...[
