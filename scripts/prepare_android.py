@@ -72,9 +72,9 @@ for app, (package, activity_file) in apps.items():
         raise FileNotFoundError(f"Missing original launcher image: {icon_source}")
     with icon_source.open("rb") as image_file:
         signature = image_file.read(8)
-    if signature.startswith(b"\\xff\\xd8\\xff"):
+    if signature.startswith(bytes.fromhex("ffd8ff")):
         icon_extension = ".jpg"
-    elif signature.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+    if signature.startswith(bytes.fromhex("ffd8ff")):
         icon_extension = ".png"
     else:
         raise ValueError("Launcher image must be a JPEG or PNG file")
