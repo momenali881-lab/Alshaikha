@@ -110,6 +110,11 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
 
 }
 
+class LoginWaveClipper extends CustomClipper<Path>{
+ @override Path getClip(Size size){final p=Path()..lineTo(0,size.height-34);p.quadraticBezierTo(size.width*.22,size.height-82,size.width*.48,size.height-40);p.quadraticBezierTo(size.width*.76,size.height+2,size.width,size.height-88);p.lineTo(size.width,0);p.close();return p;}
+ @override bool shouldReclip(covariant CustomClipper<Path> oldClipper)=>false;
+}
+
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
  int tab=0;bool busy=true;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
