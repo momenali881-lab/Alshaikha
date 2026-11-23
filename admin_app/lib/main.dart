@@ -104,7 +104,7 @@ class AdminHome extends StatefulWidget {
 }
 class _AdminHomeState extends State<AdminHome> {
   bool fromChatBooking=false;
-  String section='members'; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; final chatController=TextEditingController();
+  String section='members'; String? selectedConversationId; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; final chatController=TextEditingController();
   @override void initState(){super.initState(); refresh(); loadChatMembers(); loadNotifications(); poll=Timer.periodic(const Duration(seconds:5),(_){refresh(silent:true);loadNotifications();});}
   @override void dispose(){poll?.cancel();chatController.dispose();super.dispose();}
   void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
@@ -120,7 +120,7 @@ class _AdminHomeState extends State<AdminHome> {
   }
   Future<void> refresh({bool silent=false}) async {
     if(!silent && mounted)setState(()=>busy=true);
-    try { final data=await SharedStore.list(section); if(mounted)setState(()=>rows=data); }
+    try { final data=await SharedStore.list(section); if(mounted)setState((){rows=data;if(section=='messages'){final ids=data.map((m)=>m['conversationId']?.toString()??'').where((id)=>id.isNotEmpty).toSet().toList();if(selectedConversationId==null||!ids.contains(selectedConversationId)){selectedConversationId=ids.isEmpty?null:ids.last;}}}); }
     catch(e){if(!silent&&mounted)note('تعذر تحميل البيانات: $e');}
     finally{if(mounted)setState(()=>busy=false);}
   }
@@ -212,7 +212,7 @@ class _AdminHomeState extends State<AdminHome> {
       if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
       if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['targetType']=(linkedMemberId==null||linkedMemberId!.isEmpty)?'none':'member';data['targetId']=data['linkedMemberId'];}
       if(section=='announcements'){data['createdAt']=DateTime.now().toIso8601String();}
-      if(section=='members'&&(selectedProvince==null||areaName.text.trim().isEmpty||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||ctrls['customerName']!.text.trim().isEmpty)){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{final savedId=await SharedStore.save(section,data);if(section=='bookings'&&fromChatBooking){await SharedStore.save('messages',{'conversationId':'customer-main','sender':'الإدارة','type':'bookingCard','bookingId':savedId,'customerName':data['customerName'],'memberId':data['memberId'],'memberName':data['memberName'],'date':data['date'],'durationMinutes':data['durationMinutes']??60,'notes':data['notes']??'','status':data['status']??'قيد المراجعة','text':'تم إنشاء بطاقة حجز','createdAt':DateTime.now().toIso8601String()});}if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'){await SharedStore.save('notifications',{'target':'customer','type':'booking','title':'تم تسجيل حجز باسم ${data['customerName']}','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':data['id']});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
+      if(section=='members'&&(selectedProvince==null||areaName.text.trim().isEmpty||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||ctrls['customerName']!.text.trim().isEmpty)){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{final savedId=await SharedStore.save(section,data);if(section=='bookings'&&fromChatBooking&&selectedConversationId!=null){await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'bookingCard','bookingId':savedId,'customerName':data['customerName'],'memberId':data['memberId'],'memberName':data['memberName'],'date':data['date'],'durationMinutes':data['durationMinutes']??60,'notes':data['notes']??'','status':data['status']??'قيد المراجعة','text':'تم إنشاء بطاقة حجز','createdAt':DateTime.now().toIso8601String()});}if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'){await SharedStore.save('notifications',{'target':'customer','type':'booking','title':'تم تسجيل حجز باسم ${data['customerName']}','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':data['id']});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
     for(final c in ctrls.values){c.dispose();}landmark.dispose();areaName.dispose();
   }
@@ -241,7 +241,8 @@ class _AdminHomeState extends State<AdminHome> {
     if(chatMembers.isEmpty){note('أضف أعضاء الكادر أولاً');return;}
     final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله للعميل',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...chatMembers.map((m){final imgs=List<String>.from(m['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(9),child:Image.memory(base64Decode(imgs.first),width:48,height:48,fit:BoxFit.cover));}catch(_){}}return ListTile(leading:avatar,title:Text('${m['name']??'عضو'}'),subtitle:const Text('إرسال بطاقة الملف الشخصي'),onTap:()=>Navigator.pop(ctx,m));})]))));
     if(chosen==null)return;
-    await SharedStore.save('messages',{'conversationId':'customer-main','sender':'الإدارة','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
+    if(selectedConversationId==null){note('اختر محادثة العميل أولاً');return;}
+    await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
     await SharedStore.save('notifications',{'target':'customer','type':'message','title':'رسالة جديدة من الإدارة','body':'تم إرسال ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
     await refresh(silent:true);note('تم إرسال ملف العضو للعميل');
   }
@@ -267,9 +268,10 @@ class _AdminHomeState extends State<AdminHome> {
   Future<void> sendAdminMessage() async {
     final value=chatController.text.trim();
     if(value.isEmpty)return;
+    if(selectedConversationId==null){note('لا توجد محادثة عميل للرد عليها بعد');return;}
     try {
-      await SharedStore.save('messages', {'conversationId':'customer-main','sender':'الإدارة','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});
-      await SharedStore.save('notifications',{'target':'customer','type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
+      await SharedStore.save('messages', {'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});
+      await SharedStore.save('notifications',{'target':'customer','customerId':selectedConversationId,'type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
       chatController.clear();
       await refresh(silent:true);
     } catch(e) { note('تعذر إرسال الرد: $e'); }
@@ -284,10 +286,16 @@ class _AdminHomeState extends State<AdminHome> {
     await refresh();
   }
   Widget adminChat() {
-    final messages=[...rows]..sort((a,b)=>('${a['createdAt']??''}').compareTo('${b['createdAt']??''}'));
+    final ids=rows.map((m)=>m['conversationId']?.toString()??'').where((id)=>id.isNotEmpty).toSet().toList()..sort();
+    final messages=rows.where((m)=>m['conversationId']?.toString()==selectedConversationId).toList()..sort((a,b)=>('${a['createdAt']??''}').compareTo('${b['createdAt']??''}));
     return Column(children:[
-      const ListTile(leading:CircleAvatar(child:Icon(Icons.support_agent)),title:Text('محادثة العميل'),subtitle:Text('الرسائل والردود تظهر هنا تلقائياً')),
-      Expanded(child:messages.isEmpty?const Center(child:Text('لا توجد رسائل بعد')):ListView.builder(padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index){
+      Padding(padding:const EdgeInsets.fromLTRB(12,8,12,4),child:DropdownButtonFormField<String>(
+        value:ids.contains(selectedConversationId)?selectedConversationId:null,
+        decoration:const InputDecoration(labelText:'اختر محادثة العميل',prefixIcon:Icon(Icons.person_search)),
+        items:ids.map((id)=>DropdownMenuItem<String>(value:id,child:Text('عميل ${id.length>10?id.substring(0,10):id}'))).toList(),
+        onChanged:(id)=>setState(()=>selectedConversationId=id),
+      )),
+      Expanded(child:messages.isEmpty?const Center(child:Text('اختر محادثة أو انتظر رسالة من عميل')):ListView.builder(padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index){
         final m=messages[index]; return adminMessageBubble(m);
       })),
       SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'تسجيل حجز للعميل',onPressed:createBookingFromChat,icon:const Icon(Icons.event_available,color:teal)),IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:chatController,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رد الإدارة...',border:OutlineInputBorder()),onSubmitted:(_)=>sendAdminMessage())),IconButton(onPressed:sendAdminMessage,icon:const Icon(Icons.send,color:plum))]))),
