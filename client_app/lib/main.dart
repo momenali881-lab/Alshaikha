@@ -87,7 +87,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     constraints:BoxConstraints(minHeight:MediaQuery.of(context).size.height),
    decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFFD9EF),Color(0xFFFFF0F8),Color(0xFFFFD8EE)])),
    child:SafeArea(child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    ClipPath(clipper:LoginWaveClipper(),child:SizedBox(width:double.infinity,height:MediaQuery.of(context).size.height*.34,child:Stack(fit:StackFit.expand,children:[
+    SizedBox(width:double.infinity,height:MediaQuery.of(context).size.width*1.5,child:Stack(fit:StackFit.expand,children:[
       GestureDetector(
        onTap:()=>_breathController.forward(from:0),
        child:AnimatedBuilder(
@@ -103,12 +103,12 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
           ),
          );
         },
-        child:Image.asset('file_0000000057e4824695ffe2c5d9ccdde8.png',fit:BoxFit.cover,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
+        child:Image.asset('file_000000004d4c821087da7931f79f80cf.png',fit:BoxFit.contain,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
        ),
       ),
      const Positioned(right:24,top:100,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34)),
      const Positioned(left:28,top:150,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30))
-    ]))),
+    ])),
     const Text('الشيخة',style:TextStyle(fontSize:32,fontWeight:FontWeight.w900,color:Color(0xFFB80D70),height:1.1)),
     Container(width:190,height:2,margin:const EdgeInsets.symmetric(vertical:5),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
     const Text('مرحباً بكِ في عالم الجمال والتميز',style:TextStyle(fontSize:14,color:Color(0xFFB52B79))),
