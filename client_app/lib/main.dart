@@ -46,7 +46,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   if(!RegExp(r'^[a-z0-9._]{3,24}$').hasMatch(u)){setState(()=>error='اسم المستخدم يجب أن يكون 3 إلى 24 حرفاً إنجليزياً أو رقماً');return;}
   if(p.length<6){setState(()=>error='كلمة المرور يجب ألا تقل عن 6 أحرف');return;}
   if(register&&displayName.text.trim().isEmpty){setState(()=>error='اكتب الاسم الذي سيظهر في الحساب');return;}
-  setState(()=>{loading=true,error=null});
+  setState(() { loading=true; error=null; });
   try {
    final credential=register
     ? await FirebaseAuth.instance.createUserWithEmailAndPassword(email:_accountEmail(u),password:p)
@@ -258,55 +258,4 @@ class MemberSearch extends SearchDelegate<String>{
  @override Widget? buildLeading(BuildContext context)=>IconButton(onPressed:()=>close(context,''),icon:const Icon(Icons.arrow_back));
  @override Widget buildResults(BuildContext context)=>buildSuggestions(context);
  @override Widget buildSuggestions(BuildContext context)=>ListView(children:members.where((m)=>'${m['name']} ${m['description']}'.toLowerCase().contains(query.toLowerCase())).map((m)=>ListTile(title:Text('${m['name']}'),subtitle:Text('${m['address']??''}'),onTap:(){onPick(query);close(context,query);})).toList());
-}
-).hasMatch(u)){setState(()=>error='اسم المستخدم يجب أن يكون 3 إلى 24 حرفاً إنجليزياً أو رقماً');return;}
-  if(p.length<6){setState(()=>error='كلمة المرور يجب ألا تقل عن 6 أحرف');return;}
-  if(register&&displayName.text.trim().isEmpty){setState(()=>error='اكتب الاسم الذي سيظهر في الحساب');return;}
-  setState(()=>{loading=true,error=null});
-  try {
-   final credential=register
-    ? await FirebaseAuth.instance.createUserWithEmailAndPassword(email:_accountEmail(u),password:p)
-    : await FirebaseAuth.instance.signInWithEmailAndPassword(email:_accountEmail(u),password:p);
-   final user=credential.user!;
-   if(register){
-    await user.updateDisplayName(displayName.text.trim());
-    await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
-     'uid':user.uid,'username':u,'displayName':displayName.text.trim(),'role':'customer',
-     'createdAt':FieldValue.serverTimestamp()
-    });
-   } else {
-    final profile=await FirebaseFirestore.instance.collection('profiles').doc(user.uid).get();
-    if(!profile.exists || profile.data()?['role']!='customer'){
-     await FirebaseAuth.instance.signOut();
-     throw FirebaseAuthException(code:'profile-not-found',message:'الحساب غير مهيأ كحساب عميل');
-    }
-   }
-  } on FirebaseAuthException catch(e){
-   setState(()=>error=switch(e.code){
-    'email-already-in-use'=>'اسم المستخدم مستخدم مسبقاً',
-    'invalid-credential'=>'اسم المستخدم أو كلمة المرور غير صحيحة',
-    'user-not-found'=>'الحساب غير موجود',
-    'weak-password'=>'كلمة المرور ضعيفة',
-    'profile-not-found'=>'هذا الحساب غير مهيأ كحساب عميل',
-    _=>'تعذر إكمال العملية: ${e.message??e.code}'
-   });
-  } catch(e){setState(()=>error='حدث خطأ: $e');}
-  finally{if(mounted)setState(()=>loading=false);}
- }
- @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-  body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
-   const Icon(Icons.spa_rounded,size:68,color:plum),const SizedBox(height:12),
-   const Text('الشيخة',style:TextStyle(fontSize:30,fontWeight:FontWeight.bold,color:plum)),
-   Text(register?'إنشاء حساب عميل':'تسجيل دخول العميل',style:const TextStyle(fontSize:20)),
-   const SizedBox(height:24),
-   if(register) TextField(controller:displayName,decoration:const InputDecoration(labelText:'الاسم الظاهر',prefixIcon:Icon(Icons.person))),
-   if(register) const SizedBox(height:12),
-   TextField(controller:username,autocorrect:false,decoration:const InputDecoration(labelText:'اسم المستخدم',prefixIcon:Icon(Icons.account_circle))),
-   const SizedBox(height:12),
-   TextField(controller:password,obscureText:obscure,decoration:InputDecoration(labelText:'كلمة المرور',prefixIcon:const Icon(Icons.lock),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),
-   if(error!=null) Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
-   const SizedBox(height:20),
-   SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():Text(register?'إنشاء الحساب':'دخول'))),
-   TextButton(onPressed:loading?null:()=>setState(()=>{register=!register,error=null}),child:Text(register?'لديك حساب؟ سجّل الدخول':'ليس لديك حساب؟ أنشئ حساباً'))
-  ])))))));
 }
