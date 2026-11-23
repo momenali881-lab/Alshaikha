@@ -83,164 +83,267 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
   } catch(e){setState(()=>error='حدث خطأ: $e');}
   finally{if(mounted)setState(()=>loading=false);}
  }
- @override Widget build(BuildContext context)=>Directionality(
- textDirection:TextDirection.rtl,
- child:Scaffold(
-  resizeToAvoidBottomInset:true,
-  backgroundColor:const Color(0xFFFFB4DC),
-  body:SafeArea(
-   child:LayoutBuilder(builder:(context,screen){
-    final h=screen.maxHeight;
-    final compact=h<740;
-    final fieldHeight=register?(compact?39.0:43.0):(compact?45.0:49.0);
-    final buttonHeight=compact?43.0:49.0;
-    InputDecoration fieldDecoration(String hint,IconData icon,{Widget? suffix})=>InputDecoration(
-     hintText:hint,
-     hintStyle:TextStyle(color:const Color(0xFF87516F),fontSize:compact?13:15,fontWeight:FontWeight.w700),
-     prefixIcon:Icon(icon,color:const Color(0xFFD41483),size:compact?20:23),
-     suffixIcon:suffix,
-     isDense:true,
-     contentPadding:EdgeInsets.symmetric(horizontal:12,vertical:compact?8:10),
-     filled:true,
-     fillColor:const Color(0xFFFFF7FC),
-     enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(28),borderSide:const BorderSide(color:Color(0xFFD75AA5),width:1.35)),
-     focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(28),borderSide:const BorderSide(color:Color(0xFFD41483),width:2)),
-    );
-    Widget textField(TextEditingController controller,String hint,IconData icon,{bool secret=false,Widget? suffix,TextInputAction action=TextInputAction.next})=>SizedBox(
-     height:fieldHeight,
-     child:TextField(
-      controller:controller,
-      obscureText:secret,
-      autocorrect:false,
-      textAlign:TextAlign.right,
-      textInputAction:action,
-      onSubmitted:action==TextInputAction.done?(_){if(!loading) submit();}:null,
-      style:TextStyle(color:const Color(0xFF63334F),fontSize:compact?14:16,fontWeight:FontWeight.w600),
-      decoration:fieldDecoration(hint,icon,suffix:suffix),
-     ),
-    );
-    return Stack(fit:StackFit.expand,children:[
-     const ColoredBox(color:Color(0xFFFF9DCF)),
-     Positioned.fill(
-      child:Image.asset(
-       'file_000000004d4c821087da7931f79f80cf.png',
-       fit:BoxFit.contain,
-       alignment:Alignment.topCenter,
-       filterQuality:FilterQuality.high,
-       isAntiAlias:true,
-       gaplessPlayback:true,
-      ),
-     ),
-     Positioned.fill(
-      child:DecoratedBox(
-       decoration:BoxDecoration(
-        gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[const Color(0x00FF9DCF),const Color(0x44FFB8DE),const Color(0xFFFFD9ED)],stops:[.22,.52,1]),
+ @override
+Widget build(BuildContext context) {
+ return Directionality(
+  textDirection: TextDirection.rtl,
+  child: Scaffold(
+   backgroundColor: const Color(0xFFFFC7E4),
+   resizeToAvoidBottomInset: true,
+   body: SafeArea(
+    child: LayoutBuilder(builder: (context, constraints) {
+     final h = constraints.maxHeight;
+     final compact = h < 760;
+     final heroHeight = h * (compact ? 0.445 : 0.47);
+     final fieldHeight = register ? (compact ? 36.0 : 40.0) : (compact ? 42.0 : 46.0);
+     final actionHeight = compact ? 42.0 : 47.0;
+     final fieldGap = compact ? 5.0 : 7.0;
+     final pink = const Color(0xFFD41483);
+     final deepPink = const Color(0xFFAE075F);
+     final ink = const Color(0xFF7D315C);
+
+     InputDecoration decoration(String hint, IconData icon, {Widget? suffix}) {
+      return InputDecoration(
+       hintText: hint,
+       hintStyle: TextStyle(color: ink, fontSize: compact ? 13 : 15, fontWeight: FontWeight.w700),
+       prefixIcon: Icon(icon, color: pink, size: compact ? 21 : 24),
+       suffixIcon: suffix,
+       filled: true,
+       fillColor: const Color(0xFFFFF5FB),
+       isDense: true,
+       contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: compact ? 7 : 9),
+       enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: const BorderSide(color: Color(0xFFD95BA6), width: 1.5),
+       ),
+       focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: BorderSide(color: pink, width: 2.2),
+       ),
+      );
+     }
+
+     Widget field(TextEditingController controller, String hint, IconData icon, {bool secret = false, Widget? suffix, TextInputAction action = TextInputAction.next}) {
+      return SizedBox(
+       height: fieldHeight,
+       child: TextField(
+        controller: controller,
+        obscureText: secret,
+        autocorrect: false,
+        textAlign: TextAlign.right,
+        textInputAction: action,
+        style: TextStyle(color: ink, fontSize: compact ? 14 : 16, fontWeight: FontWeight.w700),
+        onSubmitted: action == TextInputAction.done ? (_) { if (!loading) submit(); } : null,
+        decoration: decoration(hint, icon, suffix: suffix),
+       ),
+      );
+     }
+
+     return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+       gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFF45AB1), Color(0xFFFFA9D5), Color(0xFFFFD9ED)],
+        stops: [0, .48, 1],
        ),
       ),
-     ),
-     Align(
-      alignment:Alignment.bottomCenter,
-      child:Container(
-       width:double.infinity,
-       height: h * (compact ? 0.76 : 0.72),
-       padding:EdgeInsets.fromLTRB(compact?15:19,compact?13:17,compact?15:19,compact?7:10),
-       decoration:const BoxDecoration(
-        color:Colors.transparent,
-       ),
-       child:Column(
-        mainAxisAlignment:MainAxisAlignment.spaceEvenly,
-        mainAxisSize:MainAxisSize.max,
-        children:[
-         Column(mainAxisSize:MainAxisSize.min,children:[
-          Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-           const Icon(Icons.favorite,size:17,color:Color(0xFFD41483)),
-           const SizedBox(width:8),
-           Text('الشيخة',style:TextStyle(fontSize:compact?27:31,fontWeight:FontWeight.w900,color:const Color(0xFFB80D70),height:1.0,shadows:const [Shadow(color:Color(0x55A00060),blurRadius:7,offset:Offset(0,2))])),
-           const SizedBox(width:8),
-           const Icon(Icons.favorite,size:17,color:Color(0xFFD41483)),
-          ]),
-          Container(width:180,height:2,margin:const EdgeInsets.symmetric(vertical:4),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
-          Text('مرحباً بكِ في عالم الجمال والتميز',style:TextStyle(fontSize:compact?11:13,fontWeight:FontWeight.w700,color:const Color(0xFF9F1768))),
-         ]),
-         Container(
-          width:double.infinity,
-          padding:EdgeInsets.all(compact?9:12),
-          decoration:const BoxDecoration(
-           color:Colors.transparent,
-          ),
-          child:Column(mainAxisSize:MainAxisSize.min,children:[
-           if(register) ...[
-            textField(displayName,'الاسم الكامل',Icons.person_outline),
-            SizedBox(height:compact?5:7),
-           ],
-           textField(username,'اسم المستخدم',Icons.person_outline),
-           SizedBox(height:compact?5:7),
-           textField(password,'كلمة المرور',Icons.lock_outline,secret:obscure,suffix:IconButton(
-            visualDensity:VisualDensity.compact,
-            onPressed:()=>setState(()=>obscure=!obscure),
-            icon:Icon(obscure?Icons.visibility_off_outlined:Icons.visibility_outlined,color:const Color(0xFFD41483),size:21),
-           ),action:register?TextInputAction.next:TextInputAction.done),
-           if(register) ...[
-            SizedBox(height:compact?5:7),
-            textField(confirmPassword,'تأكيد كلمة المرور',Icons.verified_user_outlined,secret:true,action:TextInputAction.done),
-           ],
-           if(error!=null) Padding(padding:const EdgeInsets.only(top:5),child:Text(error!,textAlign:TextAlign.center,style:const TextStyle(color:Colors.red,fontSize:11))),
-           SizedBox(height:compact?7:9),
-           SizedBox(
-            width:double.infinity,
-            height:buttonHeight,
-            child:FilledButton(
-             onPressed:loading?null:submit,
-             style:FilledButton.styleFrom(
-              backgroundColor:const Color(0xFFD41483),
-              foregroundColor:Colors.white,
-              elevation:5,
-              shadowColor:const Color(0x66A00060),
-              shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(30),side:const BorderSide(color:Color(0xFF9F075E),width:1.1)),
+      child: Stack(
+       children: [
+        // Original portrait is displayed with contain: no crop and no replacement.
+        Positioned(
+         left: 0,
+         right: 0,
+         top: 0,
+         height: heroHeight,
+         child: Stack(
+          fit: StackFit.expand,
+          children: [
+           Image.asset(
+            'file_000000004d4c821087da7931f79f80cf.png',
+            fit: BoxFit.contain,
+            alignment: Alignment.topCenter,
+            filterQuality: FilterQuality.high,
+           ),
+           const DecoratedBox(
+            decoration: BoxDecoration(
+             gradient: LinearGradient(
+              begin: Alignment.center,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Color(0x22FFB1DA), Color(0x88FFB8DE)],
+              stops: [0, .68, 1],
              ),
-             child:loading?const SizedBox(width:19,height:19,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-              Icon(register?Icons.person_add_alt_1:Icons.login,size:21),
-              const SizedBox(width:9),
-              Text(register?'إنشاء الحساب':'تسجيل الدخول',style:TextStyle(fontSize:compact?15:17,fontWeight:FontWeight.w900)),
-             ]),
             ),
            ),
-          ]),
+          ],
          ),
-         Row(children:[
-          const Expanded(child:Divider(indent:22,endIndent:8,color:Color(0xFFD64A9D))),
-          Text('أو',style:TextStyle(color:const Color(0xFF9C236E),fontSize:compact?12:14,fontWeight:FontWeight.bold)),
-          const Expanded(child:Divider(indent:8,endIndent:22,color:Color(0xFFD64A9D))),
-         ]),
-         SizedBox(
-          width:double.infinity,
-          height:buttonHeight,
-          child:OutlinedButton.icon(
-           onPressed:loading?null:()=>setState((){register=!register;error=null;}),
-           icon:Icon(register?Icons.login:Icons.person_add_alt_1,size:20),
-           label:Text(register?'العودة لتسجيل الدخول':'إنشاء حساب جديد',style:TextStyle(fontSize:compact?14:16,fontWeight:FontWeight.w800)),
-           style:OutlinedButton.styleFrom(
-            foregroundColor:const Color(0xFFB80D70),
-            side:const BorderSide(color:Color(0xFFD41483),width:1.5),
-            shape:const StadiumBorder(),
-            backgroundColor:const Color(0xFFFFEAF5),
+        ),
+        // Decorative hearts around the portrait, matching the supplied pink artwork.
+        Positioned(top: h * .055, left: 22, child: Icon(Icons.favorite_border, color: Colors.white.withOpacity(.8), size: compact ? 25 : 31)),
+        Positioned(top: h * .075, right: 24, child: Icon(Icons.favorite_border, color: Colors.white.withOpacity(.85), size: compact ? 29 : 35)),
+        Positioned(top: h * .30, left: 34, child: Icon(Icons.favorite_border, color: Colors.white.withOpacity(.72), size: compact ? 22 : 28)),
+        Positioned(
+         top: heroHeight - (compact ? 56 : 64),
+         left: 0,
+         right: 0,
+         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+             const Icon(Icons.favorite, color: Color(0xFFD41483), size: 17),
+             const SizedBox(width: 7),
+             Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
+              children: [
+               Text(
+                'الشيخة',
+                style: TextStyle(
+                 fontSize: compact ? 31 : 36,
+                 height: 1,
+                 fontWeight: FontWeight.w900,
+                 color: deepPink,
+                 shadows: const [Shadow(color: Color(0x66FFFFFF), blurRadius: 7, offset: Offset(0, 2))],
+                ),
+               ),
+               Positioned(
+                top: compact ? -17 : -21,
+                left: compact ? 1 : 5,
+                child: Icon(Icons.workspace_premium, color: const Color(0xFFFFC13D), size: compact ? 22 : 28),
+               ),
+              ],
+             ),
+             const SizedBox(width: 7),
+             const Icon(Icons.favorite, color: Color(0xFFD41483), size: 17),
+            ],
            ),
+           Container(
+            width: compact ? 175 : 205,
+            height: 2,
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            decoration: const BoxDecoration(
+             gradient: LinearGradient(colors: [Colors.transparent, Color(0xFFD84B9D), Colors.transparent]),
+            ),
+           ),
+           Text(
+            'مرحباً بكِ في عالم الجمال والتميز',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: deepPink, fontSize: compact ? 12 : 14, fontWeight: FontWeight.w800),
+           ),
+          ],
+         ),
+        ),
+        Positioned(
+         left: 0,
+         right: 0,
+         bottom: 0,
+         height: h - heroHeight + (compact ? 2 : 0),
+         child: Container(
+          padding: EdgeInsets.fromLTRB(compact ? 22 : 28, compact ? 8 : 12, compact ? 22 : 28, compact ? 3 : 7),
+          decoration: BoxDecoration(
+           color: const Color(0xCCFFEAF5),
+           borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+           border: const Border(top: BorderSide(color: Color(0xFFFF8AC9), width: 1.7)),
+           boxShadow: const [BoxShadow(color: Color(0x33B80069), blurRadius: 15, offset: Offset(0, -4))],
+          ),
+          child: Column(
+           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+           children: [
+            if (register) ...[
+             field(displayName, 'الاسم الكامل', Icons.person_outline),
+             SizedBox(height: fieldGap),
+            ],
+            field(username, 'اسم المستخدم', Icons.person_outline),
+            SizedBox(height: fieldGap),
+            field(
+             password,
+             'كلمة المرور',
+             Icons.lock_outline,
+             secret: obscure,
+             suffix: IconButton(
+              visualDensity: VisualDensity.compact,
+              onPressed: () => setState(() => obscure = !obscure),
+              icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: pink, size: 22),
+             ),
+             action: register ? TextInputAction.next : TextInputAction.done,
+            ),
+            if (register) ...[
+             SizedBox(height: fieldGap),
+             field(confirmPassword, 'تأكيد كلمة المرور', Icons.verified_user_outlined, secret: true, action: TextInputAction.done),
+            ],
+            if (error != null)
+             Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600)),
+             ),
+            SizedBox(
+             width: double.infinity,
+             height: actionHeight,
+             child: FilledButton(
+              onPressed: loading ? null : submit,
+              style: FilledButton.styleFrom(
+               backgroundColor: pink,
+               foregroundColor: Colors.white,
+               elevation: 5,
+               shadowColor: const Color(0x66A00060),
+               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: const BorderSide(color: Color(0xFF970052), width: 1.3)),
+              ),
+              child: loading
+               ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+               : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                   Icon(register ? Icons.person_add_alt_1 : Icons.login, size: 22),
+                   const SizedBox(width: 10),
+                   Text(register ? 'إنشاء حساب جديد' : 'تسجيل الدخول', style: TextStyle(fontSize: compact ? 15 : 17, fontWeight: FontWeight.w900)),
+                  ],
+                 ),
+             ),
+            ),
+            Row(
+             children: [
+              const Expanded(child: Divider(indent: 22, endIndent: 9, color: Color(0xFFD65AA5), thickness: 1.2)),
+              Text('أو', style: TextStyle(color: deepPink, fontSize: compact ? 13 : 15, fontWeight: FontWeight.w900)),
+              const Expanded(child: Divider(indent: 9, endIndent: 22, color: Color(0xFFD65AA5), thickness: 1.2)),
+             ],
+            ),
+            SizedBox(
+             width: double.infinity,
+             height: actionHeight,
+             child: OutlinedButton.icon(
+              onPressed: loading ? null : () => setState(() { register = !register; error = null; }),
+              icon: Icon(register ? Icons.login : Icons.person_add_alt_1, size: 21),
+              label: Text(register ? 'العودة لتسجيل الدخول' : 'إنشاء حساب جديد', style: TextStyle(fontSize: compact ? 14 : 16, fontWeight: FontWeight.w900)),
+              style: OutlinedButton.styleFrom(
+               foregroundColor: deepPink,
+               backgroundColor: const Color(0xFFFFF0F8),
+               side: const BorderSide(color: Color(0xFFD41483), width: 1.6),
+               shape: const StadiumBorder(),
+              ),
+             ),
+            ),
+            if (!register)
+             TextButton(
+              onPressed: () => setState(() => error = 'لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0), minimumSize: Size(0, compact ? 24 : 28)),
+              child: Text('نسيت كلمة المرور؟', style: TextStyle(color: deepPink, fontSize: compact ? 12 : 14, fontWeight: FontWeight.w800, decoration: TextDecoration.underline, decorationColor: pink)),
+             ),
+           ],
           ),
          ),
-         if(!register) TextButton(
-          onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),
-          style:TextButton.styleFrom(visualDensity:VisualDensity.compact,padding:const EdgeInsets.symmetric(horizontal:8,vertical:0),minimumSize:Size(0,compact?25:29)),
-          child:Text('نسيت كلمة المرور؟',style:TextStyle(color:const Color(0xFF9F1768),fontSize:compact?11:13,fontWeight:FontWeight.w700)),
-         ),
-        ],
-       ),
+        ),
+       ],
       ),
-     ),
-    ]);
-   }),
+     );
+    }),
+   ),
   ),
- ),
-);
+ );
+}
 }
 
 class LoginWaveClipper extends CustomClipper<Path>{
