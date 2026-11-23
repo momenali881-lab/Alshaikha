@@ -8,15 +8,27 @@ class SharedStore {
   static final _db = FirebaseFirestore.instance;
 
   static Future<List<Map<String, dynamic>>> _localList(String table) async {
-    final rows = await _channel.invokeListMethod<dynamic>('list', {'table': table}) ?? [];
-    return rows.map((row) {
-      final map = Map<String, dynamic>.from(row as Map);
-      return jsonDecode(map['payload'] as String) as Map<String, dynamic>;
-    }).toList();
+    try {
+      final rows = await _channel.invokeListMethod<dynamic>('list', {'table': table}) ?? [];
+      return rows.map((row) {
+        final map = Map<String, dynamic>.from(row as Map);
+        return jsonDecode(map['payload'] as String) as Map<String, dynamic>;
+      }).toList();
+    } on PlatformException {
+      return [];
+    } on MissingPluginException {
+      return [];
+    }
   }
 
   static Future<void> _cache(String table, Map<String, dynamic> data) async {
-    await _channel.invokeMethod<String>('save', {'table': table, 'data': data});
+    try {
+      await _channel.invokeMethod<String>('save', {'table': table, 'data': data});
+    } on PlatformException {
+      // The customer may install this app on a device without the admin provider.
+    } on MissingPluginException {
+      // Cloud Firestore remains the source of truth on standalone installs.
+    }
   }
 
   static Future<List<Map<String, dynamic>>> list(String table) async {
@@ -42,7 +54,6 @@ class SharedStore {
       }
       return remote;
     } catch (e) {
-      // Preserve access-control failures; only use the local cache for network errors.
       final message = e.toString().toLowerCase();
       if (message.contains('permission-denied') || message.contains('unauthorized')) rethrow;
       return _localList(table);
@@ -64,7 +75,13 @@ class SharedStore {
   }
 
   static Future<void> delete(String table, String id) async {
-    await _channel.invokeMethod<void>('delete', {'table': table, 'id': id});
+    try {
+      await _channel.invokeMethod<void>('delete', {'table': table, 'id': id});
+    } on PlatformException {
+      // Local cache is optional on standalone customer devices.
+    } on MissingPluginException {
+      // Local cache is optional on standalone customer devices.
+    }
     if (FirebaseAuth.instance.currentUser != null) {
       await _db.collection(table).doc(id).delete();
     }
