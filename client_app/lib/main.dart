@@ -114,7 +114,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
       autocorrect:false,
       textAlign:TextAlign.right,
       textInputAction:action,
-      onSubmitted:action==TextInputAction.done?(_)=>loading?null:submit():null,
+      onSubmitted:action==TextInputAction.done?(_){if(!loading) submit();}:null,
       style:TextStyle(color:const Color(0xFF63334F),fontSize:compact?14:16,fontWeight:FontWeight.w600),
       decoration:fieldDecoration(hint,icon,suffix:suffix),
      ),
@@ -222,7 +222,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
           width:double.infinity,
           height:buttonHeight,
           child:OutlinedButton.icon(
-           onPressed:loading?null:()=>setState(()=>{register=!register,error=null}),
+           onPressed:loading?null:()=>setState((){register=!register;error=null;}),
            icon:Icon(register?Icons.login:Icons.person_add_alt_1,size:20),
            label:Text(register?'العودة لتسجيل الدخول':'إنشاء حساب جديد',style:TextStyle(fontSize:compact?14:16,fontWeight:FontWeight.w800)),
            style:OutlinedButton.styleFrom(
