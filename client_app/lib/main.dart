@@ -31,6 +31,42 @@ class ClientAuthGate extends StatelessWidget {
   builder:(context,snapshot){
    if(snapshot.connectionState==ConnectionState.waiting) return const Scaffold(body:Center(child:CircularProgressIndicator()));
    if(snapshot.data==null) return const ClientAccountScreen();
+   return const ClientProfileGate();
+  });
+}
+
+class ClientProfileGate extends StatefulWidget {
+ const ClientProfileGate({super.key});
+ @override State<ClientProfileGate> createState()=>_ClientProfileGateState();
+}
+class _ClientProfileGateState extends State<ClientProfileGate> {
+ late Future<void> check;
+ @override void initState(){super.initState();check=_ensureCustomerProfile();}
+ Future<void> _ensureCustomerProfile() async {
+  final user=FirebaseAuth.instance.currentUser;
+  if(user==null)return;
+  final ref=FirebaseFirestore.instance.collection('profiles').doc(user.uid);
+  final doc=await ref.get();
+  if(!doc.exists){
+   final username=(user.email??'').split('@').first.toLowerCase();
+   final name=(user.displayName??'').trim().isNotEmpty?user.displayName!.trim():username;
+   await ref.set({'uid':user.uid,'username':username,'displayName':name,'role':'customer','createdAt':FieldValue.serverTimestamp()},SetOptions(merge:true));
+  } else if(doc.data()?['role']!='customer') {
+   await FirebaseAuth.instance.signOut();
+   throw FirebaseAuthException(code:'profile-not-found',message:'هذا الحساب غير مهيأ كحساب عميل');
+  }
+ }
+ @override Widget build(BuildContext context)=>FutureBuilder<void>(
+  future:check,
+  builder:(context,snapshot){
+   if(snapshot.connectionState==ConnectionState.waiting)return const Scaffold(body:Center(child:CircularProgressIndicator()));
+   if(snapshot.hasError)return Scaffold(body:Directionality(textDirection:TextDirection.rtl,child:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[
+    const Icon(Icons.cloud_off_outlined,size:48,color:rose),
+    const SizedBox(height:12),
+    Text('تعذر تهيئة حساب العميل: ${snapshot.error}',textAlign:TextAlign.center),
+    const SizedBox(height:12),
+    FilledButton(onPressed:()async{await FirebaseAuth.instance.signOut();},child:const Text('العودة إلى تسجيل الدخول')),
+   ])))));
    return const ClientHome();
   });
 }
