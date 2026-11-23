@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,11 +37,14 @@ class ClientAccountScreen extends StatefulWidget {
  const ClientAccountScreen({super.key});
  @override State<ClientAccountScreen> createState()=>_ClientAccountScreenState();
 }
-class _ClientAccountScreenState extends State<ClientAccountScreen> {
+class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerProviderStateMixin {
  final username=TextEditingController(), password=TextEditingController(), displayName=TextEditingController();
  bool register=false, loading=false, obscure=true;
  String? error;
- @override void dispose(){username.dispose();password.dispose();displayName.dispose();super.dispose();}
+ late final AnimationController _breathController;
+ late final AnimationController _breezeController;
+ @override void initState(){super.initState();_breathController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600))..repeat(reverse:true);_breezeController=AnimationController(vsync:this,duration:const Duration(milliseconds:5200))..repeat(reverse:true);}
+ @override void dispose(){_breathController.dispose();_breezeController.dispose();username.dispose();password.dispose();displayName.dispose();super.dispose();}
  Future<void> submit() async {
   final u=username.text.trim().toLowerCase(), p=password.text;
   if(!RegExp(r'^[a-z0-9._]{3,24}$').hasMatch(u)){setState(()=>error='اسم المستخدم يجب أن يكون 3 إلى 24 حرفاً إنجليزياً أو رقماً');return;}
@@ -85,10 +89,27 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
    child:SafeArea(child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
     ClipPath(clipper:LoginWaveClipper(),child:SizedBox(width:double.infinity,child:AspectRatio(aspectRatio:1,child:Stack(fit:StackFit.expand,children:[
      Container(color:const Color(0xFFFFB8DE)),
-      Image.asset('assets/login_photo.jpg',fit:BoxFit.contain,alignment:Alignment.center),
+      GestureDetector(
+       onTap:()=>_breathController.forward(from:0),
+       child:AnimatedBuilder(
+        animation:Listenable.merge([_breathController,_breezeController]),
+        builder:(context,child){
+         final breath=math.sin(_breathController.value*math.pi);
+         final breeze=math.sin(_breezeController.value*math.pi*2);
+         return Transform.translate(
+          offset:Offset(breeze*1.8,-breath*2.2),
+          child:Transform.rotate(
+           angle:breeze*0.004,
+           child:Transform.scale(scale:1+breath*0.012,child:child),
+          ),
+         );
+        },
+        child:Image.asset('assets/login_photo.jpg',fit:BoxFit.contain,alignment:Alignment.center),
+       ),
+      ),
      Container(decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0x44E91E8B)]))),
-     const Positioned(right:24,top:100,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34)),
-     const Positioned(left:28,top:150,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30))
+     Positioned(right:24,top:100,child:AnimatedBuilder(animation:_breezeController,builder:(context,child)=>Transform.translate(offset:Offset(0,-5*math.sin(_breezeController.value*math.pi*2)),child:child),child:const Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34))),
+     Positioned(left:28,top:150,child:AnimatedBuilder(animation:_breezeController,builder:(context,child)=>Transform.translate(offset:Offset(0,5*math.sin(_breezeController.value*math.pi*2)),child:child),child:const Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30)))
     ]))),
     const Text('الشيخة',style:TextStyle(fontSize:38,fontWeight:FontWeight.w900,color:Color(0xFFB80D70),height:1.1)),
     Container(width:190,height:2,margin:const EdgeInsets.symmetric(vertical:5),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
