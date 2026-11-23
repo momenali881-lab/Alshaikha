@@ -51,11 +51,16 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
     match /notifications/{id} {
-      allow read: if isAdmin() || (signedIn() && resource.data.target in ['customer', 'all']);
+      allow read: if isAdmin() || (signedIn()
+        && (resource.data.target == 'all' || resource.data.customerId == request.auth.uid));
       allow create: if isAdmin() || (signedIn()
         && request.resource.data.target == 'admin'
         && request.resource.data.createdBy == request.auth.uid);
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() || (signedIn()
+        && resource.data.customerId == request.auth.uid
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'updatedAt']));
+      allow delete: if isAdmin();
     }
   }
 }
