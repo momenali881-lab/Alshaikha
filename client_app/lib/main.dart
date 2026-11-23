@@ -104,9 +104,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
      final h=constraints.maxHeight;
      final keyboard=MediaQuery.viewInsetsOf(context).bottom>0;
      final compact=h<700||keyboard;
-     final imageHeight=h*(keyboard ? .10 : (register ? .25 : .43));
-     final fieldHeight=compact?47.0:54.0;
-     final buttonHeight=compact?48.0:55.0;
+     final imageHeight=h*(keyboard ? .08 : (register ? .24 : .46));
+     final fieldHeight=compact?46.0:53.0;
+     final buttonHeight=compact?47.0:54.0;
      InputDecoration decoration(String hint,IconData icon,{Widget? trailing,Widget? leading})=>InputDecoration(
       hintText:hint,
       hintStyle:TextStyle(color:ink,fontSize:compact?14:16,fontWeight:FontWeight.w700),
@@ -178,7 +178,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
         fit:BoxFit.contain,alignment:Alignment.topCenter,filterQuality:FilterQuality.high,
         errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.image_not_supported_outlined,color:Colors.white70,size:38)))),
        Expanded(child:Padding(
-        padding:EdgeInsets.fromLTRB(compact?20:28,compact?3:8,compact?20:28,compact?4:12),
+        padding:EdgeInsets.fromLTRB(compact?18:26,compact?2:7,compact?18:26,compact?3:10),
         child:keyboard?SingleChildScrollView(child:content):content,
        )),
       ]),
