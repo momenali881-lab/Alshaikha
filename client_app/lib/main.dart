@@ -40,12 +40,21 @@ class ClientAccountScreen extends StatefulWidget {
 }
 class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerProviderStateMixin {
  final username=TextEditingController(), password=TextEditingController(), displayName=TextEditingController(), confirmPassword=TextEditingController();
- bool register=false, loading=false, obscure=true;
+ bool register=false, loading=false, obscure=true, obscureConfirm=true;
  String? error;
  late final AnimationController _breathController;
  late final AnimationController _breezeController;
- @override void initState(){super.initState();SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);_breathController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600))..repeat(reverse:true);_breezeController=AnimationController(vsync:this,duration:const Duration(milliseconds:5200))..repeat(reverse:true);}
- @override void dispose(){SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);_breathController.dispose();_breezeController.dispose();username.dispose();password.dispose();displayName.dispose();confirmPassword.dispose();super.dispose();}
+ @override void initState(){
+  super.initState();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  _breathController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600))..repeat(reverse:true);
+  _breezeController=AnimationController(vsync:this,duration:const Duration(milliseconds:5200))..repeat(reverse:true);
+ }
+ @override void dispose(){
+  _breathController.dispose();_breezeController.dispose();
+  username.dispose();password.dispose();displayName.dispose();confirmPassword.dispose();
+  super.dispose();
+ }
  Future<void> submit() async {
   final u=username.text.trim().toLowerCase(), p=password.text;
   if(!RegExp(r'^[a-z0-9._]{3,24}$').hasMatch(u)){setState(()=>error='اسم المستخدم يجب أن يكون 3 إلى 24 حرفاً إنجليزياً أو رقماً');return;}
@@ -78,249 +87,106 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     'user-not-found'=>'الحساب غير موجود',
     'weak-password'=>'كلمة المرور ضعيفة',
     'profile-not-found'=>'هذا الحساب غير مهيأ كحساب عميل',
-    _=>'تعذر إكمال العملية: ${e.message??e.code}'
+    _=>'تعذر إكمال العملية: \${e.message??e.code}'
    });
-  } catch(e){setState(()=>error='حدث خطأ: $e');}
+  } catch(e){setState(()=>error='حدث خطأ: \$e');}
   finally{if(mounted)setState(()=>loading=false);}
  }
  @override
  Widget build(BuildContext context) {
+  const pink=Color(0xFFD41483), deepPink=Color(0xFF9F075F), ink=Color(0xFF74324F);
   return Directionality(
-   textDirection: TextDirection.rtl,
-   child: Scaffold(
-    backgroundColor: const Color(0xFFFFB5D9),
-    resizeToAvoidBottomInset: true,
-    body: SafeArea(
-     child: LayoutBuilder(builder: (context, constraints) {
-      final h = constraints.maxHeight;
-      final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
-      final compact = h < 690 || keyboard;
-      final imageHeight = h * (keyboard ? 0.12 : (register ? 0.27 : 0.36));
-      final fieldHeight = register ? (compact ? 35.0 : 41.0) : (compact ? 42.0 : 48.0);
-      final actionHeight = compact ? 41.0 : 49.0;
-      final pink = const Color(0xFFD41483);
-      final deepPink = const Color(0xFF9F075F);
-      final ink = const Color(0xFF74324F);
-
-      InputDecoration inputDecoration(String hint, IconData icon, {Widget? suffix, Widget? prefix}) {
-       return InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: ink, fontSize: compact ? 13 : 15, fontWeight: FontWeight.w700),
-        prefixIcon: prefix ?? Icon(icon, color: pink, size: compact ? 20 : 23),
-        suffixIcon: suffix,
-        isDense: true,
-        filled: true,
-        fillColor: const Color(0xFFFFF7FC),
-        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: compact ? 7 : 10),
-        enabledBorder: OutlineInputBorder(
-         borderRadius: BorderRadius.circular(28),
-         borderSide: const BorderSide(color: Color(0xFFD95BA6), width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-         borderRadius: BorderRadius.circular(28),
-         borderSide: BorderSide(color: pink, width: 2),
-        ),
-       );
-      }
-
-      Widget field(TextEditingController controller, String hint, IconData icon, {
-       bool secret = false, Widget? suffix, Widget? prefix, TextInputAction action = TextInputAction.next,
-      }) {
-       return SizedBox(
-        height: fieldHeight,
-        child: TextField(
-         controller: controller,
-         obscureText: secret,
-         autocorrect: false,
-         textAlign: TextAlign.right,
-         textInputAction: action,
-         style: TextStyle(color: ink, fontSize: compact ? 14 : 16, fontWeight: FontWeight.w700),
-         onSubmitted: action == TextInputAction.done ? (_) { if (!loading) submit(); } : null,
-         decoration: inputDecoration(hint, icon, suffix: suffix, prefix: prefix),
-        ),
-       );
-      }
-
-      return Container(
-       width: double.infinity,
-       height: double.infinity,
-       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-         begin: Alignment.topCenter,
-         end: Alignment.bottomCenter,
-         colors: [Color(0xFFF75DB3), Color(0xFFFFA6D2), Color(0xFFFFD9EC)],
-         stops: [0, .52, 1],
-        ),
+   textDirection:TextDirection.rtl,
+   child:Scaffold(
+    backgroundColor:const Color(0xFFFFC5E1),
+    resizeToAvoidBottomInset:true,
+    body:LayoutBuilder(builder:(context,constraints){
+     final h=constraints.maxHeight;
+     final keyboard=MediaQuery.viewInsetsOf(context).bottom>0;
+     final compact=h<700||keyboard;
+     final imageHeight=h*(keyboard ? .10 : (register ? .25 : .43));
+     final fieldHeight=compact?47.0:54.0;
+     final buttonHeight=compact?48.0:55.0;
+     InputDecoration decoration(String hint,IconData icon,{Widget? trailing,Widget? leading})=>InputDecoration(
+      hintText:hint,
+      hintStyle:TextStyle(color:ink,fontSize:compact?14:16,fontWeight:FontWeight.w700),
+      prefixIcon:leading??Icon(icon,color:pink,size:24),
+      suffixIcon:trailing,
+      filled:true,fillColor:const Color(0xFFFFF8FC),
+      isDense:true,contentPadding:EdgeInsets.symmetric(horizontal:16,vertical:compact?9:12),
+      enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(30),borderSide:const BorderSide(color:Color(0xFFD65AA5),width:1.7)),
+      focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(30),borderSide:const BorderSide(color:pink,width:2.2)),
+     );
+     Widget field(TextEditingController c,String hint,IconData icon,{bool secret=false,Widget? trailing,Widget? leading,TextInputAction action=TextInputAction.next})=>SizedBox(
+      height:fieldHeight,
+      child:TextField(
+       controller:c,obscureText:secret,autocorrect:false,textAlign:TextAlign.right,
+       textInputAction:action,style:TextStyle(color:ink,fontSize:compact?15:17,fontWeight:FontWeight.w700),
+       onSubmitted:action==TextInputAction.done?(_){if(!loading)submit();}:null,
+       decoration:decoration(hint,icon,trailing:trailing,leading:leading),
+      ),
+     );
+     final content=Column(
+      mainAxisAlignment:MainAxisAlignment.spaceEvenly,
+      children:[
+       Text(register?'إنشاء حساب جديد':'أهلاً بكِ في الشيخة',textAlign:TextAlign.center,
+        style:TextStyle(color:deepPink,fontSize:compact?20:24,fontWeight:FontWeight.w900)),
+       if(register)field(displayName,'الاسم الكامل',Icons.badge_outlined),
+       field(username,'اسم المستخدم',Icons.person_outline),
+       field(password,'كلمة المرور',Icons.lock_outline,secret:obscure,
+        trailing:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility_off_outlined:Icons.visibility_outlined,color:pink)),
+        action:register?TextInputAction.next:TextInputAction.done),
+       if(register)field(confirmPassword,'تأكيد كلمة المرور',Icons.verified_user_outlined,secret:obscureConfirm,
+        trailing:IconButton(onPressed:()=>setState(()=>obscureConfirm=!obscureConfirm),icon:Icon(obscureConfirm?Icons.visibility_off_outlined:Icons.visibility_outlined,color:pink)),
+        action:TextInputAction.done),
+       if(error!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:8),child:Text(error!,textAlign:TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Color(0xFFB00020),fontSize:12,fontWeight:FontWeight.w700))),
+       SizedBox(width:double.infinity,height:buttonHeight,child:FilledButton(
+        onPressed:loading?null:submit,
+        style:FilledButton.styleFrom(backgroundColor:pink,foregroundColor:Colors.white,elevation:5,shadowColor:const Color(0x669F075F),
+         shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(30),side:const BorderSide(color:deepPink,width:1.2))),
+        child:loading?const SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):
+         Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+          Icon(register?Icons.person_add_alt_1:Icons.login,size:22),const SizedBox(width:10),
+          Text(register?'إنشاء الحساب':'تسجيل الدخول',style:TextStyle(fontSize:compact?16:18,fontWeight:FontWeight.w900))
+         ]),
+       )),
+       Row(children:[
+        const Expanded(child:Divider(indent:20,endIndent:10,color:Color(0xFFD65AA5),thickness:1.3)),
+        Text('أو',style:TextStyle(color:deepPink,fontSize:compact?13:15,fontWeight:FontWeight.w900)),
+        const Expanded(child:Divider(indent:10,endIndent:20,color:Color(0xFFD65AA5),thickness:1.3)),
+       ]),
+       SizedBox(width:double.infinity,height:buttonHeight,child:OutlinedButton.icon(
+        onPressed:loading?null:()=>setState(() { register=!register;error=null; }),
+        icon:Icon(register?Icons.arrow_back_rounded:Icons.person_add_alt_1,size:21),
+        label:Text(register?'العودة لتسجيل الدخول':'إنشاء حساب جديد',style:TextStyle(fontSize:compact?15:17,fontWeight:FontWeight.w900)),
+        style:OutlinedButton.styleFrom(foregroundColor:deepPink,backgroundColor:const Color(0xFFFFF0F8),
+         side:const BorderSide(color:pink,width:1.8),shape:const StadiumBorder()),
+       )),
+       if(!register)TextButton(
+        onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),
+        style:TextButton.styleFrom(visualDensity:VisualDensity.compact,padding:const EdgeInsets.symmetric(horizontal:8,vertical:0),minimumSize:Size(0,compact?24:28)),
+        child:Text('نسيت كلمة المرور؟',style:TextStyle(color:deepPink,fontSize:compact?13:15,fontWeight:FontWeight.w800,decoration:TextDecoration.underline,decorationColor:pink)),
        ),
-       child: Column(
-        children: [
-         SizedBox(
-          height: imageHeight,
-          width: double.infinity,
-          child: Stack(
-           fit: StackFit.expand,
-           children: [
-            Image.asset(
-             'assets/login_portrait.jpg',
-             fit: BoxFit.contain,
-             alignment: Alignment.center,
-             filterQuality: FilterQuality.high,
-             errorBuilder: (_, __, ___) => const Center(
-              child: Icon(Icons.image_not_supported_outlined, color: Colors.white70, size: 38),
-             ),
-            ),
-            if (!keyboard) ...[
-             Positioned(top: 12, left: 20, child: Icon(Icons.favorite_border, color: Colors.white.withOpacity(.9), size: compact ? 22 : 28)),
-             Positioned(top: 18, right: 22, child: Icon(Icons.favorite_border, color: Colors.white.withOpacity(.9), size: compact ? 25 : 31)),
-            ],
-           ],
-          ),
-         ),
-         if (!keyboard)
-          Padding(
-           padding: EdgeInsets.only(top: compact ? 1 : 3, bottom: compact ? 4 : 7),
-           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-               Icon(Icons.favorite, color: pink, size: compact ? 15 : 18),
-               const SizedBox(width: 8),
-               Text(
-                'الشيخة',
-                style: TextStyle(
-                 color: deepPink,
-                 fontSize: compact ? 27 : 32,
-                 fontWeight: FontWeight.w900,
-                 height: 1,
-                 shadows: const [Shadow(color: Color(0x55FFFFFF), blurRadius: 6, offset: Offset(0, 2))],
-                ),
-               ),
-               const SizedBox(width: 8),
-               Icon(Icons.favorite, color: pink, size: compact ? 15 : 18),
-              ],
-             ),
-             Container(
-              width: compact ? 170 : 205,
-              height: 2,
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              decoration: const BoxDecoration(
-               gradient: LinearGradient(colors: [Colors.transparent, Color(0xFFD64A9D), Colors.transparent]),
-              ),
-             ),
-             Text(
-              'مرحباً بكِ في عالم الجمال والتميز',
-              style: TextStyle(color: deepPink, fontSize: compact ? 11 : 13, fontWeight: FontWeight.w800),
-             ),
-            ],
-           ),
-          ),
-         Expanded(
-          child: Padding(
-           padding: EdgeInsets.fromLTRB(compact ? 19 : 27, compact ? 3 : 7, compact ? 19 : 27, compact ? 2 : 7),
-           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-             if (register) ...[
-              field(displayName, 'الاسم الكامل', Icons.person_outline),
-             ],
-             field(username, 'اسم المستخدم', Icons.person_outline),
-             field(
-              password,
-              'كلمة المرور',
-              Icons.lock_outline,
-              secret: obscure,
-              prefix: IconButton(
-               visualDensity: VisualDensity.compact,
-               onPressed: () => setState(() => obscure = !obscure),
-               icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: pink, size: 21),
-              ),
-              suffix: const Icon(Icons.lock_outline, color: Color(0xFFD41483), size: 22),
-              action: register ? TextInputAction.next : TextInputAction.done,
-             ),
-             if (register)
-              field(confirmPassword, 'تأكيد كلمة المرور', Icons.verified_user_outlined, secret: true, action: TextInputAction.done),
-             if (error != null)
-              Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600)),
-             SizedBox(
-              width: double.infinity,
-              height: actionHeight,
-              child: FilledButton(
-               onPressed: loading ? null : submit,
-               style: FilledButton.styleFrom(
-                backgroundColor: pink,
-                foregroundColor: Colors.white,
-                elevation: 5,
-                shadowColor: const Color(0x66A00060),
-                shape: RoundedRectangleBorder(
-                 borderRadius: BorderRadius.circular(30),
-                 side: const BorderSide(color: Color(0xFF970052), width: 1.2),
-                ),
-               ),
-               child: loading
-                ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Row(
-                   mainAxisAlignment: MainAxisAlignment.center,
-                   children: [
-                    Icon(register ? Icons.person_add_alt_1 : Icons.login, size: 22),
-                    const SizedBox(width: 10),
-                    Text(register ? 'إنشاء حساب جديد' : 'تسجيل الدخول', style: TextStyle(fontSize: compact ? 15 : 17, fontWeight: FontWeight.w900)),
-                   ],
-                  ),
-              ),
-             ),
-             Row(
-              children: [
-               const Expanded(child: Divider(indent: 22, endIndent: 9, color: Color(0xFFD65AA5), thickness: 1.2)),
-               Text('أو', style: TextStyle(color: deepPink, fontSize: compact ? 12 : 14, fontWeight: FontWeight.w900)),
-               const Expanded(child: Divider(indent: 9, endIndent: 22, color: Color(0xFFD65AA5), thickness: 1.2)),
-              ],
-             ),
-             SizedBox(
-              width: double.infinity,
-              height: actionHeight,
-              child: OutlinedButton.icon(
-               onPressed: loading ? null : () => setState(() { register = !register; error = null; }),
-               icon: Icon(register ? Icons.login : Icons.person_add_alt_1, size: 20),
-               label: Text(register ? 'العودة لتسجيل الدخول' : 'إنشاء حساب جديد', style: TextStyle(fontSize: compact ? 14 : 16, fontWeight: FontWeight.w900)),
-               style: OutlinedButton.styleFrom(
-                foregroundColor: deepPink,
-                backgroundColor: const Color(0xFFFFEDF6),
-                side: const BorderSide(color: Color(0xFFD41483), width: 1.6),
-                shape: const StadiumBorder(),
-               ),
-              ),
-             ),
-             if (!register && !keyboard)
-              TextButton(
-               onPressed: () => setState(() => error = 'لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),
-               style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                minimumSize: Size(0, compact ? 24 : 28),
-               ),
-               child: Text('نسيت كلمة المرور؟', style: TextStyle(
-                color: deepPink,
-                fontSize: compact ? 12 : 14,
-                fontWeight: FontWeight.w800,
-                decoration: TextDecoration.underline,
-                decorationColor: pink,
-               )),
-              ),
-            ],
-           ),
-          ),
-         ),
-        ],
-       ),
-      );
-     }),
-    ),
+      ],
+     );
+     return Container(
+      width:double.infinity,height:double.infinity,
+      decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,
+       colors:[Color(0xFFF75DB3),Color(0xFFFFA6D2),Color(0xFFFFD9EC)],stops:[0,.52,1])),
+      child:Column(children:[
+       SizedBox(height:imageHeight,width:double.infinity,child:Image.asset('assets/login_portrait.jpg',
+        fit:BoxFit.contain,alignment:Alignment.topCenter,filterQuality:FilterQuality.high,
+        errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.image_not_supported_outlined,color:Colors.white70,size:38)))),
+       Expanded(child:Padding(
+        padding:EdgeInsets.fromLTRB(compact?20:28,compact?3:8,compact?20:28,compact?4:12),
+        child:keyboard?SingleChildScrollView(child:content):content,
+       )),
+      ]),
+     );
+    }),
    ),
   );
  }
-
 }
 
 class LoginWaveClipper extends CustomClipper<Path>{
