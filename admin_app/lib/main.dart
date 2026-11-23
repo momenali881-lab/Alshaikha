@@ -94,7 +94,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
    const SizedBox(height:12),
    TextField(controller:password,obscureText:obscure,decoration:InputDecoration(labelText:'كلمة المرور',prefixIcon:const Icon(Icons.lock),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),
    if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
-   const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():const Text('تسجيل الدخول')))
+   const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():const Text('تسجيل الدخول'))),
+   const SizedBox(height:14),const Text('يلزم إنشاء حساب الإدارة مسبقاً في Firebase ومنحه صلاحية admin. تعليمات الإعداد موجودة في ملف ADMIN_ACCOUNT_SETUP.md.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:Colors.black54))
   ])))))));
 }
 
