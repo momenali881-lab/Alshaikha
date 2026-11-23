@@ -18,7 +18,7 @@ service cloud.firestore {
     }
 
     match /members/{id} {
-      allow read: if signedIn() && (isAdmin() || resource.data.active != false);
+      allow read: if signedIn(); // Public catalogue data.
       allow write: if isAdmin();
     }
     match /sessions/{id} {
@@ -26,11 +26,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /banners/{id} {
-      allow read: if signedIn() && (isAdmin() || resource.data.active != false);
+      allow read: if signedIn(); // Active state is filtered by the client app.
       allow write: if isAdmin();
     }
     match /announcements/{id} {
-      allow read: if signedIn() && (isAdmin() || resource.data.active != false);
+      allow read: if signedIn(); // Public announcements.
       allow write: if isAdmin();
     }
 
