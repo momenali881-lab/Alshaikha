@@ -74,7 +74,7 @@ for app, (package, activity_file) in apps.items():
         signature = image_file.read(8)
     if signature.startswith(bytes.fromhex("ffd8ff")):
         icon_extension = ".jpg"
-    if signature.startswith(bytes.fromhex("ffd8ff")):
+    elif signature.startswith(bytes.fromhex("89504e470d0a1a0a")):
         icon_extension = ".png"
     else:
         raise ValueError("Launcher image must be a JPEG or PNG file")
