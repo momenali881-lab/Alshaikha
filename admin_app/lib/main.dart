@@ -243,7 +243,7 @@ class _AdminHomeState extends State<AdminHome> {
     if(chosen==null)return;
     if(selectedConversationId==null){note('اختر محادثة العميل أولاً');return;}
     await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
-    await SharedStore.save('notifications',{'target':'customer','type':'message','title':'رسالة جديدة من الإدارة','body':'تم إرسال ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
+    await SharedStore.save('notifications',{'target':'customer','customerId':selectedConversationId,'type':'message','title':'رسالة جديدة من الإدارة','body':'تم إرسال ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
     await refresh(silent:true);note('تم إرسال ملف العضو للعميل');
   }
   Map<String,dynamic>? findChatMember(dynamic id){for(final member in chatMembers){if(member['id']==id)return member;}return null;}
