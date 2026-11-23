@@ -71,8 +71,38 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
  @override void initState(){super.initState();error=widget.message;}
  @override void dispose(){username.dispose();password.dispose();super.dispose();}
  Future<void> submit()async{
-  final u=username.text.trim().toLowerCase(),p=password.text;
-  if(!RegExp(r'^[a-z0-9._]{3,24} { const AdminHome({super.key}); @override State<AdminHome> createState()=>_AdminHomeState(); }
+   final u=username.text.trim().toLowerCase(),p=password.text;
+   if(!RegExp(r'^[a-z0-9._]{3,24}$').hasMatch(u)||p.isEmpty){setState(()=>error='أدخل اسم المستخدم وكلمة المرور');return;}
+   setState(()=>{loading=true,error=null});
+   try{
+    final credential=await FirebaseAuth.instance.signInWithEmailAndPassword(email:_adminAccountEmail(u),password:p);
+    final profile=await FirebaseFirestore.instance.collection('profiles').doc(credential.user!.uid).get();
+    if(!profile.exists||profile.data()?['role']!='admin'){
+     await FirebaseAuth.instance.signOut();
+     throw FirebaseAuthException(code:'admin-required',message:'الحساب غير مخوّل للإدارة');
+    }
+   }on FirebaseAuthException catch(e){
+    setState(()=>error=e.code=='admin-required'?'هذا الحساب لا يملك صلاحية الإدارة':e.code=='invalid-credential'?'اسم المستخدم أو كلمة المرور غير صحيحة':'تعذر تسجيل الدخول: ${e.message??e.code}');
+   }catch(e){setState(()=>error='حدث خطأ: $e');}
+   finally{if(mounted)setState(()=>loading=false);}
+  }
+  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
+   const Icon(Icons.admin_panel_settings_rounded,size:68,color:plum),const SizedBox(height:12),
+   const Text('الشيخة - الإدارة',style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:plum)),
+   const SizedBox(height:24),
+   TextField(controller:username,autocorrect:false,decoration:const InputDecoration(labelText:'اسم المستخدم',prefixIcon:Icon(Icons.account_circle))),
+   const SizedBox(height:12),
+   TextField(controller:password,obscureText:obscure,decoration:InputDecoration(labelText:'كلمة المرور',prefixIcon:const Icon(Icons.lock),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),
+   if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
+   const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():const Text('تسجيل الدخول')))
+  ])))))));
+ }
+}
+
+class AdminHome extends StatefulWidget {
+ const AdminHome({super.key});
+ @override State<AdminHome> createState()=>_AdminHomeState();
+}
 class _AdminHomeState extends State<AdminHome> {
   bool fromChatBooking=false;
   String section='members'; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; final chatController=TextEditingController();
