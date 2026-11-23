@@ -78,21 +78,36 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   finally{if(mounted)setState(()=>loading=false);}
  }
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-  body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
-   const Icon(Icons.spa_rounded,size:68,color:plum),const SizedBox(height:12),
-   const Text('الشيخة',style:TextStyle(fontSize:30,fontWeight:FontWeight.bold,color:plum)),
-   Text(register?'إنشاء حساب عميل':'تسجيل دخول العميل',style:const TextStyle(fontSize:20)),
-   const SizedBox(height:24),
-   if(register) TextField(controller:displayName,decoration:const InputDecoration(labelText:'الاسم الظاهر',prefixIcon:Icon(Icons.person))),
-   if(register) const SizedBox(height:12),
-   TextField(controller:username,autocorrect:false,decoration:const InputDecoration(labelText:'اسم المستخدم',prefixIcon:Icon(Icons.account_circle))),
-   const SizedBox(height:12),
-   TextField(controller:password,obscureText:obscure,decoration:InputDecoration(labelText:'كلمة المرور',prefixIcon:const Icon(Icons.lock),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),
-   if(error!=null) Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
-   const SizedBox(height:20),
-   SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():Text(register?'إنشاء الحساب':'دخول'))),
-   TextButton(onPressed:loading?null:()=>setState(() { register=!register; error=null; }),child:Text(register?'لديك حساب؟ سجّل الدخول':'ليس لديك حساب؟ أنشئ حساباً'))
-  ])))))));
+  body:Container(
+   decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFFD9EF),Color(0xFFFFF0F8),Color(0xFFFFD8EE)])),
+   child:SafeArea(child:SingleChildScrollView(child:Column(children:[
+    ClipPath(clipper:LoginWaveClipper(),child:SizedBox(height:250,width:double.infinity,child:Stack(fit:StackFit.expand,children:[
+     Image.asset('assets/login_photo.jpg',fit:BoxFit.cover,alignment:Alignment.topCenter),
+     Container(decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0x44E91E8B)]))),
+     const Positioned(right:24,top:100,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34)),
+     const Positioned(left:28,top:150,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30))
+    ]))),
+    const Text('الشيخة',style:TextStyle(fontSize:38,fontWeight:FontWeight.w900,color:Color(0xFFB80D70),height:1.1)),
+    Container(width:190,height:2,margin:const EdgeInsets.symmetric(vertical:5),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
+    const Text('مرحباً بكِ في عالم الجمال والتميز',style:TextStyle(fontSize:14,color:Color(0xFFB52B79))),
+    const SizedBox(height:18),
+    Container(margin:const EdgeInsets.symmetric(horizontal:16),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:Colors.white.withOpacity(.72),borderRadius:BorderRadius.circular(20),border:Border.all(color:const Color(0xFFFFB5DD)),boxShadow:const [BoxShadow(color:Color(0x22D81B83),blurRadius:14,offset:Offset(0,5))]),child:Column(children:[
+     if(register) Padding(padding:const EdgeInsets.only(bottom:9),child:TextField(controller:displayName,textAlign:TextAlign.right,decoration:const InputDecoration(hintText:'الاسم الظاهر',prefixIcon:Icon(Icons.person_outline),contentPadding:EdgeInsets.symmetric(horizontal:14,vertical:10),border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(14))))),
+     TextField(controller:username,autocorrect:false,textAlign:TextAlign.right,decoration:const InputDecoration(hintText:'اسم المستخدم',prefixIcon:Icon(Icons.person_outline,color:Color(0xFFCC1682)),contentPadding:EdgeInsets.symmetric(horizontal:14,vertical:10),filled:true,fillColor:Color(0xFFFFF2FA),border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(14))))),
+     const SizedBox(height:9),
+     TextField(controller:password,obscureText:obscure,textAlign:TextAlign.right,decoration:InputDecoration(hintText:'كلمة المرور',prefixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility_off_outlined:Icons.visibility_outlined,color:Color(0xFFCC1682))),suffixIcon:const Icon(Icons.lock_outline,color:Color(0xFFCC1682)),contentPadding:const EdgeInsets.symmetric(horizontal:14,vertical:10),filled:true,fillColor:const Color(0xFFFFF2FA),border:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(14))))),
+     if(error!=null) Padding(padding:const EdgeInsets.only(top:8),child:Text(error!,style:const TextStyle(color:Colors.red,fontSize:12))),
+     const SizedBox(height:12),
+     SizedBox(width:double.infinity,height:43,child:FilledButton(style:FilledButton.styleFrom(backgroundColor:const Color(0xFFD41483),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(13))),onPressed:loading?null:submit,child:loading?const SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):Row(mainAxisAlignment:MainAxisAlignment.center,children:[Text(register?'إنشاء الحساب':'تسجيل الدخول',style:const TextStyle(fontWeight:FontWeight.bold)),const SizedBox(width:8),const Icon(Icons.login,size:19)])))
+    ])),
+    Padding(padding:const EdgeInsets.symmetric(vertical:8),child:Row(children:[const Expanded(child:Divider(indent:28,endIndent:8,color:Color(0xFFFF9ED1))),const Text('أو',style:TextStyle(color:Color(0xFF9C4C7A))),const Expanded(child:Divider(indent:8,endIndent:28,color:Color(0xFFFF9ED1)))])),
+    OutlinedButton.icon(onPressed:loading?null:()=>setState((){register=!register;error=null;}),icon:const Icon(Icons.person_add_alt_1),label:Text(register?'لديك حساب؟ سجّلي الدخول':'إنشاء حساب جديد'),style:OutlinedButton.styleFrom(foregroundColor:const Color(0xFFD41483),side:const BorderSide(color:Color(0xFFE83D9B)),minimumSize:const Size(230,42),shape:const StadiumBorder())),
+    TextButton(onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),child:const Text('نسيت كلمة المرور؟',style:TextStyle(color:Color(0xFFB80D70)))),
+    const SizedBox(height:12)
+   ])))
+  )
+ ));
+
 }
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
