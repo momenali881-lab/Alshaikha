@@ -33,7 +33,8 @@ class SharedStore {
 
   static Future<List<Map<String, dynamic>>> list(String table) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return _localList(table);
+    // Never expose the shared device cache to a signed-out session.
+    if (user == null) return [];
     try {
       Query<Map<String, dynamic>> query = _db.collection(table);
       final profile = await _db.collection('profiles').doc(user.uid).get();
@@ -68,7 +69,17 @@ class SharedStore {
     } catch (e) {
       final message = e.toString().toLowerCase();
       if (message.contains('permission-denied') || message.contains('unauthorized')) rethrow;
-      return _localList(table);
+      final local = await _localList(table);
+      if (table == 'bookings' || table == 'favorites') {
+        return local.where((item) => item['customerId'] == user.uid).toList();
+      }
+      if (table == 'messages') {
+        return local.where((item) => item['conversationId'] == user.uid).toList();
+      }
+      if (table == 'notifications') {
+        return local.where((item) => item['target'] == 'all' || item['customerId'] == user.uid).toList();
+      }
+      return local;
     }
   }
 
