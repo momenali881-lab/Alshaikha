@@ -28,7 +28,7 @@ jobs:
             "https://dropit.pics/m0e5ddd.png" \
             --output assets/launcher_icon.jpg
       - name: Install image tooling
-        run: python3 -m pip install --user pillow
+        run: python3 -m pip install --break-system-packages pillow
       - name: Generate Android projects
         run: |
           cd admin_app && flutter create --platforms=android . && cd ..
