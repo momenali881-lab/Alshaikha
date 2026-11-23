@@ -97,6 +97,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
    const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():const Text('تسجيل الدخول')))
   ])))))));
  }
+}
 
 class AdminHome extends StatefulWidget {
  const AdminHome({super.key});
