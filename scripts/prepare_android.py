@@ -78,6 +78,13 @@ for app, (package, activity_file) in apps.items():
         icon_extension = ".png"
     else:
         raise ValueError("Launcher image must be a JPEG or PNG file")
+    # Flutter's adaptive launcher XML takes precedence over density PNG/JPEG
+    # files on Android 8+. Remove the generated defaults so the uploaded artwork
+    # is the icon actually selected by Android on modern launchers.
+    adaptive_icons = android / "app" / "src" / "main" / "res" / "mipmap-anydpi-v26"
+    for adaptive_name in ("ic_launcher.xml", "ic_launcher_round.xml"):
+        (adaptive_icons / adaptive_name).unlink(missing_ok=True)
+
     for density, size in (("mdpi", 48), ("hdpi", 72), ("xhdpi", 96),
                           ("xxhdpi", 144), ("xxxhdpi", 192)):
         mipmap = android / "app" / "src" / "main" / "res" / f"mipmap-{density}"
