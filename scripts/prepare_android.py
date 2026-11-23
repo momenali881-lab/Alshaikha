@@ -89,6 +89,13 @@ for app, (package, activity_file) in apps.items():
                           ("xxhdpi", 144), ("xxxhdpi", 192)):
         mipmap = android / "app" / "src" / "main" / "res" / f"mipmap-{density}"
         mipmap.mkdir(parents=True, exist_ok=True)
+        # Remove Flutter's generated launcher files first. Android treats
+        # ic_launcher.png and ic_launcher.jpg as the same resource name, so
+        # keeping both extensions causes a duplicate-resource build failure.
+        for stale_extension in (".png", ".jpg", ".webp"):
+            stale_icon = mipmap / f"ic_launcher{stale_extension}"
+            if stale_icon.exists() and stale_icon.name != f"ic_launcher{icon_extension}":
+                stale_icon.unlink()
         # Resize the unchanged artwork to Android launcher density dimensions.
         from PIL import Image
         with Image.open(icon_source) as original:
