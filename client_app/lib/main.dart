@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -43,8 +44,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
  String? error;
  late final AnimationController _breathController;
  late final AnimationController _breezeController;
- @override void initState(){super.initState();_breathController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600))..repeat(reverse:true);_breezeController=AnimationController(vsync:this,duration:const Duration(milliseconds:5200))..repeat(reverse:true);}
- @override void dispose(){_breathController.dispose();_breezeController.dispose();username.dispose();password.dispose();displayName.dispose();super.dispose();}
+ @override void initState(){super.initState();SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,overlays:[SystemUiOverlay.bottom]);_breathController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600))..repeat(reverse:true);_breezeController=AnimationController(vsync:this,duration:const Duration(milliseconds:5200))..repeat(reverse:true);}
+ @override void dispose(){SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);_breathController.dispose();_breezeController.dispose();username.dispose();password.dispose();displayName.dispose();super.dispose();}
  Future<void> submit() async {
   final u=username.text.trim().toLowerCase(), p=password.text;
   if(!RegExp(r'^[a-z0-9._]{3,24}$').hasMatch(u)){setState(()=>error='اسم المستخدم يجب أن يكون 3 إلى 24 حرفاً إنجليزياً أو رقماً');return;}
