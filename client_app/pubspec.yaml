@@ -19,4 +19,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/login_portrait.jpg
+    - file_00000000df048210b32f5dc7efa7f5ad.png
