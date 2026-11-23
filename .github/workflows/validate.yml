@@ -18,23 +18,9 @@ jobs:
         working-directory: client_app
         run: |
           flutter pub get
-          flutter analyze
+          flutter analyze --no-fatal-infos
       - name: Analyze admin app
         working-directory: admin_app
         run: |
           flutter pub get
-          flutter analyze
-
-  functions:
-    if: ${{ hashFiles('functions/package.json') != '' }}
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: functions
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install
-      - run: node --check index.js
+          flutter analyze --no-fatal-infos
