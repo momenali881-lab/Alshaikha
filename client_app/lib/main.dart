@@ -91,7 +91,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     ),
     child:SafeArea(
      child:LayoutBuilder(builder:(context, constraints){
-      final headerHeight=(constraints.maxHeight*.23).clamp(112.0,178.0);
+      final headerHeight=(constraints.maxHeight*.28).clamp(145.0,215.0);
       return Column(children:[
        SizedBox(
         width:double.infinity,
@@ -112,7 +112,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
              ),
             );
            },
-           child:Image.asset('file_000000004d4c821087da7931f79f80cf.png',fit:BoxFit.cover,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true,gaplessPlayback:true),
+           child:Container(color:const Color(0xFFFF8CCB),child:Image.asset('file_000000004d4c821087da7931f79f80cf.png',fit:BoxFit.contain,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true,gaplessPlayback:true)),
           ),
          ),
          const Positioned(right:18,top:18,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:25)),
