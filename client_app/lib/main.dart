@@ -87,7 +87,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     constraints:BoxConstraints(minHeight:MediaQuery.of(context).size.height),
    decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFFD9EF),Color(0xFFFFF0F8),Color(0xFFFFD8EE)])),
    child:SafeArea(child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    SizedBox(width:double.infinity,height:MediaQuery.of(context).size.width*1.5,child:Stack(fit:StackFit.expand,children:[
+    SizedBox(width:double.infinity,height:MediaQuery.of(context).size.width*1.28,child:Stack(fit:StackFit.expand,children:[
       GestureDetector(
        onTap:()=>_breathController.forward(from:0),
        child:AnimatedBuilder(
@@ -103,16 +103,17 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
           ),
          );
         },
-        child:Image.asset('file_000000004d4c821087da7931f79f80cf.png',fit:BoxFit.contain,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
+        child:Image.asset('file_000000004d4c821087da7931f79f80cf.png',fit:BoxFit.cover,alignment:Alignment.topCenter,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
        ),
       ),
      const Positioned(right:24,top:100,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34)),
      const Positioned(left:28,top:150,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30))
     ])),
-    const Text('الشيخة',style:TextStyle(fontSize:32,fontWeight:FontWeight.w900,color:Color(0xFFB80D70),height:1.1)),
-    Container(width:190,height:2,margin:const EdgeInsets.symmetric(vertical:5),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
-    const Text('مرحباً بكِ في عالم الجمال والتميز',style:TextStyle(fontSize:14,color:Color(0xFFB52B79))),
-    const SizedBox(height:18),
+    Container(margin:const EdgeInsets.only(top:-28),padding:const EdgeInsets.fromLTRB(18,30,18,14),decoration:BoxDecoration(gradient:const LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFFF7FC),Color(0xFFFFD9EF),Color(0xFFFFEAF5)]),borderRadius:const BorderRadius.vertical(top:Radius.circular(38)),border:Border.all(color:const Color(0xFFFFA8D5),width:1.4),boxShadow:const [BoxShadow(color:Color(0x44D41483),blurRadius:24,offset:Offset(0,-8))]),child:Column(mainAxisSize:MainAxisSize.min,children:[
+     Row(mainAxisAlignment:MainAxisAlignment.center,children:[const Icon(Icons.favorite,size:18,color:Color(0xFFD41483)),const SizedBox(width:8),const Text('الشيخة',style:TextStyle(fontSize:36,fontWeight:FontWeight.w900,color:Color(0xFFB80D70),height:1.1,shadows:[Shadow(color:Color(0x55A00060),blurRadius:8,offset:Offset(0,3))])),const SizedBox(width:8),const Icon(Icons.favorite,size:18,color:Color(0xFFD41483))]),
+     Container(width:210,height:2,margin:const EdgeInsets.symmetric(vertical:7),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
+     const Text('مرحباً بكِ في عالم الجمال والتميز',style:TextStyle(fontSize:15,fontWeight:FontWeight.w600,color:Color(0xFFB52B79))),
+     const SizedBox(height:16),
      Container(
       margin: const EdgeInsets.symmetric(horizontal:16),
       padding: const EdgeInsets.all(12),
@@ -173,7 +174,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
         width:double.infinity,
         height:43,
         child:FilledButton(
-         style:FilledButton.styleFrom(backgroundColor:const Color(0xFFD41483),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(13))),
+         style:FilledButton.styleFrom(backgroundColor:const Color(0xFFD41483),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(28)),elevation:5,shadowColor:Color(0x66D41483)),
          onPressed:loading?null:submit,
          child:loading?const SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):Row(
           mainAxisAlignment:MainAxisAlignment.center,
@@ -184,9 +185,10 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
       ]),
      ),
     Padding(padding:const EdgeInsets.symmetric(vertical:8),child:Row(children:[const Expanded(child:Divider(indent:28,endIndent:8,color:Color(0xFFFF9ED1))),const Text('أو',style:TextStyle(color:Color(0xFF9C4C7A))),const Expanded(child:Divider(indent:8,endIndent:28,color:Color(0xFFFF9ED1)))])),
-    OutlinedButton.icon(onPressed:loading?null:()=>setState((){register=!register;error=null;}),icon:const Icon(Icons.person_add_alt_1),label:Text(register?'لديك حساب؟ سجّلي الدخول':'إنشاء حساب جديد'),style:OutlinedButton.styleFrom(foregroundColor:const Color(0xFFD41483),side:const BorderSide(color:Color(0xFFE83D9B)),minimumSize:const Size(230,42),shape:const StadiumBorder())),
+    OutlinedButton.icon(onPressed:loading?null:()=>setState((){register=!register;error=null;}),icon:const Icon(Icons.person_add_alt_1),label:Text(register?'لديك حساب؟ سجّلي الدخول':'إنشاء حساب جديد'),style:OutlinedButton.styleFrom(foregroundColor:const Color(0xFFD41483),side:const BorderSide(color:Color(0xFFE83D9B)),minimumSize:const Size(230,42),shape:const StadiumBorder(),backgroundColor:const Color(0xFFFFE7F4),padding:const EdgeInsets.symmetric(horizontal:26,vertical:13))),
     TextButton(onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),child:const Text('نسيت كلمة المرور؟',style:TextStyle(color:Color(0xFFB80D70)))),
-    const SizedBox(height:12)
+     const SizedBox(height:12)
+    ])
    ])))
   )
  ));
