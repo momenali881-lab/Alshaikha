@@ -1,0 +1,39 @@
+name: Validate Alshaikha apps
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, fix/account-and-auth]
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Analyze client app
+        working-directory: client_app
+        run: |
+          flutter pub get
+          flutter analyze
+      - name: Analyze admin app
+        working-directory: admin_app
+        run: |
+          flutter pub get
+          flutter analyze
+
+  functions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: node --check index.js
