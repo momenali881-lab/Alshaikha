@@ -119,7 +119,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
        padding:EdgeInsets.fromLTRB(18,compact?4:10,18,compact?4:10),
        child:Column(
         children:[
-         const Spacer(flex:compact?5:6),
+         Spacer(flex:compact?5:6),
          Column(mainAxisSize:MainAxisSize.min,children:[
           Row(mainAxisAlignment:MainAxisAlignment.center,children:[
            const Icon(Icons.favorite,size:18,color:Color(0xFFD41483)),
@@ -217,10 +217,10 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
          )),
          if(!register) TextButton(
           onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),
-          style:TextButton.styleFrom(visualDensity:VisualDensity.compact,padding:const EdgeInsets.symmetric(horizontal:8,vertical:2),minimumSize:const Size(0,compact?28:34)),
+          style:TextButton.styleFrom(visualDensity:VisualDensity.compact,padding:const EdgeInsets.symmetric(horizontal:8,vertical:2),minimumSize:Size(0,compact?28:34)),
           child:Text('نسيت كلمة المرور؟',style:TextStyle(color:Color(0xFF9F1768),fontSize:compact?12:14,fontWeight:FontWeight.w700)),
          ),
-         const Spacer(flex:compact?2:3),
+         Spacer(flex:compact?2:3),
         ],
        ),
       ),
