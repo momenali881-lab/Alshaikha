@@ -87,8 +87,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
     constraints:BoxConstraints(minHeight:MediaQuery.of(context).size.height),
    decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFFD9EF),Color(0xFFFFF0F8),Color(0xFFFFD8EE)])),
    child:SafeArea(child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    ClipPath(clipper:LoginWaveClipper(),child:SizedBox(width:double.infinity,child:AspectRatio(aspectRatio:1,child:Stack(fit:StackFit.expand,children:[
-     Container(color:const Color(0xFFFFB8DE)),
+    ClipPath(clipper:LoginWaveClipper(),child:SizedBox(width:double.infinity,child:AspectRatio(aspectRatio:2/3,child:Stack(fit:StackFit.expand,children:[
       GestureDetector(
        onTap:()=>_breathController.forward(from:0),
        child:AnimatedBuilder(
@@ -104,12 +103,11 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
           ),
          );
         },
-        child:Image.asset('file_0000000057e4824695ffe2c5d9ccdde8.png',fit:BoxFit.contain,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
+        child:Image.asset('file_0000000057e4824695ffe2c5d9ccdde8.png',fit:BoxFit.cover,alignment:Alignment.center,filterQuality:FilterQuality.high,isAntiAlias:true, gaplessPlayback:true),
        ),
       ),
-     Container(decoration:const BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0x44E91E8B)]))),
-     Positioned(right:24,top:100,child:AnimatedBuilder(animation:_breezeController,builder:(context,child)=>Transform.translate(offset:Offset(0,-5*math.sin(_breezeController.value*math.pi*2)),child:child),child:const Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34))),
-     Positioned(left:28,top:150,child:AnimatedBuilder(animation:_breezeController,builder:(context,child)=>Transform.translate(offset:Offset(0,5*math.sin(_breezeController.value*math.pi*2)),child:child),child:const Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30)))
+     const Positioned(right:24,top:100,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:34)),
+     const Positioned(left:28,top:150,child:Icon(Icons.favorite_border,color:Color(0xFFFFB7E0),size:30))
     ])))),
     const Text('الشيخة',style:TextStyle(fontSize:38,fontWeight:FontWeight.w900,color:Color(0xFFB80D70),height:1.1)),
     Container(width:190,height:2,margin:const EdgeInsets.symmetric(vertical:5),decoration:const BoxDecoration(gradient:LinearGradient(colors:[Colors.transparent,Color(0xFFEC4AA5),Colors.transparent]))),
