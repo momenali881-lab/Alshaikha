@@ -194,6 +194,8 @@ class AdminHome extends StatefulWidget {
 }
 class _AdminHomeState extends State<AdminHome> {
   bool fromChatBooking=false;
+  int _refreshGeneration=0;
+  String? refreshError;
   String section='members'; String? selectedConversationId; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; final chatController=TextEditingController();
   @override void initState(){super.initState(); refresh(); loadChatMembers(); loadNotifications(); poll=Timer.periodic(const Duration(seconds:5),(_){refresh(silent:true);loadNotifications();});}
   @override void dispose(){poll?.cancel();chatController.dispose();super.dispose();}
@@ -209,13 +211,48 @@ class _AdminHomeState extends State<AdminHome> {
     ])))));
   }
   Future<void> refresh({bool silent=false}) async {
-    if(section=='analytics'){if(mounted)setState(()=>busy=false);return;}
+    final requestedSection=section;
+    final generation=++_refreshGeneration;
+    if(requestedSection=='analytics'){
+      if(mounted)setState(()=>busy=false);
+      return;
+    }
     if(!silent && mounted)setState(()=>busy=true);
-    try { final data=await SharedStore.list(section); if(mounted)setState((){rows=data;if(section=='messages'){final ids=data.map((m)=>m['conversationId']?.toString()??'').where((id)=>id.isNotEmpty).toSet().toList();if(selectedConversationId==null||!ids.contains(selectedConversationId)){selectedConversationId=ids.isEmpty?null:ids.last;}}}); }
-    catch(e){if(!silent&&mounted)note('تعذر تحميل البيانات: $e');}
-    finally{if(mounted)setState(()=>busy=false);}
+    try {
+      final data=await SharedStore.list(requestedSection);
+      if(!mounted || generation!=_refreshGeneration || requestedSection!=section)return;
+      setState((){
+        rows=data;
+        refreshError=null;
+        if(requestedSection=='messages'){
+          final ids=<String>{};
+          final latestByConversation=<String,String>{};
+          for(final message in data){
+            final id=message['conversationId']?.toString()??'';
+            if(id.isEmpty)continue;
+            ids.add(id);
+            final stamp=message['createdAt']?.toString()??'';
+            if(stamp.isNotEmpty && (latestByConversation[id]==null || stamp.compareTo(latestByConversation[id]!)>0)){
+              latestByConversation[id]=stamp;
+            }
+          }
+          if(selectedConversationId==null || !ids.contains(selectedConversationId)){
+            final latest=latestByConversation.entries.toList()..sort((a,b)=>a.value.compareTo(b.value));
+            selectedConversationId=latest.isNotEmpty?latest.last.key:(ids.isEmpty?null:ids.first);
+          }
+        }
+      });
+    } catch(e) {
+      if(!mounted || generation!=_refreshGeneration || requestedSection!=section)return;
+      setState(()=>refreshError=e.toString());
+      if(!silent)note('تعذر تحميل البيانات من السحابة: $e');
+    } finally {
+      if(mounted && generation==_refreshGeneration && requestedSection==section){
+        setState(()=>busy=false);
+      }
+    }
   }
-  Map<String,String> fieldsFor(String s)=>switch(s){
+    Map<String,String> fieldsFor(String s)=>switch(s){
     'members'=>{'name':'الاسم','age':'العمر','address':'العنوان','hourlyPrice':'سعر الساعة بالدينار','nightlyPrice':'سعر الليلة بالدينار','description':'نبذة وتعريف','hasPlace':'يوجد مكان؟','available':'متاح للحجز؟'},
     'sessions'=>{'title':'عنوان الجلسة','memberId':'معرّف عضو الكادر (اختياري)','date':'التاريخ','description':'الوصف'},
     'banners'=>{'title':'عنوان البانر','description':'النص الظاهر'},
@@ -383,9 +420,16 @@ class _AdminHomeState extends State<AdminHome> {
     if(selectedConversationId==null){note('لا توجد محادثة عميل للرد عليها بعد');return;}
     try {
       await SharedStore.save('messages', {'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});
-      await SharedStore.save('notifications',{'target':'customer','customerId':selectedConversationId,'type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
+      var notificationSent=true;
+      try {
+        await SharedStore.save('notifications',{'target':'customer','customerId':selectedConversationId,'type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
+      } catch(e) {
+        notificationSent=false;
+        debugPrint('Admin reply notification failed: $e');
+      }
       chatController.clear();
       await refresh(silent:true);
+      if(!notificationSent)note('تم إرسال الرد، لكن تعذر إنشاء إشعار للعميل');
     } catch(e) { note('تعذر إرسال الرد: $e'); }
   }
   Future<void> createBookingFromChat() async {
@@ -401,6 +445,12 @@ class _AdminHomeState extends State<AdminHome> {
     final ids=rows.map((m)=>m['conversationId']?.toString()??'').where((id)=>id.isNotEmpty).toSet().toList()..sort();
     final messages=rows.where((m)=>m['conversationId']?.toString()==selectedConversationId).toList()..sort((a,b)=>(a['createdAt']?.toString()??'').compareTo(b['createdAt']?.toString()??''));
     return Column(children:[
+      if(refreshError!=null)Padding(padding:const EdgeInsets.fromLTRB(12,8,12,2),child:Container(padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:rose.withOpacity(.08),borderRadius:BorderRadius.circular(12)),child:Row(children:[
+        const Icon(Icons.cloud_off,color:rose,size:19),
+        const SizedBox(width:8),
+        Expanded(child:Text('تعذر تحديث الرسائل: $refreshError',maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12))),
+        IconButton(tooltip:'إعادة المحاولة',onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:plum)),
+      ]))),
       Padding(padding:const EdgeInsets.fromLTRB(12,8,12,4),child:DropdownButtonFormField<String>(
         value:ids.contains(selectedConversationId)?selectedConversationId:null,
         decoration:const InputDecoration(labelText:'اختر محادثة العميل',prefixIcon:Icon(Icons.person_search)),
@@ -414,11 +464,16 @@ class _AdminHomeState extends State<AdminHome> {
     ]);
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-    appBar:AppBar(flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.centerRight,end:Alignment.centerLeft,colors:[Color(0xFF3D126A),Color(0xFF6A1B9A),Color(0xFF914A9A)]))),backgroundColor:Colors.transparent,title:const Text('الشيخة | الإدارة'),actions:[IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh))]),
+    appBar:AppBar(flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.centerRight,end:Alignment.centerLeft,colors:[Color(0xFF3D126A),Color(0xFF6A1B9A),Color(0xFF914A9A)]))),backgroundColor:Colors.transparent,foregroundColor:Colors.white,iconTheme:const IconThemeData(color:Colors.white),actionsIconTheme:const IconThemeData(color:Colors.white),title:const Text('الشيخة | الإدارة'),actions:[IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh))]),
     floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(backgroundColor:rose,foregroundColor:Colors.white,onPressed:()=>edit(),icon:const Icon(Icons.add_circle_rounded,color:Colors.white),label:const Text('إضافة سجل')),
     resizeToAvoidBottomInset:true,
     body:Column(children:[
       SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(()=>section=e.key);refresh();}))).toList())),
+      if(refreshError!=null&&section!='messages')Padding(padding:const EdgeInsets.fromLTRB(12,6,12,2),child:Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),decoration:BoxDecoration(color:rose.withOpacity(.08),borderRadius:BorderRadius.circular(12)),child:Row(children:[
+        const Icon(Icons.cloud_off,color:rose,size:18),const SizedBox(width:7),
+        Expanded(child:Text('تعذر تحميل هذا القسم: $refreshError',maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:11))),
+        IconButton(tooltip:'إعادة المحاولة',visualDensity:VisualDensity.compact,onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:plum,size:19)),
+      ]))),
       Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
         Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
         if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
