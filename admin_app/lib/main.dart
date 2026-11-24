@@ -9,7 +9,7 @@ import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'shared_store.dart';
-import '../../shared/iraq_locations.dart';
+import 'iraq_locations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
