@@ -62,6 +62,10 @@ for app, (package, activity_file) in apps.items():
                                   'android:windowSoftInputMode="adjustResize"', activity_tag)
         else:
             activity_tag += ' android:windowSoftInputMode="adjustResize"'
+        # Let the customer app draw into the display-cutout/status-bar area so
+        # the pink background fills the entire screen behind the camera cutout.
+        if app == "client_app" and 'android:windowLayoutInDisplayCutoutMode=' not in activity_tag:
+            activity_tag += ' android:windowLayoutInDisplayCutoutMode="shortEdges"'
         text = text[:match.start()] + activity_tag + match.group(2) + text[match.end():]
     # Use the user's exact uploaded artwork as the launcher icon in both apps.
     if app == "client_app":
