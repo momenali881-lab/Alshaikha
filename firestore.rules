@@ -8,6 +8,20 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
     }
 
+    match /app_devices/{deviceId} {
+      // Each installation writes only its own randomly generated installation ID.
+      // Administrators can read all device analytics; customers can read only their current device.
+      allow read: if isAdmin() || (signedIn() && resource.data.lastUserId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.installationId == deviceId
+        && request.resource.data.lastUserId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.installationId == deviceId
+        && request.resource.data.installationId == deviceId
+        && request.resource.data.lastUserId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
     match /profiles/{uid} {
       allow create: if isSelf(uid) && request.resource.data.role == 'customer';
       allow read: if isSelf(uid) || isAdmin();

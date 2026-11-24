@@ -68,7 +68,10 @@ class SharedStore {
       return remote;
     } catch (e) {
       final message = e.toString().toLowerCase();
-      if (message.contains('permission-denied') || message.contains('unauthorized')) rethrow;
+      if (table == 'bookings' || table == 'messages' ||
+          message.contains('permission-denied') || message.contains('unauthorized')) {
+        rethrow;
+      }
       final local = await _localList(table);
       if (table == 'bookings' || table == 'favorites') {
         return local.where((item) => item['customerId'] == user.uid).toList();
@@ -84,20 +87,27 @@ class SharedStore {
   }
 
   static Future<String> save(String table, Map<String, dynamic> data) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw StateError('يجب تسجيل الدخول قبل حفظ البيانات المشتركة');
+    }
     final id = (data['id'] as String?) ?? _db.collection(table).doc().id;
     final record = <String, dynamic>{...data, 'id': id};
+    // Firestore is the source of truth. Cache locally only after the cloud write succeeds.
+    await _db.collection(table).doc(id).set({
+      ...record,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
     await _cache(table, record);
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await _db.collection(table).doc(id).set({
-        ...record,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
     return id;
   }
 
   static Future<void> delete(String table, String id) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw StateError('يجب تسجيل الدخول قبل حذف البيانات المشتركة');
+    }
+    await _db.collection(table).doc(id).delete();
     try {
       await _channel.invokeMethod<void>('delete', {'table': table, 'id': id});
     } on PlatformException {
@@ -105,8 +115,50 @@ class SharedStore {
     } on MissingPluginException {
       // Local cache is optional on standalone customer devices.
     }
-    if (FirebaseAuth.instance.currentUser != null) {
-      await _db.collection(table).doc(id).delete();
+  }
+
+  static Future<List<Map<String, dynamic>>> _legacyRows(String table) async {
+    final rows = await _channel.invokeListMethod<dynamic>('list', {'table': table}) ?? [];
+    return rows.map((row) {
+      final map = Map<String, dynamic>.from(row as Map);
+      return jsonDecode(map['payload'] as String) as Map<String, dynamic>;
+    }).toList();
+  }
+
+  /// Uploads legacy records from this device's SQLite cache without deleting them.
+  /// Existing cloud documents are left untouched, making repeated runs safe.
+  static Future<Map<String, int>> migrateLocalToCloud() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw StateError('يجب تسجيل الدخول بحساب الإدارة');
+    final profile = await _db.collection('profiles').doc(user.uid).get();
+    if (profile.data()?['role'] != 'admin') {
+      throw StateError('هذه العملية متاحة للإدارة فقط');
     }
+    const tables = [
+      'members', 'sessions', 'banners', 'bookings',
+      'favorites', 'messages', 'notifications', 'announcements',
+    ];
+    var migrated = 0;
+    var skipped = 0;
+    for (final table in tables) {
+      final localRows = await _legacyRows(table);
+      for (final row in localRows) {
+        final rawId = row['id']?.toString().trim() ?? '';
+        final id = rawId.isEmpty ? _db.collection(table).doc().id : rawId;
+        final ref = _db.collection(table).doc(id);
+        final existing = await ref.get();
+        if (existing.exists) {
+          skipped++;
+          continue;
+        }
+        await ref.set({
+          ...row,
+          'id': id,
+          'legacyMigratedAt': FieldValue.serverTimestamp(),
+        });
+        migrated++;
+      }
+    }
+    return {'migrated': migrated, 'skipped': skipped};
   }
 }
