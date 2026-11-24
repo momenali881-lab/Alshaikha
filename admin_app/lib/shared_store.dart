@@ -21,9 +21,22 @@ class SharedStore {
     }
   }
 
+  // MethodChannel's StandardMessageCodec cannot transfer Firestore Timestamp objects.
+  // Normalize nested values before sending records to the Android shared cache.
+  static dynamic _toChannelSafe(dynamic value) {
+    if (value is Timestamp) return value.toDate().toIso8601String();
+    if (value is DateTime) return value.toIso8601String();
+    if (value is Map) {
+      return value.map((key, item) => MapEntry(key.toString(), _toChannelSafe(item)));
+    }
+    if (value is List) return value.map(_toChannelSafe).toList();
+    return value;
+  }
+
   static Future<void> _cache(String table, Map<String, dynamic> data) async {
     try {
-      await _channel.invokeMethod<String>('save', {'table': table, 'data': data});
+      final safeData = _toChannelSafe(data) as Map<String, dynamic>;
+      await _channel.invokeMethod<String>('save', {'table': table, 'data': safeData});
     } on PlatformException {
       // The customer may install this app on a device without the admin provider.
     } on MissingPluginException {
