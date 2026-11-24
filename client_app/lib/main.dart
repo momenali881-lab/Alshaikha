@@ -15,6 +15,17 @@ import 'account_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: const [SystemUiOverlay.top],
+  );
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Color(0xFF6A1B9A),
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.black,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
   runApp(const SheikhaClientApp());
 }
@@ -49,7 +60,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
  late final AnimationController _breezeController;
  @override void initState(){
   super.initState();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: const [SystemUiOverlay.top]);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Color(0xFF6A1B9A), statusBarIconBrightness: Brightness.light, statusBarBrightness: Brightness.dark, systemNavigationBarColor: Colors.black, systemNavigationBarIconBrightness: Brightness.light));
   _breathController=AnimationController(vsync:this,duration:const Duration(milliseconds:3600))..repeat(reverse:true);
   _breezeController=AnimationController(vsync:this,duration:const Duration(milliseconds:5200))..repeat(reverse:true);
  }
@@ -224,7 +236,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;int _loadGeneration=0;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;int _loadGeneration=0;String? loadError;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();Timer? poll;Timer? bannerAuto;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
  @override void initState(){super.initState();_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -267,9 +279,18 @@ class _ClientHomeState extends State<ClientHome>{
  Future<void> openNotifications()async{await load(silent:true);if(!mounted)return;showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),onTap:()async{await SharedStore.save('notifications',{...n,'read':true});await load(silent:true);})).toList()))])))));}
  Future<void> load({bool silent=false})async{
   final generation=++_loadGeneration;
+  final loadErrors=<String,String>{};
   if(!silent&&mounted)setState(()=>busy=true);
+  Future<List<Map<String,dynamic>>> loadTable(String table)async{
+   try{return await SharedStore.list(table);}
+   catch(e){loadErrors[table]=e.toString();return <Map<String,dynamic>>[];}
+  }
   try{
-   final r=await Future.wait([SharedStore.list('members'),SharedStore.list('sessions'),SharedStore.list('banners'),SharedStore.list('bookings'),SharedStore.list('favorites'),SharedStore.list('messages'),SharedStore.list('notifications'),SharedStore.list('announcements')]);
+   final r=await Future.wait([
+    loadTable('members'),loadTable('sessions'),loadTable('banners'),
+    loadTable('bookings'),loadTable('favorites'),loadTable('messages'),
+    loadTable('notifications'),loadTable('announcements'),
+   ]);
    if(!mounted||generation!=_loadGeneration)return;
    setState((){
     members=r[0];
@@ -280,7 +301,11 @@ class _ClientHomeState extends State<ClientHome>{
     messages=(r[5].where((m)=>m['conversationId']==conversationId).toList()..sort((a,b)=>'${a['createdAt']??''}'.compareTo('${b['createdAt']??''}')));
     notifications=r[6].where((n)=>n['target']=='customer').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));
     announcements=r[7]..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));
+    loadError=loadErrors.isEmpty?null:loadErrors.entries.map((e)=>'${e.key}: ${e.value}').join(' | ');
    });
+   if(loadErrors.isNotEmpty&&!silent){
+    note('تعذر تحميل بعض الأقسام؛ بقيت البيانات المتاحة ظاهرة. التفاصيل: ${loadErrors.entries.map((e)=>'${e.key}: ${e.value}').join(' | ')}');
+   }
   }catch(e){
    if(!silent&&mounted&&generation==_loadGeneration)note('تعذر تحميل البيانات المشتركة: $e');
   }finally{
@@ -447,7 +472,14 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
   appBar:AppBar(flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.centerRight,end:Alignment.centerLeft,colors:[Color(0xFF3D126A),Color(0xFF6A1B9A),Color(0xFF914A9A)]))),backgroundColor:Colors.transparent,foregroundColor:Colors.white,iconTheme:const IconThemeData(color:Colors.white),actionsIconTheme:const IconThemeData(color:Colors.white),title:const Text('الشيخة',style:TextStyle(fontWeight:FontWeight.bold)),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.14)),icon:const Icon(Icons.favorite,color:Colors.white)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active)))]),
   resizeToAvoidBottomInset:true,
-  body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
+  body:busy?const Center(child:CircularProgressIndicator()):Column(children:[
+   if(loadError!=null)Container(width:double.infinity,color:rose.withOpacity(.08),padding:const EdgeInsets.symmetric(horizontal:12,vertical:7),child:Row(children:[
+    const Icon(Icons.cloud_off,color:rose,size:18),const SizedBox(width:7),
+    Expanded(child:Text('تعذر تحميل بعض البيانات: $loadError',maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:11))),
+    IconButton(tooltip:'إعادة المحاولة',visualDensity:VisualDensity.compact,onPressed:()=>load(),icon:const Icon(Icons.refresh,color:plum,size:19)),
+   ])),
+   Expanded(child:RefreshIndicator(onRefresh:load,child:currentPage())),
+  ]),
   bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
  ));
 }
