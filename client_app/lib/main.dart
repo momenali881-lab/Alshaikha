@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
 import 'image_utils.dart';
 import 'account_page.dart';
-import 'shared/notification_service.dart';
+import 'notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

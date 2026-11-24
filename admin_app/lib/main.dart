@@ -11,7 +11,7 @@ import 'image_utils.dart';
 import 'get_pronto_uploader.dart';
 import 'iraq_locations.dart';
 import 'analytics_screen.dart';
-import 'shared/notification_service.dart';
+import 'notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
