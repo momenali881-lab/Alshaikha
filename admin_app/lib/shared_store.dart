@@ -117,6 +117,14 @@ class SharedStore {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> _legacyRows(String table) async {
+    final rows = await _channel.invokeListMethod<dynamic>('list', {'table': table}) ?? [];
+    return rows.map((row) {
+      final map = Map<String, dynamic>.from(row as Map);
+      return jsonDecode(map['payload'] as String) as Map<String, dynamic>;
+    }).toList();
+  }
+
   /// Uploads legacy records from this device's SQLite cache without deleting them.
   /// Existing cloud documents are left untouched, making repeated runs safe.
   static Future<Map<String, int>> migrateLocalToCloud() async {
@@ -133,7 +141,7 @@ class SharedStore {
     var migrated = 0;
     var skipped = 0;
     for (final table in tables) {
-      final localRows = await _localList(table);
+      final localRows = await _legacyRows(table);
       for (final row in localRows) {
         final rawId = row['id']?.toString().trim() ?? '';
         final id = rawId.isEmpty ? _db.collection(table).doc().id : rawId;
