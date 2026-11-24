@@ -29,9 +29,6 @@ jobs:
       - name: Install Firebase CLI
         run: npm install --global firebase-tools
 
-      - name: Verify Firebase project
-        run: firebase projects:list --json
-
       - name: Set admin bootstrap secret
         env:
           ADMIN_BOOTSTRAP_CODE: ${{ secrets.ADMIN_BOOTSTRAP_CODE }}
