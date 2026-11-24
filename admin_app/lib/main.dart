@@ -16,7 +16,11 @@ import 'notification_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
-  await NotificationService.initialize();
+  try {
+    await NotificationService.initialize();
+  } catch (_) {
+    // Push notifications are optional; never prevent the app from opening.
+  }
   runApp(const SheikhaAdminApp());
 }
 
@@ -77,14 +81,46 @@ class AdminAuthGate extends StatelessWidget {
    return const AdminRoleCheck();
   });
 }
-class AdminRoleCheck extends StatelessWidget {
+class AdminRoleCheck extends StatefulWidget {
  const AdminRoleCheck({super.key});
- @override Widget build(BuildContext context)=>FutureBuilder<DocumentSnapshot<Map<String,dynamic>>>(
-  future:FirebaseFirestore.instance.collection('profiles').doc(FirebaseAuth.instance.currentUser!.uid).get(),
+ @override State<AdminRoleCheck> createState() => _AdminRoleCheckState();
+}
+class _AdminRoleCheckState extends State<AdminRoleCheck> {
+ late Future<DocumentSnapshot<Map<String,dynamic>>> _profileFuture;
+
+ Future<DocumentSnapshot<Map<String,dynamic>>> _loadProfile() {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw StateError('لا يوجد حساب مسجل');
+  return FirebaseFirestore.instance.collection('profiles').doc(user.uid).get();
+ }
+
+ @override void initState() {
+  super.initState();
+  _profileFuture = _loadProfile();
+ }
+
+ @override Widget build(BuildContext context) => FutureBuilder<DocumentSnapshot<Map<String,dynamic>>>(
+  future: _profileFuture,
   builder:(context,snapshot){
-   if(snapshot.connectionState==ConnectionState.waiting)return const Scaffold(body:Center(child:CircularProgressIndicator()));
-   if(snapshot.hasError||snapshot.data?.data()?['role']!='admin'){
-    FirebaseAuth.instance.signOut();
+   if(snapshot.connectionState==ConnectionState.waiting) {
+    return const Scaffold(body:Center(child:CircularProgressIndicator()));
+   }
+   if(snapshot.hasError) {
+    return Scaffold(body:Center(child:Padding(
+     padding:const EdgeInsets.all(24),
+     child:Column(mainAxisSize:MainAxisSize.min,children:[
+      const Text('تعذر الاتصال ببيانات الحساب. تحقق من الإنترنت ثم أعد المحاولة.'),
+      const SizedBox(height:16),
+      FilledButton(onPressed:()=>setState(()=>_profileFuture=_loadProfile()),child:const Text('إعادة المحاولة')),
+     ]),
+    )));
+   }
+   if(!snapshot.hasData || !snapshot.data!.exists || snapshot.data!.data()?['role']!='admin') {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+     if(mounted && FirebaseAuth.instance.currentUser!=null) {
+      FirebaseAuth.instance.signOut();
+     }
+    });
     return const AdminLoginScreen(message:'هذا الحساب لا يملك صلاحية الإدارة');
    }
    return const AdminHome();
