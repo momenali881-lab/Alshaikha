@@ -1,14 +1,14 @@
-import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'shared_store.dart';
+import 'image_utils.dart';
+import 'get_pronto_uploader.dart';
 import 'iraq_locations.dart';
 
 Future<void> main() async {
@@ -36,16 +36,33 @@ class SheikhaAdminApp extends StatelessWidget {
 }
 
 
+Future<void> showAdminSetupInstructions(BuildContext context) async {
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        title: const Text('إعداد حساب الإدارة'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'يتم إنشاء حساب المدير الأول يدوياً مرة واحدة لتجنب خدمات Firebase المدفوعة:\n\n'
+            '1. افتح Firebase Console ثم Authentication ثم Users وأضف مستخدماً جديداً.\n'
+            '2. اجعل البريد بصيغة اسم_المستخدم@alshaikha.app، وحدد كلمة مرور.\n'
+            '3. انسخ UID للمستخدم الجديد.\n'
+            '4. افتح Firestore وأنشئ مجموعة profiles، ثم مستنداً يكون معرّفه هو UID نفسه.\n'
+            '5. أضف الحقول: uid (String)، username (String)، displayName (String)، role (String وقيمته admin).\n'
+            '6. احفظ المستند ثم سجّل الدخول هنا باسم المستخدم وكلمة المرور.\n\n'
+            'لا تنشئ ملف المدير من التطبيق ولا تشارك كلمة المرور أو مفاتيح Secret.'
+          ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('فهمت'))],
+      ),
+    ),
+  );
+}
+
 String _adminAccountEmail(String username) => '${username.trim().toLowerCase()}@alshaikha.app';
 
-Future<void> _createAdmin({required String username, required String password, String? setupCode, String? displayName}) async {
-  await FirebaseFunctions.instance.httpsCallable('createAdminAccount').call({
-    'username': username.trim().toLowerCase(),
-    'password': password,
-    'displayName': (displayName == null || displayName.trim().isEmpty) ? username.trim() : displayName.trim(),
-    if (setupCode != null && setupCode.isNotEmpty) 'setupCode': setupCode,
-  });
-}
 
 class AdminAuthGate extends StatelessWidget {
  const AdminAuthGate({super.key});
@@ -97,80 +114,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
    finally{if(mounted)setState(()=>loading=false);}
   }
   Future<void> createFirstAdmin() async {
-    final username = TextEditingController();
-    final display = TextEditingController();
-    final password = TextEditingController();
-    final setupCode = TextEditingController();
-    final key = GlobalKey<FormState>();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('إنشاء أول حساب إداري'),
-          content: Form(
-            key: key,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: username,
-                    decoration: const InputDecoration(labelText: 'اسم المستخدم'),
-                    validator: (v) => v == null || !RegExp(r'^[a-z0-9._]{3,24}$').hasMatch(v.trim().toLowerCase())
-                        ? 'استخدم 3 إلى 24 حرفاً أو رقماً أو . أو _'
-                        : null,
-                  ),
-                  TextFormField(
-                    controller: display,
-                    decoration: const InputDecoration(labelText: 'الاسم الظاهر'),
-                  ),
-                  TextFormField(
-                    controller: password,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'كلمة المرور (8 أحرف على الأقل)'),
-                    validator: (v) => v == null || v.length < 8 ? 'كلمة المرور قصيرة' : null,
-                  ),
-                  TextFormField(
-                    controller: setupCode,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'رمز الإعداد الأول'),
-                    validator: (v) => v == null || v.isEmpty ? 'أدخل رمز الإعداد' : null,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, key.currentState!.validate()),
-              child: const Text('إنشاء الحساب'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (ok == true) {
-      setState(() { loading = true; error = null; });
-      try {
-        await _createAdmin(
-          username: username.text,
-          password: password.text,
-          setupCode: setupCode.text,
-          displayName: display.text,
-        );
-        if (mounted) setState(() => error = 'تم إنشاء الحساب. سجّل الدخول باستخدام بياناته.');
-      } catch (e) {
-        if (mounted) setState(() => error = 'تعذر إنشاء الحساب: $e');
-      } finally {
-        if (mounted) setState(() => loading = false);
-      }
-    }
-    username.dispose();
-    display.dispose();
-    password.dispose();
-    setupCode.dispose();
+    await showAdminSetupInstructions(context);
   }
 
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
@@ -183,8 +127,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
    if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
    const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():const Text('تسجيل الدخول'))),
    const SizedBox(height:14),
-   SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:loading?null:createFirstAdmin,icon:const Icon(Icons.person_add_alt_1),label:const Text('إنشاء أول حساب إداري'))),
-   const SizedBox(height:8),const Text('بعد إنشاء الحساب الأول، يستطيع المدير إضافة مدراء آخرين من داخل التطبيق.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:Colors.black54))
+   SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:loading?null:createFirstAdmin,icon:const Icon(Icons.info_outline),label:const Text('طريقة إنشاء أول حساب إداري'))),
+   const SizedBox(height:8),const Text('لأمان الحسابات، تتم إضافة المديرين من وحدة تحكم Firebase فقط.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:Colors.black54))
   ])))))));
 }
 
@@ -197,79 +141,7 @@ class AdminAccountsScreen extends StatefulWidget {
 class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
   bool busy = false;
 
-  Future<void> addAdmin() async {
-    final username = TextEditingController();
-    final password = TextEditingController();
-    final display = TextEditingController();
-    final key = GlobalKey<FormState>();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('إضافة مدير جديد'),
-          content: Form(
-            key: key,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: username,
-                  decoration: const InputDecoration(labelText: 'اسم المستخدم'),
-                  validator: (v) => v == null || !RegExp(r'^[a-zA-Z0-9._]{3,24}$').hasMatch(v.trim())
-                      ? 'اسم المستخدم غير صالح'
-                      : null,
-                ),
-                TextFormField(
-                  controller: display,
-                  decoration: const InputDecoration(labelText: 'الاسم الظاهر'),
-                ),
-                TextFormField(
-                  controller: password,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'كلمة المرور'),
-                  validator: (v) => v == null || v.length < 8 ? '8 أحرف على الأقل' : null,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, key.currentState!.validate()),
-              child: const Text('إنشاء الحساب'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (ok == true) {
-      setState(() => busy = true);
-      try {
-        await _createAdmin(
-          username: username.text,
-          password: password.text,
-          displayName: display.text,
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم إنشاء الحساب الإداري')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تعذر إنشاء الحساب: $e')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => busy = false);
-      }
-    }
-    username.dispose();
-    password.dispose();
-    display.dispose();
-  }
+  Future<void> addAdmin() async => showAdminSetupInstructions(context);
 
   @override
   Widget build(BuildContext context) => Directionality(
@@ -278,8 +150,8 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
           appBar: AppBar(title: const Text('الحسابات الإدارية')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: busy ? null : addAdmin,
-            icon: const Icon(Icons.person_add),
-            label: const Text('إضافة مدير'),
+            icon: const Icon(Icons.info_outline),
+            label: const Text('طريقة إضافة مدير'),
           ),
           body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: FirebaseFirestore.instance
@@ -354,10 +226,18 @@ class _AdminHomeState extends State<AdminHome> {
     final files=await picker.pickMultiImage(imageQuality:72,maxWidth:1500);
     if(files.isEmpty)return existing;
     final out=[...existing];
-    for(final f in files.take(10-existing.length)){out.add(base64Encode(await f.readAsBytes()));}
+    for(final f in files.take(10-existing.length)){
+      try {
+        out.add(await GetProntoUploader.upload(f));
+      } catch (e) {
+        note('تعذر رفع الصورة ${f.name}: $e');
+        break;
+      }
+    }
     return out;
   }
   Future<void> edit([Map<String,dynamic>? old]) async {
+    if(section=='banners'&&old==null&&rows.length>=7){note('وصلت إلى الحد الأقصى: 7 بانرات.');return;}
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
     for(final e in fields.entries){if(section=='members'&&e.key=='address')continue;ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}if(section=='bookings'&&old==null)ctrls['durationMinutes']!.text='60';
     final landmark=TextEditingController(text:'${old?['landmark']??''}');
@@ -368,7 +248,12 @@ class _AdminHomeState extends State<AdminHome> {
     List<String> liveLandmarks=[];bool loadingLandmarks=false;List<String> liveAreas=[];bool loadingAreas=false;
     final bookingMembers=section=='bookings'?await SharedStore.list('members'):<Map<String,dynamic>>[];
     final bannerMembers=section=='banners'?await SharedStore.list('members'):<Map<String,dynamic>>[];
+    final bannerSessions=section=='banners'?await SharedStore.list('sessions'):<Map<String,dynamic>>[];
+    final sessionMembers=section=='sessions'?await SharedStore.list('members'):<Map<String,dynamic>>[];
+    String? sessionMemberId=old?['memberId']?.toString();
+    DateTime? sessionDate=DateTime.tryParse('${old?['date']??''}');
     String? linkedMemberId=old?['linkedMemberId']?.toString();
+    String? linkedSessionId=old?['linkedSessionId']?.toString();
     String? selectedMemberId=old?['memberId']?.toString()??(bookingMembers.isNotEmpty?bookingMembers.first['id']?.toString():null);
     DateTime? bookingDate=DateTime.tryParse('${old?['date']??''}');
     bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, active=old?['active']!=false;
@@ -377,8 +262,13 @@ class _AdminHomeState extends State<AdminHome> {
       title:Text(old==null?'إضافة ${sections[section]}':'تعديل ${sections[section]}'),
       content:SizedBox(width:460,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
         ...fields.entries.where((e)=>!['available','hasPlace','memberId','date'].contains(e.key)&&!(section=='members'&&e.key=='address')).map((e)=>Padding(padding:const EdgeInsets.only(bottom:10),child:TextField(controller:ctrls[e.key],scrollPadding:const EdgeInsets.only(bottom:180),maxLines:['description','notes','text','address'].contains(e.key)?3:1,keyboardType:['age','hourlyPrice','nightlyPrice','durationMinutes'].contains(e.key)?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:e.value,border:const OutlineInputBorder())))),
+        if(section=='sessions')...[
+          DropdownButtonFormField<String>(value:sessionMembers.any((m)=>m['id']?.toString()==sessionMemberId)?sessionMemberId:'',decoration:const InputDecoration(labelText:'ربط الجلسة بعضو الكادر (اختياري)',border:OutlineInputBorder()),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط')), ...sessionMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']??'عضو'}')))],onChanged:(v)=>ds(()=>sessionMemberId=v)),
+          const SizedBox(height:10),
+          OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:ctx,initialDate:sessionDate??DateTime.now(),firstDate:DateTime(2000),lastDate:DateTime(2100));if(d!=null)ds(()=>sessionDate=DateTime(d.year,d.month,d.day));},icon:const Icon(Icons.calendar_month),label:Text(sessionDate==null?'تحديد تاريخ الجلسة':'${sessionDate!.year}/${sessionDate!.month}/${sessionDate!.day}')),
+        ],
         if(section=='bookings')...[
-          DropdownButtonFormField<String>(value:bookingMembers.any((m)=>m['id']?.toString()==selectedMemberId)?selectedMemberId:null,decoration:const InputDecoration(labelText:'اختيار عضو الكادر',border:OutlineInputBorder()),items:bookingMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Row(children:[if((m['images'] as List? ?? []).isNotEmpty)ClipRRect(borderRadius:BorderRadius.circular(6),child:Image.memory(base64Decode((m['images'] as List).first),width:30,height:30,fit:BoxFit.cover)),const SizedBox(width:8),Text('${m['name']??'عضو'}')]))).toList(),onChanged:(v)=>ds(()=>selectedMemberId=v)),
+          DropdownButtonFormField<String>(value:bookingMembers.any((m)=>m['id']?.toString()==selectedMemberId)?selectedMemberId:null,decoration:const InputDecoration(labelText:'اختيار عضو الكادر',border:OutlineInputBorder()),items:bookingMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Row(children:[if((m['images'] as List? ?? []).isNotEmpty)ClipRRect(borderRadius:BorderRadius.circular(6),child:appImage((m['images'] as List).first,width:30,height:30,fit:BoxFit.cover)),const SizedBox(width:8),Text('${m['name']??'عضو'}')]))).toList(),onChanged:(v)=>ds(()=>selectedMemberId=v)),
           const SizedBox(height:10),
           OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:ctx,initialDate:bookingDate??DateTime.now().add(const Duration(days:1)),firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)ds(()=>bookingDate=DateTime(d.year,d.month,d.day,bookingDate?.hour??12,bookingDate?.minute??0));},icon:const Icon(Icons.calendar_month),label:Text(bookingDate==null?'تحديد تاريخ الحجز':'${bookingDate!.year}/${bookingDate!.month}/${bookingDate!.day}')),
           OutlinedButton.icon(onPressed:()async{final t=await showTimePicker(context:ctx,initialTime:TimeOfDay.fromDateTime(bookingDate??DateTime.now()));if(t!=null)ds(()=>bookingDate=DateTime(bookingDate?.year??DateTime.now().year,bookingDate?.month??DateTime.now().month,bookingDate?.day??DateTime.now().day,t.hour,t.minute));},icon:const Icon(Icons.schedule),label:Text(bookingDate==null?'تحديد وقت الحجز':TimeOfDay.fromDateTime(bookingDate!).format(ctx))),
@@ -406,13 +296,15 @@ class _AdminHomeState extends State<AdminHome> {
         ],
         if(section=='banners')SwitchListTile(value:active,onChanged:(v)=>ds(()=>active=v),title:const Text('عرض البانر للعملاء')),
         if(section=='banners')...[
-          DropdownButtonFormField<String>(value:bannerMembers.any((m)=>m['id']?.toString()==linkedMemberId)?linkedMemberId:'',decoration:const InputDecoration(labelText:'ربط البانر بملف عضو (اختياري)'),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط')), ...bannerMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']??'عضو'}')))],onChanged:(v)=>ds(()=>linkedMemberId=v)),
+          DropdownButtonFormField<String>(value:bannerMembers.any((m)=>m['id']?.toString()==linkedMemberId)?linkedMemberId:'',decoration:const InputDecoration(labelText:'ربط البانر بملف عضو (اختياري)'),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط')), ...bannerMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']??'عضو'}')))],onChanged:(v)=>ds((){linkedMemberId=v;if(v!=null&&v.isNotEmpty)linkedSessionId=null;})),
+          const SizedBox(height:8),
+          DropdownButtonFormField<String>(value:bannerSessions.any((x)=>x['id']?.toString()==linkedSessionId)?linkedSessionId:'',decoration:const InputDecoration(labelText:'أو ربط البانر بجلسة (اختياري)'),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط بجلسة')), ...bannerSessions.map((x)=>DropdownMenuItem<String>(value:x['id'].toString(),child:Text('${x['title']??'جلسة'}')))],onChanged:(v)=>ds((){linkedSessionId=v;if(v!=null&&v.isNotEmpty)linkedMemberId=null;})),
           const SizedBox(height:8),
         ],
         if(['members','sessions','banners','announcements'].contains(section))...[
           Align(alignment:Alignment.centerRight,child:Text('الصور ${images.length}/10')),
           Wrap(spacing:6,children:images.asMap().entries.map((e)=>Stack(children:[
-            ClipRRect(borderRadius:BorderRadius.circular(8),child:Image.memory(base64Decode(e.value),width:62,height:62,fit:BoxFit.cover)),
+            ClipRRect(borderRadius:BorderRadius.circular(8),child:appImage(e.value,width:62,height:62,fit:BoxFit.cover)),
             Positioned(right:0,top:0,child:InkWell(onTap:()=>ds(()=>images.removeAt(e.key)),child:const CircleAvatar(radius:10,child:Icon(Icons.close,size:12))))
           ])).toList()),
           OutlinedButton.icon(onPressed:images.length>=10?null:()async{final v=await pickImages(images);ds(()=>images=v);},icon:const Icon(Icons.add_photo_alternate),label:const Text('اختيار صور من الهاتف')),
@@ -424,12 +316,13 @@ class _AdminHomeState extends State<AdminHome> {
       final data=<String,dynamic>{'id':old?['id'],'customerId':old?['customerId']??(fromChatBooking?selectedConversationId:null)};
       for(final key in fields.keys){if(key=='available'||key=='hasPlace'||(section=='members'&&key=='address'))continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=(key=='age'||key=='durationMinutes')?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?double.tryParse(v)??0:v;}
       if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];}
+      if(section=='sessions'){final chosen=sessionMembers.where((m)=>m['id']?.toString()==sessionMemberId).toList();data['memberId']=sessionMemberId==null||sessionMemberId!.isEmpty?null:sessionMemberId;data['memberName']=chosen.isEmpty?'':chosen.first['name'];data['date']=sessionDate?.toIso8601String()??'';}
       if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;data['province']=selectedProvince??'';data['area']=areaName.text.trim();data['district']=areaName.text.trim();data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,areaName.text.trim(),data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
       if(section=='banners')data['active']=active;
       if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
-      if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['targetType']=(linkedMemberId==null||linkedMemberId!.isEmpty)?'none':'member';data['targetId']=data['linkedMemberId'];}
+      if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['linkedSessionId']=(linkedSessionId==null||linkedSessionId!.isEmpty)?null:linkedSessionId;data['targetType']=data['linkedMemberId']!=null?'member':data['linkedSessionId']!=null?'session':'none';data['targetId']=data['linkedMemberId']??data['linkedSessionId'];}
       if(section=='announcements'){data['createdAt']=DateTime.now().toIso8601String();}
-      if(section=='members'&&(selectedProvince==null||areaName.text.trim().isEmpty||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||ctrls['customerName']!.text.trim().isEmpty)){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{final savedId=await SharedStore.save(section,data);if(section=='bookings'&&fromChatBooking&&selectedConversationId!=null){await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'bookingCard','bookingId':savedId,'customerName':data['customerName'],'memberId':data['memberId'],'memberName':data['memberName'],'date':data['date'],'durationMinutes':data['durationMinutes']??60,'notes':data['notes']??'','status':data['status']??'قيد المراجعة','text':'تم إنشاء بطاقة حجز','createdAt':DateTime.now().toIso8601String()});}if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'&&data['customerId']!=null){await SharedStore.save('notifications',{'target':'customer','customerId':data['customerId'],'type':'booking','title':'تم تسجيل حجز باسم ${data['customerName']}','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':data['id']});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
+      if(section=='members'&&(selectedProvince==null||areaName.text.trim().isEmpty||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||ctrls['customerName']!.text.trim().isEmpty)){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else if(section=='sessions'&&(ctrls['title']!.text.trim().isEmpty||sessionDate==null)){note('اكتب عنوان الجلسة وحدد تاريخها');}else try{final savedId=await SharedStore.save(section,data);if(section=='bookings'&&fromChatBooking&&selectedConversationId!=null){await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'bookingCard','bookingId':savedId,'customerName':data['customerName'],'memberId':data['memberId'],'memberName':data['memberName'],'date':data['date'],'durationMinutes':data['durationMinutes']??60,'notes':data['notes']??'','status':data['status']??'قيد المراجعة','text':'تم إنشاء بطاقة حجز','createdAt':DateTime.now().toIso8601String()});}if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'&&data['customerId']!=null){await SharedStore.save('notifications',{'target':'customer','customerId':data['customerId'],'type':'booking','title':'تم تسجيل حجز باسم ${data['customerName']}','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':data['id']});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
     for(final c in ctrls.values){c.dispose();}landmark.dispose();areaName.dispose();
   }
@@ -443,7 +336,7 @@ class _AdminHomeState extends State<AdminHome> {
     final subtitle=[m['description'],m['date'],m['status'],if(section=='bookings'&&m['address']!=null)m['address'],if(section=='members')'${m['hourlyPrice']??0} د.ع/ساعة',if(section=='members')'${m['nightlyPrice']??0} د.ع/ليلة'].where((x)=>x!=null&&x.toString().isNotEmpty).join(' • ');
     final imgs=List<String>.from(m['images']??[]);
     return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
-      ListTile(leading:imgs.isNotEmpty?ClipRRect(borderRadius:BorderRadius.circular(8),child:Image.memory(base64Decode(imgs.first),width:52,height:52,fit:BoxFit.cover)):const CircleAvatar(child:Icon(Icons.spa)),title:Text('$title'),subtitle:Text(subtitle),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')edit(m);else if(v=='delete')remove(m);else if(v=='accept')updateBooking(m,'مؤكد');else updateBooking(m,'مرفوض');},itemBuilder:(_)=>[
+      ListTile(leading:imgs.isNotEmpty?ClipRRect(borderRadius:BorderRadius.circular(8),child:appImage(imgs.first,width:52,height:52,fit:BoxFit.cover)):const CircleAvatar(child:Icon(Icons.spa)),title:Text('$title'),subtitle:Text(subtitle),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')edit(m);else if(v=='delete')remove(m);else if(v=='accept')updateBooking(m,'مؤكد');else updateBooking(m,'مرفوض');},itemBuilder:(_)=>[
         if(section=='bookings')const PopupMenuItem(value:'accept',child:Text('تأكيد الحجز')),
         if(section=='bookings')const PopupMenuItem(value:'reject',child:Text('رفض الحجز')),
         const PopupMenuItem(value:'edit',child:Text('تعديل')),
@@ -456,7 +349,7 @@ class _AdminHomeState extends State<AdminHome> {
   Future<void> shareMemberProfile() async {
     chatMembers=await SharedStore.list('members');
     if(chatMembers.isEmpty){note('أضف أعضاء الكادر أولاً');return;}
-    final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله للعميل',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...chatMembers.map((m){final imgs=List<String>.from(m['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(9),child:Image.memory(base64Decode(imgs.first),width:48,height:48,fit:BoxFit.cover));}catch(_){}}return ListTile(leading:avatar,title:Text('${m['name']??'عضو'}'),subtitle:const Text('إرسال بطاقة الملف الشخصي'),onTap:()=>Navigator.pop(ctx,m));})]))));
+    final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله للعميل',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...chatMembers.map((m){final imgs=List<String>.from(m['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(9),child:appImage(imgs.first,width:48,height:48,fit:BoxFit.cover));}catch(_){}}return ListTile(leading:avatar,title:Text('${m['name']??'عضو'}'),subtitle:const Text('إرسال بطاقة الملف الشخصي'),onTap:()=>Navigator.pop(ctx,m));})]))));
     if(chosen==null)return;
     if(selectedConversationId==null){note('اختر محادثة العميل أولاً');return;}
     await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
@@ -464,7 +357,7 @@ class _AdminHomeState extends State<AdminHome> {
     await refresh(silent:true);note('تم إرسال ملف العضو للعميل');
   }
   Map<String,dynamic>? findChatMember(dynamic id){for(final member in chatMembers){if(member['id']==id)return member;}return null;}
-  void openSharedMember(Map<String,dynamic> member){showDialog(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(title:Text('${member['name']??'ملف العضو'}'),content:SizedBox(width:360,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[if((member['images'] as List? ?? []).isNotEmpty)ClipRRect(borderRadius:BorderRadius.circular(14),child:Image.memory(base64Decode((member['images'] as List).first),height:180,fit:BoxFit.cover)),ListTile(title:const Text('العمر'),subtitle:Text('${member['age']??'-'}')),ListTile(title:const Text('سعر الساعة'),subtitle:Text('${member['hourlyPrice']??0} د.ع')),ListTile(title:const Text('سعر الليلة'),subtitle:Text('${member['nightlyPrice']??0} د.ع')),if((member['description']??'').toString().isNotEmpty)Text('${member['description']}')]))),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))])));}
+  void openSharedMember(Map<String,dynamic> member){showDialog(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(title:Text('${member['name']??'ملف العضو'}'),content:SizedBox(width:360,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[if((member['images'] as List? ?? []).isNotEmpty)ClipRRect(borderRadius:BorderRadius.circular(14),child:appImage((member['images'] as List).first,height:180,fit:BoxFit.cover)),ListTile(title:const Text('العمر'),subtitle:Text('${member['age']??'-'}')),ListTile(title:const Text('سعر الساعة'),subtitle:Text('${member['hourlyPrice']??0} د.ع')),ListTile(title:const Text('سعر الليلة'),subtitle:Text('${member['nightlyPrice']??0} د.ع')),if((member['description']??'').toString().isNotEmpty)Text('${member['description']}')]))),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))])));}
   Widget adminMessageBubble(Map<String,dynamic> m){
     final mine=m['sender']=='الإدارة';
     final member=m['type']=='memberProfile'?findChatMember(m['memberId']):null;
@@ -479,7 +372,7 @@ class _AdminHomeState extends State<AdminHome> {
       Text('الحالة: ${m['status']??'قيد المراجعة'}',style:const TextStyle(fontWeight:FontWeight.bold,color:teal)),
     ])));}
     Widget? profile;
-    if(member!=null){final imgs=List<String>.from(member['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(10),child:Image.memory(base64Decode(imgs.first),width:58,height:58,fit:BoxFit.cover));}catch(_){}}profile=Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[avatar,const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('بطاقة ملف العضو') ])),const Icon(Icons.badge_outlined,color:rose)])));}
+    if(member!=null){final imgs=List<String>.from(member['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(10),child:appImage(imgs.first,width:58,height:58,fit:BoxFit.cover));}catch(_){}}profile=Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[avatar,const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('بطاقة ملف العضو') ])),const Icon(Icons.badge_outlined,color:rose)])));}
     return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?teal.withOpacity(.12):rose.withOpacity(.13),borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['sender']??'عميل'}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12,color:plum)),if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')Text('${m['text']??'تعذر العثور على ملف العضو'}'),Text('${m['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))])));
   }
   Future<void> sendAdminMessage() async {
@@ -519,7 +412,7 @@ class _AdminHomeState extends State<AdminHome> {
     ]);
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-    appBar:AppBar(title:const Text('الشيخة | الإدارة'),actions:[IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active))),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh))]),
+    appBar:AppBar(title:const Text('الشيخة | الإدارة'),actions:[IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh))]),
     floatingActionButton:section=='messages'?null:FloatingActionButton.extended(backgroundColor:rose,foregroundColor:Colors.white,onPressed:()=>edit(),icon:const Icon(Icons.add_circle_rounded,color:Colors.white),label:const Text('إضافة سجل')),
     resizeToAvoidBottomInset:true,
     body:Column(children:[
