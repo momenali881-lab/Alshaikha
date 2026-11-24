@@ -209,13 +209,48 @@ class _AdminHomeState extends State<AdminHome> {
     ])))));
   }
   Future<void> refresh({bool silent=false}) async {
-    if(section=='analytics'){if(mounted)setState(()=>busy=false);return;}
+    final requestedSection=section;
+    final generation=++_refreshGeneration;
+    if(requestedSection=='analytics'){
+      if(mounted)setState(()=>busy=false);
+      return;
+    }
     if(!silent && mounted)setState(()=>busy=true);
-    try { final data=await SharedStore.list(section); if(mounted)setState((){rows=data;if(section=='messages'){final ids=data.map((m)=>m['conversationId']?.toString()??'').where((id)=>id.isNotEmpty).toSet().toList();if(selectedConversationId==null||!ids.contains(selectedConversationId)){selectedConversationId=ids.isEmpty?null:ids.last;}}}); }
-    catch(e){if(!silent&&mounted)note('تعذر تحميل البيانات: $e');}
-    finally{if(mounted)setState(()=>busy=false);}
+    try {
+      final data=await SharedStore.list(requestedSection);
+      if(!mounted || generation!=_refreshGeneration || requestedSection!=section)return;
+      setState((){
+        rows=data;
+        refreshError=null;
+        if(requestedSection=='messages'){
+          final ids=<String>{};
+          final latestByConversation=<String,String>{};
+          for(final message in data){
+            final id=message['conversationId']?.toString()??'';
+            if(id.isEmpty)continue;
+            ids.add(id);
+            final stamp=message['createdAt']?.toString()??'';
+            if(stamp.isNotEmpty && (latestByConversation[id]==null || stamp.compareTo(latestByConversation[id]!)>0)){
+              latestByConversation[id]=stamp;
+            }
+          }
+          if(selectedConversationId==null || !ids.contains(selectedConversationId)){
+            final latest=latestByConversation.entries.toList()..sort((a,b)=>a.value.compareTo(b.value));
+            selectedConversationId=latest.isNotEmpty?latest.last.key:(ids.isEmpty?null:ids.first);
+          }
+        }
+      });
+    } catch(e) {
+      if(!mounted || generation!=_refreshGeneration || requestedSection!=section)return;
+      setState(()=>refreshError=e.toString());
+      if(!silent)note('تعذر تحميل البيانات من السحابة: $e');
+    } finally {
+      if(mounted && generation==_refreshGeneration && requestedSection==section){
+        setState(()=>busy=false);
+      }
+    }
   }
-  Map<String,String> fieldsFor(String s)=>switch(s){
+    Map<String,String> fieldsFor(String s)=>switch(s){
     'members'=>{'name':'الاسم','age':'العمر','address':'العنوان','hourlyPrice':'سعر الساعة بالدينار','nightlyPrice':'سعر الليلة بالدينار','description':'نبذة وتعريف','hasPlace':'يوجد مكان؟','available':'متاح للحجز؟'},
     'sessions'=>{'title':'عنوان الجلسة','memberId':'معرّف عضو الكادر (اختياري)','date':'التاريخ','description':'الوصف'},
     'banners'=>{'title':'عنوان البانر','description':'النص الظاهر'},
@@ -383,9 +418,16 @@ class _AdminHomeState extends State<AdminHome> {
     if(selectedConversationId==null){note('لا توجد محادثة عميل للرد عليها بعد');return;}
     try {
       await SharedStore.save('messages', {'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});
-      await SharedStore.save('notifications',{'target':'customer','customerId':selectedConversationId,'type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
+      var notificationSent=true;
+      try {
+        await SharedStore.save('notifications',{'target':'customer','customerId':selectedConversationId,'type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
+      } catch(e) {
+        notificationSent=false;
+        debugPrint('Admin reply notification failed: $e');
+      }
       chatController.clear();
       await refresh(silent:true);
+      if(!notificationSent)note('تم إرسال الرد، لكن تعذر إنشاء إشعار للعميل');
     } catch(e) { note('تعذر إرسال الرد: $e'); }
   }
   Future<void> createBookingFromChat() async {
@@ -401,6 +443,12 @@ class _AdminHomeState extends State<AdminHome> {
     final ids=rows.map((m)=>m['conversationId']?.toString()??'').where((id)=>id.isNotEmpty).toSet().toList()..sort();
     final messages=rows.where((m)=>m['conversationId']?.toString()==selectedConversationId).toList()..sort((a,b)=>(a['createdAt']?.toString()??'').compareTo(b['createdAt']?.toString()??''));
     return Column(children:[
+      if(refreshError!=null)Padding(padding:const EdgeInsets.fromLTRB(12,8,12,2),child:Container(padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:rose.withOpacity(.08),borderRadius:BorderRadius.circular(12)),child:Row(children:[
+        const Icon(Icons.cloud_off,color:rose,size:19),
+        const SizedBox(width:8),
+        Expanded(child:Text('تعذر تحديث الرسائل: $refreshError',maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12))),
+        IconButton(tooltip:'إعادة المحاولة',onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:plum)),
+      ]))),
       Padding(padding:const EdgeInsets.fromLTRB(12,8,12,4),child:DropdownButtonFormField<String>(
         value:ids.contains(selectedConversationId)?selectedConversationId:null,
         decoration:const InputDecoration(labelText:'اختر محادثة العميل',prefixIcon:Icon(Icons.person_search)),
