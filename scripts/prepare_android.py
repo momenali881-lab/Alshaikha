@@ -112,7 +112,7 @@ for app, (package, activity_file) in apps.items():
         styles_text = styles_file.read_text(encoding="utf-8")
         for style_name in ("LaunchTheme", "NormalTheme"):
             pattern = re.compile(
-                rf'(<style\\s+name=["\\']{style_name}["\\'][^>]*>)(.*?)(</style>)',
+                rf"""(<style\s+name=["']{re.escape(style_name)}["'][^>]*>)(.*?)(</style>)""",
                 flags=re.DOTALL,
             )
             match = pattern.search(styles_text)
@@ -126,13 +126,13 @@ for app, (package, activity_file) in apps.items():
             }
             for item_name, item_value in items.items():
                 item_pattern = re.compile(
-                    rf'<item\\s+name=["\\']{re.escape(item_name)}["\\'][^>]*>.*?</item>',
+                    rf"""<item\s+name=["']{re.escape(item_name)}["'][^>]*>.*?</item>""",
                     flags=re.DOTALL,
                 )
                 item = f'<item name="{item_name}">{item_value}</item>'
                 if item_pattern.search(body):
                     body = item_pattern.sub(item, body)
                 else:
-                    body += f"\\n        {item}"
+                    body += f"\n        {item}"
             styles_text = styles_text[:match.start(2)] + body + styles_text[match.end(2):]
         styles_file.write_text(styles_text, encoding="utf-8")
