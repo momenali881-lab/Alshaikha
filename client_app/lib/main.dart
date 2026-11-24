@@ -224,7 +224,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;int _loadGeneration=0;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();Timer? poll;Timer? bannerAuto;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
  @override void initState(){super.initState();_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -266,10 +266,26 @@ class _ClientHomeState extends State<ClientHome>{
  }
  Future<void> openNotifications()async{await load(silent:true);if(!mounted)return;showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),onTap:()async{await SharedStore.save('notifications',{...n,'read':true});await load(silent:true);})).toList()))])))));}
  Future<void> load({bool silent=false})async{
+  final generation=++_loadGeneration;
   if(!silent&&mounted)setState(()=>busy=true);
-  try{final r=await Future.wait([SharedStore.list('members'),SharedStore.list('sessions'),SharedStore.list('banners'),SharedStore.list('bookings'),SharedStore.list('favorites'),SharedStore.list('messages'),SharedStore.list('notifications'),SharedStore.list('announcements')]);
-   if(mounted)setState((){members=r[0];sessions=r[1];banners=r[2].where((b)=>b['active']!=false).take(7).toList();bookings=r[3];favorites=r[4];messages=(r[5].where((m)=>m['conversationId']==conversationId).toList()..sort((a,b)=>'${a['createdAt']??''}'.compareTo('${b['createdAt']??''}')));notifications=r[6].where((n)=>n['target']=='customer').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));announcements=r[7]..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));});
-  }catch(e){if(!silent&&mounted)note('تعذر تحميل البيانات المشتركة: $e');}finally{if(mounted)setState(()=>busy=false);}
+  try{
+   final r=await Future.wait([SharedStore.list('members'),SharedStore.list('sessions'),SharedStore.list('banners'),SharedStore.list('bookings'),SharedStore.list('favorites'),SharedStore.list('messages'),SharedStore.list('notifications'),SharedStore.list('announcements')]);
+   if(!mounted||generation!=_loadGeneration)return;
+   setState((){
+    members=r[0];
+    sessions=r[1];
+    banners=r[2].where((b)=>b['active']!=false).take(7).toList();
+    bookings=r[3];
+    favorites=r[4];
+    messages=(r[5].where((m)=>m['conversationId']==conversationId).toList()..sort((a,b)=>'${a['createdAt']??''}'.compareTo('${b['createdAt']??''}')));
+    notifications=r[6].where((n)=>n['target']=='customer').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));
+    announcements=r[7]..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));
+   });
+  }catch(e){
+   if(!silent&&mounted&&generation==_loadGeneration)note('تعذر تحميل البيانات المشتركة: $e');
+  }finally{
+   if(mounted&&generation==_loadGeneration)setState(()=>busy=false);
+  }
  }
  bool isFav(Map<String,dynamic> m)=>favorites.any((f)=>f['memberId']==m['id']);
  Future<void> toggleFav(Map<String,dynamic> m)async{final old=favorites.where((f)=>f['memberId']==m['id']).toList();if(old.isNotEmpty){await SharedStore.delete('favorites',old.first['id']);}else{await SharedStore.save('favorites',{'customerId':FirebaseAuth.instance.currentUser!.uid,'memberId':m['id'],'memberName':m['name']});}_trackActivity('favorite');await load(silent:true);}
