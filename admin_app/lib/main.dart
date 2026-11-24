@@ -469,6 +469,11 @@ class _AdminHomeState extends State<AdminHome> {
     resizeToAvoidBottomInset:true,
     body:Column(children:[
       SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(()=>section=e.key);refresh();}))).toList())),
+      if(refreshError!=null&&section!='messages')Padding(padding:const EdgeInsets.fromLTRB(12,6,12,2),child:Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),decoration:BoxDecoration(color:rose.withOpacity(.08),borderRadius:BorderRadius.circular(12)),child:Row(children:[
+        const Icon(Icons.cloud_off,color:rose,size:18),const SizedBox(width:7),
+        Expanded(child:Text('تعذر تحميل هذا القسم: $refreshError',maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:11))),
+        IconButton(tooltip:'إعادة المحاولة',visualDensity:VisualDensity.compact,onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:plum,size:19)),
+      ]))),
       Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
         Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
         if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
