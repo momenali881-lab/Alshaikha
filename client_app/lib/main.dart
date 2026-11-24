@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
@@ -226,9 +227,43 @@ class _ClientHomeState extends State<ClientHome>{
  int tab=0;bool busy=true;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();Timer? poll;Timer? bannerAuto;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
- @override void initState(){super.initState();load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
+ @override void initState(){super.initState();_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
  @override void dispose(){poll?.cancel();bannerAuto?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();super.dispose();}
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
+ Future<void> _trackActivity(String activity) async {
+  try {
+   final user=FirebaseAuth.instance.currentUser;
+   if(user==null)return;
+   final prefs=await SharedPreferences.getInstance();
+   var installationId=prefs.getString('alshaikha_installation_id');
+   if(installationId==null||installationId.isEmpty){
+    final random=math.Random.secure();
+    installationId=List.generate(32,(_)=>random.nextInt(16).toRadixString(16)).join();
+    await prefs.setString('alshaikha_installation_id',installationId);
+   }
+   final firstLaunch=prefs.getBool('alshaikha_installation_registered')!=true;
+   final updates=<String,dynamic>{
+    'installationId':installationId,
+    'lastUserId':user.uid,
+    'lastSeen':FieldValue.serverTimestamp(),
+    'lastActivity':activity,
+    'platform':'android',
+    'appVersion':'1.0.0+1',
+   };
+   if(firstLaunch)updates['firstSeen']=FieldValue.serverTimestamp();
+   if(activity=='app_open')updates['launchCount']=FieldValue.increment(1);
+   final counter=switch(activity){
+    'booking'=>'bookingCount',
+    'message'=>'messageCount',
+    'favorite'=>'favoriteCount',
+    'profile_view'=>'profileViewCount',
+    _=>null,
+   };
+   if(counter!=null)updates[counter]=FieldValue.increment(1);
+   await FirebaseFirestore.instance.collection('app_devices').doc(installationId).set(updates,SetOptions(merge:true));
+   if(firstLaunch)await prefs.setBool('alshaikha_installation_registered',true);
+  }catch(e){debugPrint('Analytics tracking failed: $e');}
+ }
  Future<void> openNotifications()async{await load(silent:true);if(!mounted)return;showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),onTap:()async{await SharedStore.save('notifications',{...n,'read':true});await load(silent:true);})).toList()))])))));}
  Future<void> load({bool silent=false})async{
   if(!silent&&mounted)setState(()=>busy=true);
@@ -237,7 +272,7 @@ class _ClientHomeState extends State<ClientHome>{
   }catch(e){if(!silent&&mounted)note('تعذر تحميل البيانات المشتركة: $e');}finally{if(mounted)setState(()=>busy=false);}
  }
  bool isFav(Map<String,dynamic> m)=>favorites.any((f)=>f['memberId']==m['id']);
- Future<void> toggleFav(Map<String,dynamic> m)async{final old=favorites.where((f)=>f['memberId']==m['id']).toList();if(old.isNotEmpty){await SharedStore.delete('favorites',old.first['id']);}else{await SharedStore.save('favorites',{'customerId':FirebaseAuth.instance.currentUser!.uid,'memberId':m['id'],'memberName':m['name']});}await load(silent:true);}
+ Future<void> toggleFav(Map<String,dynamic> m)async{final old=favorites.where((f)=>f['memberId']==m['id']).toList();if(old.isNotEmpty){await SharedStore.delete('favorites',old.first['id']);}else{await SharedStore.save('favorites',{'customerId':FirebaseAuth.instance.currentUser!.uid,'memberId':m['id'],'memberName':m['name']});}_trackActivity('favorite');await load(silent:true);}
  Future<void> book([Map<String,dynamic>? initialMember])async{
   Map<String,dynamic>? selectedMember=initialMember;
   if(selectedMember==null){for(final candidate in members){if(candidate['available']!=false){selectedMember=candidate;break;}}}
@@ -258,16 +293,17 @@ class _ClientHomeState extends State<ClientHome>{
    ]))),
    actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))],
   )));
-  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والعضو والتاريخ والوقت');}else{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerId':FirebaseAuth.instance.currentUser!.uid,'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'booking','title':'طلب حجز جديد','body':'${name.text.trim()} طلب حجزاً مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});note('تم إرسال طلب الحجز');await load();}}
+  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والعضو والتاريخ والوقت');}else{try{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerId':FirebaseAuth.instance.currentUser!.uid,'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'booking','title':'طلب حجز جديد','body':'${name.text.trim()} طلب حجزاً مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});_trackActivity('booking');note('تم إرسال طلب الحجز إلى الإدارة');await load();}catch(e){note('تعذر إرسال طلب الحجز إلى الإدارة: $e');}}}
   name.dispose();phone.dispose();notes.dispose();
  }
- Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'message','title':'رسالة جديدة من العميل','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});messageCtrl.clear();await load(silent:true);}catch(e){note('تعذر إرسال الرسالة: $e');}}
+ Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'message','title':'رسالة جديدة من العميل','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});messageCtrl.clear();_trackActivity('message');await load(silent:true);}catch(e){note('تعذر إرسال الرسالة: $e');}}
  Future<void> shareMemberProfile()async{
   if(members.isEmpty){note('لا يوجد أعضاء متاحون للمشاركة');return;}
   final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...members.map((m)=>ListTile(leading:photo(m,size:48),title:Text('${m['name']??''}'),subtitle:Text('ملف العضو'),onTap:()=>Navigator.pop(ctx,m)))]))));
   if(chosen==null)return;
   await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
   await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'message','title':'مشاركة ملف عضو جديدة','body':'شارك العميل ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
+  _trackActivity('message');
   await load(silent:true);note('تم إرسال ملف العضو داخل المحادثة');
  }
   Map<String,dynamic>? findMemberById(dynamic id){for(final member in members){if(member['id'].toString()==id?.toString())return member;}return null;}
@@ -295,7 +331,7 @@ class _ClientHomeState extends State<ClientHome>{
  Widget imageGallery(Map<String,dynamic> item,{double height=190}){final imgs=imageList(item);if(imgs.isEmpty)return const SizedBox.shrink();return SizedBox(height:height,child:PageView.builder(itemCount:imgs.length,itemBuilder:(ctx,i)=>GestureDetector(onTap:()=>viewImages(imgs,i),child:Stack(fit:StackFit.expand,children:[appImage(imgs[i],fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.broken_image))),if(imgs.length>1)Positioned(top:9,left:9,child:Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:Colors.black54,borderRadius:BorderRadius.circular(20)),child:Text('${i+1}/${imgs.length}',style:const TextStyle(color:Colors.white))))]))));}
  void openFavorites(){showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,shape:const RoundedRectangleBorder(borderRadius:BorderRadius.vertical(top:Radius.circular(26))),builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[Padding(padding:const EdgeInsets.all(16),child:Row(children:[const Icon(Icons.favorite,color:rose),const SizedBox(width:8),const Expanded(child:Text('المفضلة',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),IconButton(onPressed:()=>Navigator.pop(ctx),icon:const Icon(Icons.close))])),Expanded(child:members.where(isFav).isEmpty?const Center(child:Text('لم تضف أي عضو إلى المفضلة بعد')):ListView(padding:const EdgeInsets.all(12),children:members.where(isFav).map(memberCard).toList()))])))));}
  Widget photo(Map<String,dynamic> m,{double size=66}){final images=List<String>.from(m['images']??[]);if(images.isEmpty)return CircleAvatar(radius:size/2,child:const Icon(Icons.spa_outlined));try{return ClipRRect(borderRadius:BorderRadius.circular(12),child:appImage(images.first,width:size,height:size,fit:BoxFit.cover));}catch(_){return CircleAvatar(radius:size/2,child:const Icon(Icons.spa));}}
- void openMember(Map<String,dynamic> m){Navigator.push(context,MaterialPageRoute(builder:(_)=>Scaffold(backgroundColor:cream,appBar:AppBar(title:Text('${m['name']??'الملف الشخصي'}')),body:Directionality(textDirection:TextDirection.rtl,child:memberProfilePage(m)))));}
+ void openMember(Map<String,dynamic> m){_trackActivity('profile_view');Navigator.push(context,MaterialPageRoute(builder:(_)=>Scaffold(backgroundColor:cream,appBar:AppBar(flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.centerRight,end:Alignment.centerLeft,colors:[Color(0xFF3D126A),Color(0xFF6A1B9A),Color(0xFF914A9A)]))),backgroundColor:Colors.transparent,title:Text('${m['name']??'الملف الشخصي'}')),body:Directionality(textDirection:TextDirection.rtl,child:memberProfilePage(m)))));}
  void previewMember(Map<String,dynamic> m){showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,shape:const RoundedRectangleBorder(borderRadius:BorderRadius.vertical(top:Radius.circular(26))),builder:(c)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:Padding(padding:const EdgeInsets.fromLTRB(18,12,18,22),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
   Center(child:Container(width:42,height:4,decoration:BoxDecoration(color:Colors.grey.shade400,borderRadius:BorderRadius.circular(4)))),
   const SizedBox(height:12),
@@ -393,7 +429,7 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
  Widget accountPage()=>const AccountPage();
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-  appBar:AppBar(title:const Text('الشيخة',style:TextStyle(fontWeight:FontWeight.bold)),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.14)),icon:const Icon(Icons.favorite,color:rose)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active)))]),
+  appBar:AppBar(flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.centerRight,end:Alignment.centerLeft,colors:[Color(0xFF3D126A),Color(0xFF6A1B9A),Color(0xFF914A9A)]))),backgroundColor:Colors.transparent,title:const Text('الشيخة',style:TextStyle(fontWeight:FontWeight.bold)),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.14)),icon:const Icon(Icons.favorite,color:rose)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active)))]),
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
   bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
