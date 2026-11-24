@@ -325,7 +325,29 @@ class _ClientHomeState extends State<ClientHome>{
    Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',maxLines:1,style:const TextStyle(fontSize:11,color:Colors.black54))
   ]))
  ])));
- void openBanner(Map<String,dynamic> b){final member=findMemberById(b['linkedMemberId']??b['targetId']);if(member!=null){openMember(member);return;}final imgs=imageList(b);if(imgs.isNotEmpty){viewImages(imgs,0);return;}showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('${b['title']??'إعلان'}'),content:Text('${b['description']??''}'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]));}
+ void openBanner(Map<String,dynamic> b){
+  final member=findMemberById(b['linkedMemberId']??(b['targetType']=='member'?b['targetId']:null));
+  if(member!=null){openMember(member);return;}
+  final sessionId=(b['linkedSessionId']??(b['targetType']=='session'?b['targetId']:null))?.toString();
+  Map<String,dynamic>? linkedSession;
+  for(final session in sessions){if(session['id']?.toString()==sessionId){linkedSession=session;break;}}
+  if(linkedSession!=null){
+   showDialog(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(
+    title:Text('\${linkedSession!['title']??'الجلسة'}'),
+    content:SizedBox(width:360,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+     imageGallery(linkedSession!,height:180),
+     const SizedBox(height:8),
+     Text('\${linkedSession!['date']??''}'),
+     Text('\${linkedSession!['description']??''}'),
+    ]))),
+    actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))],
+   )));
+   return;
+  }
+  final imgs=imageList(b);
+  if(imgs.isNotEmpty){viewImages(imgs,0);return;}
+  showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('\${b['title']??'إعلان'}'),content:Text('\${b['description']??''}'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]));
+ }
  Widget bannerCard(Map<String,dynamic> b)=>Card(clipBehavior:Clip.antiAlias,margin:const EdgeInsets.symmetric(horizontal:3,vertical:2),child:InkWell(onTap:()=>openBanner(b),child:Stack(fit:StackFit.expand,children:[
  if(imageList(b).isNotEmpty)appImage(imageList(b).first,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:plum,child:const Icon(Icons.broken_image,color:Colors.white,size:40))) else Container(color:plum,child:const Icon(Icons.image_outlined,color:Colors.white,size:42)),
  const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xCC180A25)],stops:[.28,1]))),
