@@ -361,7 +361,7 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   if(banners.isNotEmpty)...[SizedBox(height:190,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
   if(banners.isEmpty)const SizedBox.shrink(),
   if(announcements.isNotEmpty)const Padding(padding:EdgeInsets.only(top:12,bottom:6),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),
-  ...announcements.map((a)=>Card(child:ListTile(leading:const Icon(Icons.campaign,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}')))),
+  ...announcements.map((a)=>Card(clipBehavior:Clip.antiAlias,child:Column(children:[if(imageList(a).isNotEmpty)imageGallery(a,height:150),ListTile(leading:const Icon(Icons.campaign,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}'))]))),
   const SizedBox(height:12),const Text('الكادر المتوفر',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
   GridView.builder(
     shrinkWrap:true,
