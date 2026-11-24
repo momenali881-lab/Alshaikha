@@ -1,0 +1,52 @@
+name: Deploy Alshaikha Firebase
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_project:
+        description: "Type alshaikha to confirm the Firebase project"
+        required: true
+        type: string
+jobs:
+  deploy:
+    if: ${{ inputs.confirm_project == 'alshaikha' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+
+      - name: Verify Firebase project
+        run: firebase projects:list --json
+
+      - name: Set admin bootstrap secret
+        env:
+          ADMIN_BOOTSTRAP_CODE: ${{ secrets.ADMIN_BOOTSTRAP_CODE }}
+        run: |
+          if [ -z "$ADMIN_BOOTSTRAP_CODE" ]; then
+            echo "Missing GitHub Actions secret ADMIN_BOOTSTRAP_CODE"
+            exit 1
+          fi
+          printf '%s' "$ADMIN_BOOTSTRAP_CODE" > "$RUNNER_TEMP/admin_bootstrap_code.txt"
+          firebase functions:secrets:set ADMIN_BOOTSTRAP_CODE --data-file "$RUNNER_TEMP/admin_bootstrap_code.txt" --project alshaikha --force
+          rm -f "$RUNNER_TEMP/admin_bootstrap_code.txt"
+
+      - name: Install Cloud Functions dependencies
+        working-directory: functions
+        run: npm install --omit=dev
+
+      - name: Deploy Functions and security rules
+        run: firebase deploy --only functions,firestore:rules,storage --project alshaikha --non-interactive
