@@ -237,6 +237,7 @@ class _AdminHomeState extends State<AdminHome> {
     return out;
   }
   Future<void> edit([Map<String,dynamic>? old]) async {
+    if(section=='banners'&&old==null&&rows.length>=7){note('وصلت إلى الحد الأقصى: 7 بانرات.');return;}
     final fields=fieldsFor(section); final ctrls=<String,TextEditingController>{};
     for(final e in fields.entries){if(section=='members'&&e.key=='address')continue;ctrls[e.key]=TextEditingController(text:'${old?[e.key]??''}');}if(section=='bookings'&&old==null)ctrls['durationMinutes']!.text='60';
     final landmark=TextEditingController(text:'${old?['landmark']??''}');
@@ -247,7 +248,9 @@ class _AdminHomeState extends State<AdminHome> {
     List<String> liveLandmarks=[];bool loadingLandmarks=false;List<String> liveAreas=[];bool loadingAreas=false;
     final bookingMembers=section=='bookings'?await SharedStore.list('members'):<Map<String,dynamic>>[];
     final bannerMembers=section=='banners'?await SharedStore.list('members'):<Map<String,dynamic>>[];
+    final bannerSessions=section=='banners'?await SharedStore.list('sessions'):<Map<String,dynamic>>[];
     String? linkedMemberId=old?['linkedMemberId']?.toString();
+    String? linkedSessionId=old?['linkedSessionId']?.toString();
     String? selectedMemberId=old?['memberId']?.toString()??(bookingMembers.isNotEmpty?bookingMembers.first['id']?.toString():null);
     DateTime? bookingDate=DateTime.tryParse('${old?['date']??''}');
     bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, active=old?['active']!=false;
@@ -285,7 +288,9 @@ class _AdminHomeState extends State<AdminHome> {
         ],
         if(section=='banners')SwitchListTile(value:active,onChanged:(v)=>ds(()=>active=v),title:const Text('عرض البانر للعملاء')),
         if(section=='banners')...[
-          DropdownButtonFormField<String>(value:bannerMembers.any((m)=>m['id']?.toString()==linkedMemberId)?linkedMemberId:'',decoration:const InputDecoration(labelText:'ربط البانر بملف عضو (اختياري)'),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط')), ...bannerMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']??'عضو'}')))],onChanged:(v)=>ds(()=>linkedMemberId=v)),
+          DropdownButtonFormField<String>(value:bannerMembers.any((m)=>m['id']?.toString()==linkedMemberId)?linkedMemberId:'',decoration:const InputDecoration(labelText:'ربط البانر بملف عضو (اختياري)'),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط')), ...bannerMembers.map((m)=>DropdownMenuItem<String>(value:m['id'].toString(),child:Text('${m['name']??'عضو'}')))],onChanged:(v)=>ds((){linkedMemberId=v;if(v!=null&&v.isNotEmpty)linkedSessionId=null;})),
+          const SizedBox(height:8),
+          DropdownButtonFormField<String>(value:bannerSessions.any((x)=>x['id']?.toString()==linkedSessionId)?linkedSessionId:'',decoration:const InputDecoration(labelText:'أو ربط البانر بجلسة (اختياري)'),items:[const DropdownMenuItem<String>(value:'',child:Text('بدون ربط بجلسة')), ...bannerSessions.map((x)=>DropdownMenuItem<String>(value:x['id'].toString(),child:Text('${x['title']??'جلسة'}')))],onChanged:(v)=>ds((){linkedSessionId=v;if(v!=null&&v.isNotEmpty)linkedMemberId=null;})),
           const SizedBox(height:8),
         ],
         if(['members','sessions','banners','announcements'].contains(section))...[
@@ -306,7 +311,7 @@ class _AdminHomeState extends State<AdminHome> {
       if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;data['province']=selectedProvince??'';data['area']=areaName.text.trim();data['district']=areaName.text.trim();data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,areaName.text.trim(),data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
       if(section=='banners')data['active']=active;
       if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
-      if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['targetType']=(linkedMemberId==null||linkedMemberId!.isEmpty)?'none':'member';data['targetId']=data['linkedMemberId'];}
+      if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['linkedSessionId']=(linkedSessionId==null||linkedSessionId!.isEmpty)?null:linkedSessionId;data['targetType']=data['linkedMemberId']!=null?'member':data['linkedSessionId']!=null?'session':'none';data['targetId']=data['linkedMemberId']??data['linkedSessionId'];}
       if(section=='announcements'){data['createdAt']=DateTime.now().toIso8601String();}
       if(section=='members'&&(selectedProvince==null||areaName.text.trim().isEmpty||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||ctrls['customerName']!.text.trim().isEmpty)){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else try{final savedId=await SharedStore.save(section,data);if(section=='bookings'&&fromChatBooking&&selectedConversationId!=null){await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'bookingCard','bookingId':savedId,'customerName':data['customerName'],'memberId':data['memberId'],'memberName':data['memberName'],'date':data['date'],'durationMinutes':data['durationMinutes']??60,'notes':data['notes']??'','status':data['status']??'قيد المراجعة','text':'تم إنشاء بطاقة حجز','createdAt':DateTime.now().toIso8601String()});}if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':data['title']??'إعلان جديد','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'&&data['customerId']!=null){await SharedStore.save('notifications',{'target':'customer','customerId':data['customerId'],'type':'booking','title':'تم تسجيل حجز باسم ${data['customerName']}','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':data['id']});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
