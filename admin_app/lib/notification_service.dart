@@ -49,21 +49,37 @@ class NotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen((message)=>_emit(message.data));
     final initial=await FirebaseMessaging.instance.getInitialMessage();
     if(initial!=null)_initialTap=Map<String,dynamic>.from(initial.data);
-    FirebaseMessaging.instance.onTokenRefresh.listen(_saveToken);
-    FirebaseAuth.instance.authStateChanges().listen((user){if(user!=null)unawaited(syncToken());});
-    if(FirebaseAuth.instance.currentUser!=null)await syncToken();
+    FirebaseMessaging.instance.onTokenRefresh.listen((token) => unawaited(_saveToken(token)));
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) unawaited(_syncTokenSafely());
+    });
+    if (FirebaseAuth.instance.currentUser != null) await _syncTokenSafely();
+  }
+
+  // Push-token registration is best-effort and must never affect authentication.
+  static Future<void> _syncTokenSafely() async {
+    try {
+      await syncToken();
+    } catch (_) {
+      // Notifications may be unavailable; the user can still use the app.
+    }
   }
 
   static Future<void> syncToken() async {
-    final token=await FirebaseMessaging.instance.getToken();
-    if(token!=null)await _saveToken(token);
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token != null) await _saveToken(token);
   }
+
   static Future<void> _saveToken(String token) async {
-    final user=FirebaseAuth.instance.currentUser;
-    if(user==null||token.isEmpty)return;
-    await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
-      'fcmTokens':FieldValue.arrayUnion([token]),
-    },SetOptions(merge:true));
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || token.isEmpty) return;
+    try {
+      await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
+        'fcmTokens': FieldValue.arrayUnion([token]),
+      }, SetOptions(merge: true));
+    } catch (_) {
+      // A Firestore rule/network failure must not sign out or block the account.
+    }
   }
   static Map<String,dynamic>? takeInitialTap(){final value=_initialTap;_initialTap=null;return value;}
   static void _emit(Map<dynamic,dynamic> data){
