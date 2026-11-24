@@ -28,6 +28,30 @@ for app, (package, activity_file) in apps.items():
     else:
         shutil.copyfile(source / "ClientSharedStoreChannel.kt", pkg_dir / "ClientSharedStoreChannel.kt")
 
+    # flutter_local_notifications requires Android core library desugaring.
+    gradle_file = android / "app" / "build.gradle.kts"
+    gradle_text = gradle_file.read_text(encoding="utf-8")
+    if "isCoreLibraryDesugaringEnabled" not in gradle_text:
+        compile_options = re.search(r"compileOptions\\s*\\{", gradle_text)
+        if not compile_options:
+            raise RuntimeError(f"Missing compileOptions block in {gradle_file}")
+        insert_at = compile_options.end()
+        gradle_text = (gradle_text[:insert_at] +
+                       "\\n        isCoreLibraryDesugaringEnabled = true" +
+                       gradle_text[insert_at:])
+    if "desugar_jdk_libs" not in gradle_text:
+        dependencies = re.search(r"dependencies\\s*\\{", gradle_text)
+        if dependencies:
+            insert_at = dependencies.end()
+            gradle_text = (gradle_text[:insert_at] +
+                           '\\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")' +
+                           gradle_text[insert_at:])
+        else:
+            gradle_text += ('\\ndependencies {\\n' +
+                            '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\\n' +
+                            '}\\n')
+    gradle_file.write_text(gradle_text, encoding="utf-8")
+
     manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
     text = manifest.read_text()
     internet = '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n'
