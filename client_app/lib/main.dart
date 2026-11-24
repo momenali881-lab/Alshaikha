@@ -233,7 +233,7 @@ class _ClientHomeState extends State<ClientHome>{
  Future<void> load({bool silent=false})async{
   if(!silent&&mounted)setState(()=>busy=true);
   try{final r=await Future.wait([SharedStore.list('members'),SharedStore.list('sessions'),SharedStore.list('banners'),SharedStore.list('bookings'),SharedStore.list('favorites'),SharedStore.list('messages'),SharedStore.list('notifications'),SharedStore.list('announcements')]);
-   if(mounted)setState((){members=r[0];sessions=r[1];banners=r[2].where((b)=>b['active']!=false).take(7).toList();bookings=r[3];favorites=r[4];messages=(r[5].where((m)=>m['conversationId']==conversationId).toList()..sort((a,b)=>'${a['createdAt']??''}'.compareTo('${b['createdAt']??''}')));notifications=r[6].where((n)=>n['target']=='customer'||n['target']=='all').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));announcements=r[7]..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));});
+   if(mounted)setState((){members=r[0];sessions=r[1];banners=r[2].where((b)=>b['active']!=false).take(7).toList();bookings=r[3];favorites=r[4];messages=(r[5].where((m)=>m['conversationId']==conversationId).toList()..sort((a,b)=>'${a['createdAt']??''}'.compareTo('${b['createdAt']??''}')));notifications=r[6].where((n)=>n['target']=='customer').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));announcements=r[7]..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));});
   }catch(e){if(!silent&&mounted)note('تعذر تحميل البيانات المشتركة: $e');}finally{if(mounted)setState(()=>busy=false);}
  }
  bool isFav(Map<String,dynamic> m)=>favorites.any((f)=>f['memberId']==m['id']);
@@ -267,6 +267,7 @@ class _ClientHomeState extends State<ClientHome>{
   final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...members.map((m)=>ListTile(leading:photo(m,size:48),title:Text('${m['name']??''}'),subtitle:Text('ملف العضو'),onTap:()=>Navigator.pop(ctx,m)))]))));
   if(chosen==null)return;
   await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
+  await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'message','title':'مشاركة ملف عضو جديدة','body':'شارك العميل ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
   await load(silent:true);note('تم إرسال ملف العضو داخل المحادثة');
  }
   Map<String,dynamic>? findMemberById(dynamic id){for(final member in members){if(member['id'].toString()==id?.toString())return member;}return null;}
