@@ -12,10 +12,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
 import 'image_utils.dart';
 import 'account_page.dart';
+import 'shared/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
+  await NotificationService.initialize();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:Colors.transparent,statusBarIconBrightness:Brightness.dark,systemNavigationBarColor:Colors.transparent,systemNavigationBarIconBrightness:Brightness.dark));
   runApp(const SheikhaClientApp());
@@ -228,10 +230,10 @@ class LoginWaveClipper extends CustomClipper<Path>{
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
  int tab=0;bool busy=true;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
- List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];
+ List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
- @override void initState(){super.initState();_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
- @override void dispose(){poll?.cancel();bannerAuto?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();clientChatScrollController.dispose();super.dispose();}
+ @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
+ @override void dispose(){poll?.cancel();bannerAuto?.cancel();notificationTapSub?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();clientChatScrollController.dispose();super.dispose();}
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
  Future<void> _trackActivity(String activity) async {
   try {
@@ -267,11 +269,47 @@ class _ClientHomeState extends State<ClientHome>{
    if(firstLaunch)await prefs.setBool('alshaikha_installation_registered',true);
   }catch(e){debugPrint('Analytics tracking failed: $e');}
  }
- Future<void> openNotifications()async{await load(silent:true);if(!mounted)return;showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),onTap:()async{await SharedStore.save('notifications',{...n,'read':true});await load(silent:true);})).toList()))])))));}
+Future<void> handleNotificationTap(Map<String,dynamic> n)async{
+  final id=(n['id']??n['notificationId']??'').toString();
+  if(id.isNotEmpty&&n['target']!='all'){try{await SharedStore.save('notifications',{...n,'id':id,'read':true});}catch(_){}}
+  await load(silent:true);if(!mounted)return;
+  final type=(n['type']??'').toString();
+  if(type=='message'){setState(()=>tab=1);WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});}
+  else if(type=='booking'){
+    final bookingId=(n['bookingId']??'').toString();
+    setState(() {tab=2;selectedBookingId=bookingId;});
+    final found=bookings.where((b)=>b['id']?.toString()==bookingId).toList();
+    if(found.isNotEmpty)WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)showClientBooking(found.first);});
+  }else{setState(()=>tab=0);}
+}
+Future<void> showClientBooking(Map<String,dynamic> b)async{
+  await showDialog<void>(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(
+    title:const Text('تفاصيل الحجز'),
+    content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Text('عضو الكادر: ${b['memberName']??'-'}'),Text('الموعد: ${b['date']??'-'}'),
+      Text('الحالة: ${b['status']??'قيد المراجعة'}'),
+      if((b['notes']??'').toString().isNotEmpty)Text('ملاحظات: ${b['notes']}')
+    ]),
+    actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]
+  )));
+}
+Future<void> openNotifications()async{
+  await load(silent:true);if(!mounted)return;
+  showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:cream,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:SizedBox(height:MediaQuery.of(ctx).size.height*.72,child:Column(children:[
+    const Padding(padding:EdgeInsets.all(16),child:Text('الإشعارات',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold))),
+    Expanded(child:notifications.isEmpty?const Center(child:Text('لا توجد إشعارات حالياً')):ListView(children:notifications.map((n)=>ListTile(
+      leading:Icon(n['type']=='booking'?Icons.event_available:n['type']=='message'?Icons.forum:Icons.campaign,color:rose),
+      title:Text('${n['title']??'إشعار'}'),subtitle:Text('${n['body']??''}'),
+      trailing:n['read']==true?const Icon(Icons.done,color:teal):const Icon(Icons.circle,color:rose,size:10),
+      onTap:(){Navigator.pop(ctx);handleNotificationTap(n);}
+    )).toList()))
+  ])))));
+}
+
  Future<void> load({bool silent=false})async{
   if(!silent&&mounted)setState(()=>busy=true);
   try{final r=await Future.wait([SharedStore.list('members'),SharedStore.list('sessions'),SharedStore.list('banners'),SharedStore.list('bookings'),SharedStore.list('favorites'),SharedStore.list('messages'),SharedStore.list('notifications'),SharedStore.list('announcements')]);
-   if(mounted)setState((){members=r[0];sessions=r[1];banners=r[2].where((b)=>b['active']!=false).take(7).toList();bookings=r[3];favorites=r[4];messages=(r[5].where((m)=>m['conversationId']==conversationId).toList()..sort((a,b)=>'${a['createdAt']??''}'.compareTo('${b['createdAt']??''}')));notifications=r[6].where((n)=>n['target']=='customer').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));announcements=r[7]..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));});
+   if(mounted)setState((){members=r[0];sessions=r[1];banners=r[2].where((b)=>b['active']!=false).take(7).toList();bookings=r[3];favorites=r[4];messages=(r[5].where((m)=>m['conversationId']==conversationId).toList()..sort((a,b)=>'${a['createdAt']??''}'.compareTo('${b['createdAt']??''}')));notifications=r[6].where((n)=>n['target']=='customer'||n['target']=='all').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));announcements=r[7]..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));});
   }catch(e){if(!silent&&mounted)note('تعذر تحميل البيانات المشتركة: $e');}finally{if(mounted)setState(()=>busy=false);}
  }
  bool isFav(Map<String,dynamic> m)=>favorites.any((f)=>f['memberId']==m['id']);
@@ -296,10 +334,10 @@ class _ClientHomeState extends State<ClientHome>{
    ]))),
    actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))],
   )));
-  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والعضو والتاريخ والوقت');}else{try{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerId':FirebaseAuth.instance.currentUser!.uid,'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});try{await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'booking','title':'طلب حجز جديد','body':'${name.text.trim()} طلب حجزاً مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});}catch(notificationError){debugPrint('Booking notification failed: $notificationError');}_trackActivity('booking');note('تم إرسال طلب الحجز إلى الإدارة');await load();}catch(e){note('تعذر إرسال طلب الحجز إلى الإدارة: $e');}}}
+  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والعضو والتاريخ والوقت');}else{try{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerId':FirebaseAuth.instance.currentUser!.uid,'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});try{await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'customerId':FirebaseAuth.instance.currentUser!.uid,'conversationId':conversationId,'type':'booking','title':'طلب حجز جديد','body':'${name.text.trim()} طلب حجزاً مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});}catch(notificationError){debugPrint('Booking notification failed: $notificationError');}_trackActivity('booking');note('تم إرسال طلب الحجز إلى الإدارة');await load();}catch(e){note('تعذر إرسال طلب الحجز إلى الإدارة: $e');}}}
   name.dispose();phone.dispose();notes.dispose();
  }
- Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});try{await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'message','title':'رسالة جديدة من العميل','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});}catch(notificationError){debugPrint('Message notification failed: $notificationError');}messageCtrl.clear();_trackActivity('message');await load(silent:true);WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});}catch(e){note('تعذر إرسال الرسالة: $e');}}
+ Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});try{await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'customerId':FirebaseAuth.instance.currentUser!.uid,'conversationId':conversationId,'type':'message','title':'رسالة جديدة من العميل','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});}catch(notificationError){debugPrint('Message notification failed: $notificationError');}messageCtrl.clear();_trackActivity('message');await load(silent:true);WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});}catch(e){note('تعذر إرسال الرسالة: $e');}}
  Future<void> shareMemberProfile()async{
   if(members.isEmpty){note('لا يوجد أعضاء متاحون للمشاركة');return;}
   final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...members.map((m)=>ListTile(leading:photo(m,size:48),title:Text('${m['name']??''}'),subtitle:Text('ملف العضو'),onTap:()=>Navigator.pop(ctx,m)))]))));
@@ -423,16 +461,15 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   ]))),
  ]);
 
- Widget bookingsPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),FilledButton.icon(onPressed:()=>book(),icon:const Icon(Icons.add_circle_outline),label:const Text('حجز موعد جديد')),const SizedBox(height:10),...bookings.map((b)=>Card(child:ListTile(leading:const Icon(Icons.event_available),title:Text('${b['memberName']??'حجز'}'),subtitle:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')))),if(bookings.isEmpty)const Text('لا توجد حجوزات حتى الآن.')]);
+ Widget bookingsPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),FilledButton.icon(onPressed:()=>book(),icon:const Icon(Icons.add_circle_outline),label:const Text('حجز موعد جديد')),const SizedBox(height:10),...bookings.map((b)=>Card(color:b['id']?.toString()==selectedBookingId?const Color(0xFFFFE4EF):Colors.white,child:ListTile(onTap:()=>showClientBooking(b),leading:const Icon(Icons.event_available),title:Text('${b['memberName']??'حجز'}'),subtitle:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')))),if(bookings.isEmpty)const Text('لا توجد حجوزات حتى الآن.')]);
  Widget chatPage()=>Column(children:[
-  const ListTile(leading:CircleAvatar(backgroundColor:Color(0xFFFFE4EF),child:Icon(Icons.support_agent,color:rose)),title:Text('التواصل مع الإدارة'),subtitle:Text('يمكنك إرسال الرسائل واستقبال رد الإدارة هنا')),
   Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView.builder(controller:clientChatScrollController,reverse:true,padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index)=>chatMessage(messages[messages.length-1-index]))),
   SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onTap:(){WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});},onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
  ]);
  Widget accountPage()=>const AccountPage();
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-  appBar:AppBar(toolbarHeight:64,backgroundColor:const Color(0xFFFFB6D0),surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.centerRight,end:Alignment.centerLeft,colors:[Color(0xFFFF91B8),Color(0xFFFFB6D0),Color(0xFFFFD9E6)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:23,letterSpacing:.3))]),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:Colors.black.withOpacity(.06)),icon:const Icon(Icons.favorite,color:Colors.black)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black)))]),
+  appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),backgroundColor:cream,flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:23,letterSpacing:.3))]),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:Colors.black.withOpacity(.06)),icon:const Icon(Icons.favorite,color:Colors.black)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black)))]),
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
   bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])

@@ -13,6 +13,8 @@ for app in ("admin_app", "client_app"):
     app_shared.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "shared" / "iraq_locations.dart",
                     app_shared / "iraq_locations.dart")
+    shutil.copyfile(root / "shared" / "notification_service.dart",
+                    app_shared / "notification_service.dart")
 
 for app, (package, activity_file) in apps.items():
     android = root / app / "android"
@@ -28,7 +30,7 @@ for app, (package, activity_file) in apps.items():
 
     manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
     text = manifest.read_text()
-    internet = '<uses-permission android:name="android.permission.INTERNET" />\n'
+    internet = '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n'
     if 'android.permission.INTERNET' not in text:
         manifest_start = text.find('<manifest')
         close = text.find('>', manifest_start)
