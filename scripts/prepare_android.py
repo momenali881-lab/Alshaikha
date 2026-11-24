@@ -13,6 +13,8 @@ for app in ("admin_app", "client_app"):
     app_shared.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "shared" / "iraq_locations.dart",
                     app_shared / "iraq_locations.dart")
+    shutil.copyfile(root / "shared" / "notification_service.dart",
+                    app_shared / "notification_service.dart")
 
 for app, (package, activity_file) in apps.items():
     android = root / app / "android"
@@ -28,7 +30,7 @@ for app, (package, activity_file) in apps.items():
 
     manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
     text = manifest.read_text()
-    internet = '<uses-permission android:name="android.permission.INTERNET" />\n'
+    internet = '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n'
     if 'android.permission.INTERNET' not in text:
         manifest_start = text.find('<manifest')
         close = text.find('>', manifest_start)
@@ -62,6 +64,10 @@ for app, (package, activity_file) in apps.items():
                                   'android:windowSoftInputMode="adjustResize"', activity_tag)
         else:
             activity_tag += ' android:windowSoftInputMode="adjustResize"'
+        # Let the customer app draw into the display-cutout/status-bar area so
+        # the pink background fills the entire screen behind the camera cutout.
+        if app == "client_app" and 'android:windowLayoutInDisplayCutoutMode=' not in activity_tag:
+            activity_tag += ' android:windowLayoutInDisplayCutoutMode="shortEdges"'
         text = text[:match.start()] + activity_tag + match.group(2) + text[match.end():]
     # Use the user's exact uploaded artwork as the launcher icon in both apps.
     if app == "client_app":
