@@ -333,12 +333,12 @@ class _ClientHomeState extends State<ClientHome>{
   for(final session in sessions){if(session['id']?.toString()==sessionId){linkedSession=session;break;}}
   if(linkedSession!=null){
    showDialog(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(
-    title:Text('\${linkedSession!['title']??'الجلسة'}'),
+    title:Text('${linkedSession!['title']??'الجلسة'}'),
     content:SizedBox(width:360,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
      imageGallery(linkedSession!,height:180),
      const SizedBox(height:8),
-     Text('\${linkedSession!['date']??''}'),
-     Text('\${linkedSession!['description']??''}'),
+     Text('${linkedSession!['date']??''}'),
+     Text('${linkedSession!['description']??''}'),
     ]))),
     actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))],
    )));
@@ -346,7 +346,7 @@ class _ClientHomeState extends State<ClientHome>{
   }
   final imgs=imageList(b);
   if(imgs.isNotEmpty){viewImages(imgs,0);return;}
-  showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('\${b['title']??'إعلان'}'),content:Text('\${b['description']??''}'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]));
+  showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('${b['title']??'إعلان'}'),content:Text('${b['description']??''}'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]));
  }
  Widget bannerCard(Map<String,dynamic> b)=>Card(clipBehavior:Clip.antiAlias,margin:const EdgeInsets.symmetric(horizontal:3,vertical:2),child:InkWell(onTap:()=>openBanner(b),child:Stack(fit:StackFit.expand,children:[
  if(imageList(b).isNotEmpty)appImage(imageList(b).first,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:plum,child:const Icon(Icons.broken_image,color:Colors.white,size:40))) else Container(color:plum,child:const Icon(Icons.image_outlined,color:Colors.white,size:42)),
