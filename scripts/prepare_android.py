@@ -103,3 +103,36 @@ for app, (package, activity_file) in apps.items():
             resized.save(mipmap / f"ic_launcher{icon_extension}", quality=100, subsampling=0)
 
     manifest.write_text(text, encoding="utf-8")
+
+    # The customer app keeps the Android status bar visible as a purple strip,
+    # hides the bottom system navigation overlay, and avoids drawing into the
+    # display cutout/notch area on supported Android versions.
+    if app == "client_app":
+        styles_file = android / "app" / "src" / "main" / "res" / "values" / "styles.xml"
+        styles_text = styles_file.read_text(encoding="utf-8")
+        for style_name in ("LaunchTheme", "NormalTheme"):
+            pattern = re.compile(
+                rf'(<style\\s+name=["\\']{style_name}["\\'][^>]*>)(.*?)(</style>)',
+                flags=re.DOTALL,
+            )
+            match = pattern.search(styles_text)
+            if not match:
+                raise RuntimeError(f"Missing Android {style_name} in {styles_file}")
+            body = match.group(2)
+            items = {
+                "android:windowLayoutInDisplayCutoutMode": "never",
+                "android:statusBarColor": "#6A1B9A",
+                "android:windowLightStatusBar": "false",
+            }
+            for item_name, item_value in items.items():
+                item_pattern = re.compile(
+                    rf'<item\\s+name=["\\']{re.escape(item_name)}["\\'][^>]*>.*?</item>',
+                    flags=re.DOTALL,
+                )
+                item = f'<item name="{item_name}">{item_value}</item>'
+                if item_pattern.search(body):
+                    body = item_pattern.sub(item, body)
+                else:
+                    body += f"\\n        {item}"
+            styles_text = styles_text[:match.start(2)] + body + styles_text[match.end(2):]
+        styles_file.write_text(styles_text, encoding="utf-8")
