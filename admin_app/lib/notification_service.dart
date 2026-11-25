@@ -74,9 +74,9 @@ class NotificationService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || token.isEmpty) return;
     try {
-      await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
+      await FirebaseFirestore.instance.collection('profiles').doc(user.uid).update({
         'fcmTokens': FieldValue.arrayUnion([token]),
-      }, SetOptions(merge: true));
+      });
     } catch (_) {
       // A Firestore rule/network failure must not sign out or block the account.
     }
