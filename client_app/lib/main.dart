@@ -20,14 +20,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
   try {
-    await NotificationService.initialize();
-  } catch (_) {
-    // Push notifications are optional; never prevent the app from opening.
-  }
-  try {
     OneSignalService.initialize('603a9d8a-365a-4b6f-befd-b213f725c09e');
   } catch (_) {
     // OneSignal is optional; never prevent the app from opening.
+  }
+  try {
+    await NotificationService.initialize();
+  } catch (_) {
+    // Push notifications are optional; never prevent the app from opening.
   }
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:Colors.transparent,statusBarIconBrightness:Brightness.dark,systemNavigationBarColor:Colors.transparent,systemNavigationBarIconBrightness:Brightness.dark));
