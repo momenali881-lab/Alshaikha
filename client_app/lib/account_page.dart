@@ -61,6 +61,11 @@ class _AccountPageState extends State<AccountPage> {
       var uploadedAvatarUrl = _avatarUrl;
       if (_avatarFile != null) {
         uploadedAvatarUrl = await GetProntoUploader.upload(_avatarFile!);
+      } else if ((uploadedAvatarUrl == null || uploadedAvatarUrl.isEmpty) && _avatar != null && _avatar!.isNotEmpty) {
+        final legacyBytes = base64Decode(_avatar!);
+        uploadedAvatarUrl = await GetProntoUploader.upload(
+          XFile.fromData(legacyBytes, name: 'customer-avatar.jpg', mimeType: 'image/jpeg'),
+        );
       }
       await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
         'uid': user.uid,
