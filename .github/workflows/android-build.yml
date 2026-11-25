@@ -3,7 +3,7 @@ name: Build Android APKs
 on:
   workflow_dispatch:
   push:
-    branches: [main, notifications-bookings-polish]
+    branches: [main, notifications-bookings-polish, onesignal-integration]
   pull_request:
     branches: [main]
 
