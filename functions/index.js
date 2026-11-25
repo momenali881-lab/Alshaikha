@@ -133,7 +133,7 @@ exports.deliverAppNotification = onDocumentCreated("notifications/{notificationI
     const batch=entries.slice(start,start+500);
     const result=await getMessaging().sendEachForMulticast({
       tokens:batch.map(([token])=>token),
-      notification:{title:String(notification.title||"الشيخة"),body:String(notification.body||"لديك إشعار جديد"),...((notification.senderImageUrl||target==="customer")?{image:String(notification.senderImageUrl||APP_NOTIFICATION_IMAGE)}:{})},
+      notification:{title:String(notification.title||"الشيخة"),body:String(notification.body||"لديك إشعار جديد")},
       data,
       android:{priority:"high",notification:{channelId:"alshaikha_notifications",sound:"default"}}
     });
