@@ -145,4 +145,4 @@ for app, (package, activity_file) in apps.items():
             resized = original.convert("RGB").resize((size, size), Image.Resampling.LANCZOS)
             resized.save(mipmap / f"ic_launcher{icon_extension}", quality=100, subsampling=0)
 
-    manifest.write_text(text, encoding="utf-8")
+    # Install the monochrome notification glyph without touching launcher icons.\n    notification_icon = root / "assets" / "ic_stat_alshaikha.png"\n    if not notification_icon.is_file():\n        raise FileNotFoundError(f"Missing notification icon: {notification_icon}")\n    drawable = android / "app" / "src" / "main" / "res" / "drawable"\n    drawable.mkdir(parents=True, exist_ok=True)\n    shutil.copyfile(notification_icon, drawable / "ic_stat_alshaikha.png")\n\n    manifest.write_text(text, encoding="utf-8")
