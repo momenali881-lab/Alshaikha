@@ -454,7 +454,18 @@ class _AdminHomeState extends State<AdminHome> {
     final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('حذف السجل؟'),content:const Text('لا يمكن التراجع عن الحذف.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('حذف'))]));
     if(yes==true){await SharedStore.delete(section,item['id']);await refresh();}
   }
-  Future<void> updateBooking(Map<String,dynamic> b,String status)async{if((b['status']??'قيد المراجعة')!=status){final d={...b,'status':status};await SharedStore.save('bookings',d);await SharedStore.save('notifications',{'target':'customer','customerId':b['customerId'],'conversationId':b['customerId'],'type':'booking','title':'تحديث طلب الحجز','body':'تم تحديث حالة حجز ${b['memberName']??''} إلى $status','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':b['id']});}await refresh();}
+  Future<void> updateBooking(Map<String,dynamic> b,String status)async{
+    if((b['status']??'قيد المراجعة')!=status){
+      final d={...b,'status':status};
+      await SharedStore.save('bookings',d);
+      final cancelled=status.contains('إلغاء')||status.contains('ملغ')||status.contains('رفض');
+      final confirmed=status.contains('تأكيد')||status.contains('مؤكد')||status.contains('مقبول');
+      final title=cancelled?'تم إلغاء الحجز':confirmed?'تم تأكيد الحجز':'تحديث حالة الحجز';
+      final body=cancelled?'نعتذر، تم إلغاء حجزك مع ${b['memberName']??''}':confirmed?'تم تأكيد حجزك مع ${b['memberName']??''} في الموعد المحدد':'حالة حجزك مع ${b['memberName']??''}: $status';
+      await SharedStore.save('notifications',{'target':'customer','customerId':b['customerId'],'conversationId':b['customerId'],'type':'booking','title':title,'senderName':'الإدارة','body':body,'createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':b['id'],'bookingStatus':status});
+    }
+    await refresh();
+  }
   Widget adminBookingsPage(){
     final grouped=<String,List<Map<String,dynamic>>>{};
     for(final booking in rows){
