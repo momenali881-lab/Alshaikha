@@ -346,14 +346,16 @@ Future<void> openNotifications()async{
  Future<void> book([Map<String,dynamic>? initialMember])async{
   Map<String,dynamic>? selectedMember=initialMember;
   if(selectedMember==null){for(final candidate in members){if(candidate['available']!=false){selectedMember=candidate;break;}}}
-  final name=TextEditingController(),phone=TextEditingController(),notes=TextEditingController();
+  final phone=TextEditingController(),notes=TextEditingController();
+  final user=FirebaseAuth.instance.currentUser;
+  final profileData=user==null? <String,dynamic>{} : ((await FirebaseFirestore.instance.collection('profiles').doc(user.uid).get()).data()??<String,dynamic>{});
+  final customerName=(profileData['displayName']??user?.displayName??profileData['username']??'عميل').toString().trim();
   DateTime? selectedDate; TimeOfDay? selectedTime;
   final result=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,ds)=>AlertDialog(
    title:const Text('طلب حجز موعد'),
    content:SizedBox(width:420,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
     DropdownButtonFormField<String>(value:selectedMember?['id']?.toString(),decoration:const InputDecoration(labelText:'اختيار العضو',prefixIcon:Icon(Icons.spa),border:OutlineInputBorder()),items:members.where((member)=>member['available']!=false).map((member)=>DropdownMenuItem<String>(value:member['id'].toString(),child:Text('${member['name']??'عضو'}'))).toList(),onChanged:(v)=>ds(()=>selectedMember=members.firstWhere((member)=>member['id'].toString()==v)),),
     const SizedBox(height:10),
-    TextField(controller:name,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'الاسم الكامل',prefixIcon:Icon(Icons.person))),
     TextField(controller:phone,keyboardType:TextInputType.phone,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(labelText:'رقم الهاتف',prefixIcon:Icon(Icons.phone))),
     const SizedBox(height:12),
     const SizedBox(height:10),
@@ -363,8 +365,8 @@ Future<void> openNotifications()async{
    ]))),
    actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))],
   )));
-  if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والعضو والتاريخ والوقت');}else{try{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerId':FirebaseAuth.instance.currentUser!.uid,'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});try{final bookingUser=FirebaseAuth.instance.currentUser!;final profile=(await FirebaseFirestore.instance.collection('profiles').doc(bookingUser.uid).get()).data()??<String,dynamic>{};await SharedStore.save('notifications',{'target':'admin','createdBy':bookingUser.uid,'customerId':bookingUser.uid,'conversationId':conversationId,'type':'booking','title':'طلب حجز جديد من ${name.text.trim()}','senderName':name.text.trim(),'senderImageUrl':profile['avatarUrl']??profile['photoUrl']??'','body':'طلب حجز مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});}catch(notificationError){debugPrint('Booking notification failed: $notificationError');}_trackActivity('booking');note('تم إرسال طلب الحجز إلى الإدارة');await load();}catch(e){note('تعذر إرسال طلب الحجز إلى الإدارة: $e');}}}
-  name.dispose();phone.dispose();notes.dispose();
+  if(result==true){if(customerName.isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('تعذر تحديد اسم الحساب أو لم تكتمل بيانات الحجز');}else{try{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerId':FirebaseAuth.instance.currentUser!.uid,'customerName':customerName,'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});try{final bookingUser=FirebaseAuth.instance.currentUser!;final profile=(await FirebaseFirestore.instance.collection('profiles').doc(bookingUser.uid).get()).data()??<String,dynamic>{};await SharedStore.save('notifications',{'target':'admin','createdBy':bookingUser.uid,'customerId':bookingUser.uid,'conversationId':conversationId,'type':'booking','title':'طلب حجز جديد من $customerName','senderName':customerName,'senderImageUrl':profile['avatarUrl']??profile['photoUrl']??'','body':'طلب حجز مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});}catch(notificationError){debugPrint('Booking notification failed: $notificationError');}_trackActivity('booking');note('تم إرسال طلب الحجز إلى الإدارة');await load();}catch(e){note('تعذر إرسال طلب الحجز إلى الإدارة: $e');}}}
+  phone.dispose();notes.dispose();
  }
  Future<void> sendMessage()async{
   final value=messageCtrl.text.trim();
