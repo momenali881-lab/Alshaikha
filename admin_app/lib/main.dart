@@ -19,14 +19,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
   try {
-    await NotificationService.initialize();
-  } catch (_) {
-    // Push notifications are optional; never prevent the app from opening.
-  }
-  try {
     OneSignalService.initialize('5ccd4e96-a64c-4565-9ae5-964548bed976');
   } catch (_) {
     // OneSignal is optional; never prevent the app from opening.
+  }
+  try {
+    await NotificationService.initialize();
+  } catch (_) {
+    // Push notifications are optional; never prevent the app from opening.
   }
   runApp(const SheikhaAdminApp());
 }
