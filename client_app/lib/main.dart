@@ -372,16 +372,6 @@ Future<void> openNotifications()async{
   final value=messageCtrl.text.trim();
   final user=FirebaseAuth.instance.currentUser;
   if(value.isEmpty||user==null||sendingMessage)return;
-  try {
-    final deleted = await FirebaseFirestore.instance.collection('deleted_conversations').doc(user.uid).get();
-    if (deleted.exists && deleted.data()?['deleted'] == true) {
-      note('تم حذف هذه المحادثة من الإدارة ولا يمكن إرسال رسائل جديدة.');
-      return;
-    }
-  } catch (e) {
-    note('تعذر التحقق من حالة المحادثة. حاول مرة أخرى.');
-    return;
-  }
   final now=DateTime.now();
   final localId='local_${now.microsecondsSinceEpoch}';
   final optimistic=<String,dynamic>{'id':localId,'_localId':localId,'conversationId':conversationId,'senderId':user.uid,'sender':'عميل','type':'text','text':value,'createdAt':now.toIso8601String(),'pending':true};
