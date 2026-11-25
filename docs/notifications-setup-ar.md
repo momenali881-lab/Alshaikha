@@ -5,7 +5,7 @@
 ## 1. إنشاء مشروع Apps Script
 1. افتح https://script.google.com وأنشئ مشروعاً جديداً.
 2. افتح الملف `Code.gs`.
-3. انسخ محتوى الملف `scripts/onesignal_dispatcher.gs` من فرع `onesignal-integration` والصقه في `Code.gs`.
+3. انسخ محتوى الملف `scripts/onesignal_dispatcher.gs` من فرع `feature/onesignal-on-latest-app` أو طلب المراجعة الخاص بدمج OneSignal والصقه في `Code.gs`.
 
 ## 2. إضافة المفاتيح بشكل خاص
 من إعدادات المشروع افتح **Project Settings → Script Properties** وأضف:
