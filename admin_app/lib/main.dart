@@ -249,17 +249,10 @@ class _AdminHomeState extends State<AdminHome> {
   void _showTopNotification(Map<String,dynamic> n){
     final messenger=ScaffoldMessenger.of(context);
     messenger.hideCurrentMaterialBanner();
-    final customerId=(n['customerId']??n['createdBy']??'').toString();
-    final matches=customerProfiles.where((p)=>p['id']?.toString()==customerId).toList();
-    final avatar=(matches.isEmpty?'':(matches.first['avatarBase64']??'').toString());
-    final avatarUrl=(matches.isEmpty?'':(matches.first['avatarUrl']??matches.first['photoUrl']??'').toString());
-    Widget leading=const CircleAvatar(backgroundColor:Color(0xFFFFE4EF),child:Icon(Icons.person,color:rose));
-    if(avatarUrl.startsWith('https://')){leading=CircleAvatar(backgroundImage:NetworkImage(avatarUrl));}
-    else if(avatar.isNotEmpty){try{leading=CircleAvatar(backgroundImage:MemoryImage(base64Decode(avatar)));}catch(_){}}
     messenger.showMaterialBanner(MaterialBanner(
       backgroundColor:Colors.white,elevation:5,
       padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
-      leading:leading,
+      leading:const Icon(Icons.notifications_active_rounded,color:plum,size:30),
       content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text((n['title']??'إشعار جديد').toString(),maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,color:plum)),
         Text((n['body']??'').toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.black87)),
