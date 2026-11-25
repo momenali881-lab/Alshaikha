@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -241,16 +242,37 @@ class AdminHome extends StatefulWidget {
 class _AdminHomeState extends State<AdminHome> {
   bool fromChatBooking=false;
   bool showChatConversation=false;
-  String section='members'; String? selectedConversationId; String? selectedBookingCustomerId; String? selectedBookingId; StreamSubscription<Map<String,dynamic>>? notificationTapSub; final Set<String> _seenNotificationIds=<String>{}; bool _notificationsInitialized=false; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> customerProfiles=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; final chatController=TextEditingController(); final ScrollController adminChatScrollController=ScrollController();
+  String section='members'; String? selectedConversationId; String? selectedBookingCustomerId; String? selectedBookingId; StreamSubscription<Map<String,dynamic>>? notificationTapSub; final Set<String> _seenNotificationIds=<String>{}; bool _notificationsInitialized=false; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> customerProfiles=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; Timer? topNotificationTimer; final chatController=TextEditingController(); final ScrollController adminChatScrollController=ScrollController();
   @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});refresh();loadChatMembers();loadNotifications();poll=Timer.periodic(const Duration(seconds:5),(_){refresh(silent:true);loadNotifications();});}
-  @override void dispose(){poll?.cancel();notificationTapSub?.cancel();chatController.dispose();adminChatScrollController.dispose();super.dispose();}
+  @override void dispose(){poll?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();chatController.dispose();adminChatScrollController.dispose();super.dispose();}
   void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
+  void _showTopNotification(Map<String,dynamic> n){
+    final messenger=ScaffoldMessenger.of(context);
+    messenger.hideCurrentMaterialBanner();
+    final customerId=(n['customerId']??n['createdBy']??'').toString();
+    final matches=customerProfiles.where((p)=>p['id']?.toString()==customerId).toList();
+    final avatar=(matches.isEmpty?'':(matches.first['avatarBase64']??'').toString());
+    Widget leading=const CircleAvatar(backgroundColor:Color(0xFFFFE4EF),child:Icon(Icons.person,color:rose));
+    if(avatar.isNotEmpty){try{leading=CircleAvatar(backgroundImage:MemoryImage(base64Decode(avatar)));}catch(_){}}
+    messenger.showMaterialBanner(MaterialBanner(
+      backgroundColor:Colors.white,elevation:5,
+      padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
+      leading:leading,
+      content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text((n['title']??'إشعار جديد').toString(),maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,color:plum)),
+        Text((n['body']??'').toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.black87)),
+      ]),
+      actions:[TextButton(onPressed:(){messenger.hideCurrentMaterialBanner();openNotifications();},child:const Text('عرض'))],
+    ));
+    topNotificationTimer?.cancel();
+    topNotificationTimer=Timer(const Duration(seconds:5),()=>messenger.hideCurrentMaterialBanner());
+  }
   Future<void> loadChatMembers() async { try { chatMembers=await SharedStore.list('members'); } catch(_){} try { final snapshot=await FirebaseFirestore.instance.collection('profiles').where('role',isEqualTo:'customer').get(); customerProfiles=snapshot.docs.map((d)=>{'id':d.id,...d.data()}).toList(); } catch(_){} if(mounted)setState((){}); }
   String customerLabel(String id){final profile=customerProfiles.where((p)=>p['id']?.toString()==id).toList();if(profile.isNotEmpty)return (profile.first['displayName']??profile.first['username']??'عميل').toString();return 'عميل ${id.length>8?id.substring(0,8):id}';}
   String chatTime(dynamic value){final d=DateTime.tryParse(value?.toString()??'');if(d==null)return '';final now=DateTime.now();String two(int n)=>n.toString().padLeft(2,'0');if(d.year==now.year&&d.month==now.month&&d.day==now.day)return '${two(d.hour)}:${two(d.minute)}';return '${two(d.day)}/${two(d.month)}';}
   String chatPreview(Map<String,dynamic> m){if(m['type']=='memberProfile')return 'ملف عضو من الكادر';if(m['type']=='bookingCard')return 'بطاقة حجز';return (m['text']??'رسالة').toString();}
   Future<void> markConversationRead(String id)async{for(final n in notifications.where((n)=>n['createdBy']?.toString()==id&&n['read']!=true).toList()){try{await SharedStore.save('notifications',{...n,'read':true});}catch(_){}}await loadNotifications();}
-  Future<void> loadNotifications()async{try{final all=await SharedStore.list('notifications');final items=all.where((n)=>n['target']=='admin').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));final incoming=<Map<String,dynamic>>[];for(final item in items){final id=(item['id']??'').toString();if(id.isEmpty)continue;if(!_notificationsInitialized){_seenNotificationIds.add(id);}else if(_seenNotificationIds.add(id)){incoming.add(item);}}_notificationsInitialized=true;if(mounted){setState(()=>notifications=items);if(incoming.isNotEmpty){final latest=incoming.first;ScaffoldMessenger.of(context).showSnackBar(SnackBar(behavior:SnackBarBehavior.floating,duration:const Duration(seconds:6),content:Text('${latest['title']??'إشعار جديد'}\\n${latest['body']??''}'),action:SnackBarAction(label:'عرض',onPressed:openNotifications)));}}}catch(_){}}
+  Future<void> loadNotifications()async{try{final all=await SharedStore.list('notifications');final items=all.where((n)=>n['target']=='admin').toList()..sort((a,b)=>'${b['createdAt']??''}'.compareTo('${a['createdAt']??''}'));final incoming=<Map<String,dynamic>>[];for(final item in items){final id=(item['id']??'').toString();if(id.isEmpty)continue;if(!_notificationsInitialized){_seenNotificationIds.add(id);}else if(_seenNotificationIds.add(id)){incoming.add(item);}}_notificationsInitialized=true;if(mounted){setState(()=>notifications=items);if(incoming.isNotEmpty){final latest=incoming.first;_showTopNotification(latest);}}}catch(_){}}
   Future<void> openCustomerChat(String customerId)async{
     if(customerId.isEmpty){note('لا يوجد حساب عميل مرتبط بهذا السجل');return;}
     setState(() {section='messages';selectedConversationId=customerId;showChatConversation=true;});
