@@ -11,8 +11,8 @@ import 'image_utils.dart';
 import 'get_pronto_uploader.dart';
 import 'iraq_locations.dart';
 import 'analytics_screen.dart';
-import 'shared/one_signal_service.dart';
-import 'shared/one_signal_subscription_gate.dart';
+import '../../shared/one_signal_service.dart';
+import '../../shared/one_signal_subscription_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
