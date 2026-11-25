@@ -243,7 +243,7 @@ class ClientHome extends StatefulWidget { const ClientHome({super.key}); @overri
 class _ClientHomeState extends State<ClientHome>{
  int tab=0;bool busy=true;bool sendingMessage=false;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
- final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
+ final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
  @override void dispose(){poll?.cancel();bannerAuto?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();chatFocusNode.dispose();clientChatScrollController.dispose();super.dispose();}
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
@@ -254,7 +254,7 @@ class _ClientHomeState extends State<ClientHome>{
    backgroundColor:Colors.white,
    elevation:5,
    padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
-   leading:ClipRRect(borderRadius:BorderRadius.circular(12),child:Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',width:48,height:48,fit:BoxFit.cover)),
+   leading:const Icon(Icons.notifications_active_rounded,color:plum,size:30),
    content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text((n['title']??'إشعار جديد').toString(),maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,color:plum)),
     Text((n['body']??'').toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.black87)),
@@ -482,7 +482,7 @@ Future<void> openNotifications()async{
   if(imgs.isNotEmpty){viewImages(imgs,0);return;}
   showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('${b['title']??'إعلان'}'),content:Text('${b['description']??''}'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('إغلاق'))]));
  }
- Widget bannerCard(Map<String,dynamic> b)=>Card(clipBehavior:Clip.antiAlias,margin:const EdgeInsets.symmetric(horizontal:3,vertical:2),child:InkWell(onTap:()=>openBanner(b),child:Stack(fit:StackFit.expand,children:[
+ Widget bannerCard(Map<String,dynamic> b)=>Card(clipBehavior:Clip.antiAlias,margin:const EdgeInsets.symmetric(horizontal:1,vertical:2),child:InkWell(onTap:()=>openBanner(b),child:Stack(fit:StackFit.expand,children:[
  if(imageList(b).isNotEmpty)appImage(imageList(b).first,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:plum,child:const Icon(Icons.broken_image,color:Colors.white,size:40))) else Container(color:plum,child:const Icon(Icons.image_outlined,color:Colors.white,size:42)),
  const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xCC180A25)],stops:[.28,1]))),
  Positioned(right:18,left:18,bottom:15,child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisSize:MainAxisSize.min,children:[
@@ -490,8 +490,8 @@ Future<void> openNotifications()async{
   if('${b['description']??''}'.toString().trim().isNotEmpty)Padding(padding:const EdgeInsets.only(top:3),child:Text('${b['description']}',maxLines:2,overflow:TextOverflow.ellipsis,style:GoogleFonts.cairo(color:Colors.white,fontSize:13,fontWeight:FontWeight.w600,shadows:[const Shadow(color:Colors.black54,blurRadius:6)])))
  ]))
 ])));
-Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
-  if(banners.isNotEmpty)...[SizedBox(height:190,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
+Widget homePage()=>ListView(padding:const EdgeInsets.fromLTRB(4,14,4,14),children:[
+  if(banners.isNotEmpty)...[SizedBox(height:210,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
   if(banners.isEmpty)const SizedBox.shrink(),
   if(announcements.isNotEmpty)const Padding(padding:EdgeInsets.only(top:12,bottom:6),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),
   ...announcements.map((a)=>Card(clipBehavior:Clip.antiAlias,child:Column(children:[if(imageList(a).isNotEmpty)imageGallery(a,height:150),ListTile(leading:const Icon(Icons.campaign,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}'))]))),
