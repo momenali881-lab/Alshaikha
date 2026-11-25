@@ -7,6 +7,19 @@ class SharedStore {
   static const _channel = MethodChannel('al_sheikha/shared_store');
   static final _db = FirebaseFirestore.instance;
 
+  // Convert Firestore-only values before passing records to Android/SQLite.
+  static dynamic _toLocalSafeValue(dynamic value) {
+    if (value == null || value is String || value is num || value is bool) return value;
+    if (value is Timestamp) return value.toDate().toIso8601String();
+    if (value is DateTime) return value.toIso8601String();
+    if (value is GeoPoint) return <String, dynamic>{'latitude': value.latitude, 'longitude': value.longitude};
+    if (value is DocumentReference) return value.path;
+    if (value is Blob) return base64Encode(value.bytes);
+    if (value is Map) return value.map((key, item) => MapEntry(key.toString(), _toLocalSafeValue(item)));
+    if (value is Iterable) return value.map(_toLocalSafeValue).toList();
+    return value.toString();
+  }
+
   static Future<List<Map<String, dynamic>>> _localList(String table) async {
     try {
       final rows = await _channel.invokeListMethod<dynamic>('list', {'table': table}) ?? [];
@@ -23,7 +36,8 @@ class SharedStore {
 
   static Future<void> _cache(String table, Map<String, dynamic> data) async {
     try {
-      await _channel.invokeMethod<String>('save', {'table': table, 'data': data});
+      final safeData = _toLocalSafeValue(data) as Map<String, dynamic>;
+      await _channel.invokeMethod<String>('save', {'table': table, 'data': safeData});
     } on PlatformException {
       // The customer may install this app on a device without the admin provider.
     } on MissingPluginException {
@@ -49,7 +63,7 @@ class SharedStore {
         for (final snapshot in snapshots) {
           for (final doc in snapshot.docs) { docs[doc.id] = doc; }
         }
-        final remote = docs.values.map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()}).toList();
+        final remote = docs.values.map((doc) => _toLocalSafeValue(<String, dynamic>{'id': doc.id, ...doc.data()}) as Map<String, dynamic>).toList();
         for (final item in remote) { await _cache(table, item); }
         return remote;
       }
@@ -61,7 +75,7 @@ class SharedStore {
         }
       }
       final snapshot = await query.get();
-      final remote = snapshot.docs.map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()}).toList();
+      final remote = snapshot.docs.map((doc) => _toLocalSafeValue(<String, dynamic>{'id': doc.id, ...doc.data()}) as Map<String, dynamic>).toList();
       for (final item in remote) {
         await _cache(table, item);
       }
