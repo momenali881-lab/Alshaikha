@@ -24,7 +24,7 @@ class NotificationService {
     if (_initialized) return;
     _initialized = true;
     const settings = InitializationSettings(
-      android: AndroidInitializationSettings('ic_stat_alshaikha'),
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     );
     await _local.initialize(settings,
       onDidReceiveNotificationResponse: (response) => _emitPayload(response.payload));
