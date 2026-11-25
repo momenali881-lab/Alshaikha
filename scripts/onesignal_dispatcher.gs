@@ -161,7 +161,7 @@ function processAlshaikhaNotification_(token, projectId, document) {
     const message = String(error && error.message ? error.message : error).slice(0, 900);
     // Leave transient errors pending so the next scheduled run can retry.
     patchAlshaikhaDocument_(token, document.name, {
-      pushStatus: { stringValue: 'pending' },
+      pushStatus: { stringValue: attempts >= 5 ? 'failed' : 'pending' },
       pushAttempts: { integerValue: String(attempts) },
       pushError: { stringValue: message },
       pushUpdatedAt: { timestampValue: new Date().toISOString() }
