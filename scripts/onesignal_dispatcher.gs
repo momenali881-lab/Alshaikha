@@ -290,7 +290,7 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       android_channel_id: target === 'admin'
         ? ALSHAIKHA_ADMIN_NOTIFICATION_CHANNEL_ID
         : ALSHAIKHA_CLIENT_NOTIFICATION_CHANNEL_ID,
-      priority: 10,
+      priority: 10,\n      small_icon: 'ic_stat_alshaikha',
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
       data: data,
