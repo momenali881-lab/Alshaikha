@@ -10,6 +10,7 @@ class OneSignalService {
   static bool _initialized = false;
   static String? _lastExternalId;
   static StreamSubscription<auth.User?>? _authSubscription;
+  static void Function(String?)? _pushSubscriptionHandler;
 
   static void initialize(String appId) {
     if (_initialized) return;
@@ -43,11 +44,14 @@ class OneSignalService {
   }
 
   static void addPushSubscriptionObserver(void Function(String?) handler) {
+    // Retain the callback for the lifetime of the app because the SDK observer
+    // is expected to remain active after this method returns.
+    _pushSubscriptionHandler = handler;
     OneSignal.User.pushSubscription.addObserver((state) {
-      handler(state.current.id);
+      _pushSubscriptionHandler?.call(state.current.id);
     });
     // The server-assigned ID may already exist before the observer is attached.
-    handler(OneSignal.User.pushSubscription.id);
+    _pushSubscriptionHandler?.call(OneSignal.User.pushSubscription.id);
   }
 
   static Future<bool> requestPermission() async {
