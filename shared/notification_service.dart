@@ -42,11 +42,6 @@ class NotificationService {
           channelId,'إشعارات الشيخة',
           channelDescription:'رسائل العملاء والحجوزات والتحديثات',
           importance:Importance.max,priority:Priority.high,playSound:true,
-          styleInformation:BigTextStyleInformation(
-            body ?? '',
-            contentTitle:title,
-            summaryText:'الشيخة',
-          ),
         )),
         payload:jsonEncode(message.data),
       ));
