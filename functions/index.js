@@ -93,7 +93,6 @@ exports.createAdminAccount = onCall(
 
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
-const APP_NOTIFICATION_IMAGE = "https://raw.githubusercontent.com/momenali881-lab/Alshaikha/main/client_app/file_00000000df048210b32f5dc7efa7f5ad.png";
 
 exports.deliverAppNotification = onDocumentCreated("notifications/{notificationId}", async (event) => {
   const snapshot = event.data;
@@ -125,7 +124,7 @@ exports.deliverAppNotification = onDocumentCreated("notifications/{notificationI
     return;
   }
   const data = {};
-  for (const key of ["type","bookingId","customerId","createdBy","conversationId","target","title","body","senderName","senderImageUrl"]) {
+  for (const key of ["type","bookingId","customerId","createdBy","conversationId","target","title","body","senderName"]) {
     if (notification[key] !== undefined && notification[key] !== null) data[key] = String(notification[key]);
   }
   data.notificationId = snapshot.id;
