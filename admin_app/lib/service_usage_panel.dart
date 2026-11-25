@@ -48,7 +48,7 @@ class _ServiceUsagePanelState extends State<ServiceUsagePanel> {
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
-            value: progress,
+            value: progress ?? 0,
             minHeight: 7,
             backgroundColor: Colors.black12,
             color: color,
