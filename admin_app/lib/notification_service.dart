@@ -81,6 +81,7 @@ class NotificationService {
       // A Firestore rule/network failure must not sign out or block the account.
     }
   }
+  static void handleExternalTap(Map<String,dynamic> data) => _emit(data);
   static Map<String,dynamic>? takeInitialTap(){final value=_initialTap;_initialTap=null;return value;}
   static void _emit(Map<dynamic,dynamic> data){
     final normalized=data.map((key,value)=>MapEntry(key.toString(),value));
