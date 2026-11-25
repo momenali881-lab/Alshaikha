@@ -15,6 +15,10 @@ for app in ("admin_app", "client_app"):
                     app_shared / "iraq_locations.dart")
     shutil.copyfile(root / "shared" / "notification_service.dart",
                     app_shared / "notification_service.dart")
+    shutil.copyfile(root / "shared" / "one_signal_service.dart",
+                    app_shared / "one_signal_service.dart")
+    shutil.copyfile(root / "shared" / "one_signal_subscription_gate.dart",
+                    app_shared / "one_signal_subscription_gate.dart")
 
 for app, (package, activity_file) in apps.items():
     android = root / app / "android"
