@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'shared_store.dart';
+import 'service_usage_panel.dart';
 
 class AdminAnalyticsScreen extends StatefulWidget {
   const AdminAnalyticsScreen({super.key});
@@ -206,6 +207,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                 _metric('إجمالي الحجوزات', data.totalBookings, Icons.event_available, const Color(0xFF00897B)),
                 _metric('رسائل الدردشة', data.totalMessages, Icons.forum, const Color(0xFF5E35B1)),
               ]),
+              const ServiceUsagePanel(),
               Card(child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
