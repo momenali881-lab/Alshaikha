@@ -143,15 +143,16 @@ function processAlshaikhaNotification_(token, projectId, document) {
       chunks.push(externalIds.slice(i, i + 2000));
     }
 
+    let delivered = false;
     chunks.forEach(function (ids, index) {
-      sendAlshaikhaOneSignal_(
+      if (sendAlshaikhaOneSignal_(
         restKey, appId, ids, title, body, data,
         deterministicAlshaikhaUuid_(notificationId + ':' + index)
-      );
+      )) delivered = true;
     });
 
     patchAlshaikhaDocument_(token, document.name, {
-      pushStatus: { stringValue: 'sent' },
+      pushStatus: { stringValue: delivered ? 'sent' : 'no_recipients' },
       pushAttempts: { integerValue: String(attempts) },
       pushSentAt: { timestampValue: new Date().toISOString() },
       pushError: { stringValue: '' }
@@ -197,10 +198,7 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       String(response.getContentText() || '').slice(0, 500));
   }
   // OneSignal can return HTTP 200 with an empty ID when nobody is subscribed.
-  if (!result.id) {
-    throw new Error('OneSignal found no subscribed recipients: ' +
-      JSON.stringify(result.errors || []));
-  }
+  return Boolean(result.id);
 }
 
 function queryAlshaikhaProfileIds_(token, projectId, role) {
