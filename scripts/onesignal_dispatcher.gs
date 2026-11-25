@@ -15,7 +15,10 @@ const ALSHAIKHA_CLIENT_APP_ID = '603a9d8a-365a-4b6f-befd-b213f725c09e';
 const ALSHAIKHA_ADMIN_APP_ID = '5ccd4e96-a64c-4565-9ae5-964548bed976';
 const ALSHAIKHA_FIRESTORE_COLLECTION = 'notifications';
 const ALSHAIKHA_ONESIGNAL_ENDPOINT = 'https://api.onesignal.com/notifications';
-const ALSHAIKHA_APP_IMAGE_URL = 'https://raw.githubusercontent.com/momenali881-lab/Alshaikha/main/client_app/file_00000000df048210b32f5dc7efa7f5ad.png';
+const ALSHAIKHA_NOTIFICATION_CHANNEL_ID = 'alshaikha_alerts_v2';
+// Small, optimized brand artwork; the login background image is intentionally not used.
+const ALSHAIKHA_APP_IMAGE_URL = 'https://raw.githubusercontent.com/momenali881-lab/Alshaikha/main/assets/launcher_icon.jpg';
+const ALSHAIKHA_FIREBASE_WEB_API_KEY = 'AIzaSyA97IxmVYLuB73jTZ7VDCwFI8keBTxZfA4';
 
 function setupAlshaikhaNotifications() {
   const properties = PropertiesService.getScriptProperties();
@@ -40,6 +43,91 @@ function setupAlshaikhaNotifications() {
     .timeBased()
     .everyMinutes(1)
     .create();
+}
+
+/**
+ * Immediate, authenticated webhook called by the mobile apps after a new
+ * Firestore notification is saved. The one-minute trigger remains as fallback.
+ * Deploy this Apps Script as a web app (execute as owner, access: anyone).
+ */
+function doPost(e) {
+  let lock;
+  let locked = false;
+  try {
+    const payload = JSON.parse(e && e.postData && e.postData.contents || '{}');
+    const idToken = String(payload.idToken || '');
+    const notificationId = String(payload.notificationId || '');
+    if (!idToken || !/^[A-Za-z0-9_-]{10,150}$/.test(notificationId)) {
+      throw new Error('Missing or invalid request data');
+    }
+
+    const identityResponse = UrlFetchApp.fetch(
+      'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' +
+        encodeURIComponent(ALSHAIKHA_FIREBASE_WEB_API_KEY),
+      {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({ idToken: idToken }),
+        muteHttpExceptions: true
+      }
+    );
+    const identityCode = identityResponse.getResponseCode();
+    const identity = JSON.parse(identityResponse.getContentText() || '{}');
+    const uid = identity.users && identity.users[0] && identity.users[0].localId;
+    if (identityCode < 200 || identityCode >= 300 || !uid) {
+      throw new Error('Firebase authentication failed');
+    }
+
+    const token = getAlshaikhaAccessToken_();
+    const projectId = PropertiesService.getScriptProperties()
+      .getProperty('FIREBASE_PROJECT_ID') || 'alshaikha';
+    const document = getAlshaikhaDocument_(
+      token, projectId, 'notifications/' + encodeURIComponent(notificationId)
+    );
+    if (!document) throw new Error('Notification document not found');
+
+    const fields = fromAlshaikhaFields_(document.fields || {});
+    if (fields.pushStatus !== 'pending') {
+      return alshaikhaJsonResponse_({ ok: true, skipped: true });
+    }
+
+    const profile = getAlshaikhaDocument_(
+      token, projectId, 'profiles/' + encodeURIComponent(uid)
+    );
+    const profileData = profile ? fromAlshaikhaFields_(profile.fields || {}) : {};
+    const role = String(profileData.role || '');
+    const target = String(fields.target || '');
+    let authorized = false;
+    if (target === 'admin') {
+      authorized = role === 'customer' &&
+        String(fields.customerId || '') === uid &&
+        String(fields.createdBy || '') === uid;
+    } else if (target === 'customer') {
+      authorized = role === 'admin' && Boolean(fields.customerId);
+    } else if (target === 'all') {
+      authorized = role === 'admin';
+    }
+    if (!authorized) throw new Error('Not authorized to dispatch this notification');
+
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) {
+      return alshaikhaJsonResponse_({ ok: true, queued: true });
+    }
+    locked = true;
+    processAlshaikhaNotification_(token, projectId, document);
+    return alshaikhaJsonResponse_({ ok: true });
+  } catch (error) {
+    console.error('Immediate notification webhook: ' +
+      String(error && error.message ? error.message : error));
+    return alshaikhaJsonResponse_({ ok: false, error: 'Notification dispatch failed' });
+  } finally {
+    if (locked && lock) lock.releaseLock();
+  }
+}
+
+function alshaikhaJsonResponse_(value) {
+  return ContentService.createTextOutput(JSON.stringify(value))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function dispatchAlshaikhaNotifications() {
@@ -126,8 +214,10 @@ function processAlshaikhaNotification_(token, projectId, document) {
     }
     if (!restKey) throw new Error('OneSignal REST API key is not configured');
 
-    const title = String(fields.title || 'الشيخة');
-    const body = String(fields.body || 'لديك إشعار جديد');
+    const title = (target === 'customer' || target === 'all')
+      ? 'الشيخة'
+      : String(fields.title || fields.senderName || 'الشيخة');
+    const body = buildAlshaikhaPushBody_(fields, target);
     const data = {};
     [
       'type', 'bookingId', 'customerId', 'createdBy',
@@ -171,6 +261,22 @@ function processAlshaikhaNotification_(token, projectId, document) {
   }
 }
 
+function buildAlshaikhaPushBody_(fields, target) {
+  let body = String(fields.body || 'لديك إشعار جديد')
+    .replace(/\\s+/g, ' ')
+    .trim();
+  if (target === 'customer' || target === 'all') {
+    const type = String(fields.type || '');
+    if (type === 'message') body = 'رسالة جديدة: ' + body;
+    else if (type === 'booking') body = 'تحديث الحجز: ' + body;
+    else if (type === 'announcement') body = 'إشعار جديد: ' + body;
+  }
+  // Keep a useful preview visible in the collapsed Android notification.
+  const maxLength = 150;
+  if (body.length > maxLength) body = body.slice(0, maxLength - 1).trimEnd() + '…';
+  return body || 'لديك إشعار جديد';
+}
+
 function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempotencyKey, target) {
   const response = UrlFetchApp.fetch(ALSHAIKHA_ONESIGNAL_ENDPOINT, {
     method: 'post',
@@ -180,12 +286,14 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       app_id: appId,
       include_aliases: { external_id: ids },
       target_channel: 'push',
-      android_channel_id: 'alshaikha_notifications',
+      android_channel_id: ALSHAIKHA_NOTIFICATION_CHANNEL_ID,
       priority: 10,
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
       data: data,
-      ...((data.senderImageUrl || target === 'customer') ? { large_icon: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL, big_picture: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL, ios_attachments: { sender: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL } } : {}),
+      large_icon: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL,
+      big_picture: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL,
+      ios_attachments: { sender: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL },
       idempotency_key: idempotencyKey
     }),
     muteHttpExceptions: true
@@ -281,6 +389,9 @@ function patchAlshaikhaDocument_(token, documentName, fields) {
 }
 
 function getAlshaikhaAccessToken_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('alshaikha_firebase_access_token');
+  if (cached) return cached;
   const raw = PropertiesService.getScriptProperties()
     .getProperty('FIREBASE_SERVICE_ACCOUNT_JSON');
   if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is missing');
@@ -313,6 +424,7 @@ function getAlshaikhaAccessToken_() {
     throw new Error('Google token exchange failed: ' +
       String(response.getContentText() || '').slice(0, 500));
   }
+  cache.put('alshaikha_firebase_access_token', result.access_token, 3300);
   return result.access_token;
 }
 
