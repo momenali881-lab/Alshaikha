@@ -12,8 +12,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'shared_store.dart';
 import 'image_utils.dart';
 import 'account_page.dart';
-import 'shared/one_signal_service.dart';
-import 'shared/one_signal_subscription_gate.dart';
+import '../../shared/one_signal_service.dart';
+import '../../shared/one_signal_subscription_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
