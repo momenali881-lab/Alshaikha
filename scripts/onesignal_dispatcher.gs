@@ -15,6 +15,7 @@ const ALSHAIKHA_CLIENT_APP_ID = '603a9d8a-365a-4b6f-befd-b213f725c09e';
 const ALSHAIKHA_ADMIN_APP_ID = '5ccd4e96-a64c-4565-9ae5-964548bed976';
 const ALSHAIKHA_FIRESTORE_COLLECTION = 'notifications';
 const ALSHAIKHA_ONESIGNAL_ENDPOINT = 'https://api.onesignal.com/notifications';
+const ALSHAIKHA_APP_IMAGE_URL = 'https://raw.githubusercontent.com/momenali881-lab/Alshaikha/main/client_app/file_00000000df048210b32f5dc7efa7f5ad.png';
 
 function setupAlshaikhaNotifications() {
   const properties = PropertiesService.getScriptProperties();
@@ -182,7 +183,7 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
       data: data,
-      ...(data.senderImageUrl ? { large_icon: data.senderImageUrl, big_picture: data.senderImageUrl, ios_attachments: { sender: data.senderImageUrl } } : {}),
+      ...((data.senderImageUrl || target === 'customer') ? { large_icon: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL, big_picture: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL, ios_attachments: { sender: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL } } : {}),
       idempotency_key: idempotencyKey
     }),
     muteHttpExceptions: true
