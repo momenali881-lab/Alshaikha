@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,7 +68,7 @@ class _OneSignalSubscriptionGateState extends State<OneSignalSubscriptionGate> {
               TextButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
-                  OneSignalService.requestPermission();
+                  unawaited(OneSignalService.requestPermission());
                 },
                 child: const Text('تفعيل الإشعارات'),
               ),
