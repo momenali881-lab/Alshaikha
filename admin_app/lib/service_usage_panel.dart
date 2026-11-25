@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'get_pronto_uploader.dart';
 
 class ServiceUsagePanel extends StatefulWidget {
   const ServiceUsagePanel({super.key});
@@ -9,18 +8,6 @@ class ServiceUsagePanel extends StatefulWidget {
 }
 
 class _ServiceUsagePanelState extends State<ServiceUsagePanel> {
-  late Future<Map<String, int>> _prontoUsage;
-
-  @override
-  void initState() {
-    super.initState();
-    _prontoUsage = GetProntoUploader.readStorageUsage();
-  }
-
-  void _refresh() {
-    setState(() => _prontoUsage = GetProntoUploader.readStorageUsage());
-  }
-
   String _bytes(int value) {
     if (value >= 1024 * 1024 * 1024) {
       return '${(value / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
@@ -45,15 +32,19 @@ class _ServiceUsagePanelState extends State<ServiceUsagePanel> {
           Text(' / $limit', style: const TextStyle(color: Colors.black54, fontSize: 12)),
         ]),
         const SizedBox(height: 5),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: progress ?? 0,
-            minHeight: 7,
-            backgroundColor: Colors.black12,
-            color: color,
-          ),
-        ),
+        if (progress != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 7,
+              backgroundColor: Colors.black12,
+              color: color,
+            ),
+          )
+        else
+          const Text('لا تتوفر قراءة مباشرة من داخل التطبيق',
+            style: TextStyle(fontSize: 10, color: Colors.black54)),
         if (note != null)
           Padding(
             padding: const EdgeInsets.only(top: 3),
@@ -92,8 +83,6 @@ class _ServiceUsagePanelState extends State<ServiceUsagePanel> {
       Row(children: [
         const Expanded(child: Text('استهلاك الخدمات والحدود المجانية',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-        IconButton(onPressed: _refresh, tooltip: 'تحديث الاستهلاك',
-          icon: const Icon(Icons.refresh)),
       ]),
       _serviceCard(
         title: 'OneSignal',
@@ -101,10 +90,9 @@ class _ServiceUsagePanelState extends State<ServiceUsagePanel> {
         icon: Icons.notifications_active,
         color: const Color(0xFF5E35B1),
         children: [
-          _line('المستخدمون النشطون شهرياً (MAU)', '1,000', 'غير مقروء',
-            note: 'حد الخطة المجانية. الرقم الفعلي يظهر في لوحة Organization لدى OneSignal.'),
-          _line('رسائل البريد الإلكتروني', '10,000 / شهر', 'غير مقروء',
-            note: 'حجم الإرسال الفعلي لا يتوفر عبر إعدادات التطبيق الحالية.'),
+          _line('المستخدمون النشطون شهرياً (MAU)', '1,000', 'راجع لوحة OneSignal',
+            note: 'إشعارات Push غير محدودة من حيث عدد الإرسال ضمن حد 1,000 مستخدم نشط شهرياً.'),
+          _line('رسائل البريد الإلكتروني', '10,000 / شهر', 'راجع لوحة OneSignal'),
           const SelectableText('لوحة الاستخدام: https://dashboard.onesignal.com/'),
         ],
       ),
@@ -114,11 +102,11 @@ class _ServiceUsagePanelState extends State<ServiceUsagePanel> {
         icon: Icons.local_fire_department,
         color: const Color(0xFFFF8F00),
         children: [
-          _line('قراءات المستندات', '50,000 / يوم', 'غير متصل'),
-          _line('كتابات المستندات', '20,000 / يوم', 'غير متصل'),
-          _line('حذف المستندات', '20,000 / يوم', 'غير متصل'),
-          _line('تخزين Firestore', '1 GiB', 'غير متصل'),
-          _line('نقل البيانات الصادر', '10 GiB / شهر', 'غير متصل'),
+          _line('قراءات المستندات', '50,000 / يوم', 'راجع لوحة Firebase'),
+          _line('كتابات المستندات', '20,000 / يوم', 'راجع لوحة Firebase'),
+          _line('حذف المستندات', '20,000 / يوم', 'راجع لوحة Firebase'),
+          _line('تخزين Firestore', '1 GiB', 'راجع لوحة Firebase'),
+          _line('نقل البيانات الصادر', '10 GiB / شهر', 'راجع لوحة Firebase'),
           const Text('الأرقام الفعلية تحتاج صلاحية Cloud Monitoring؛ لا تُستنتج من عدد السجلات داخل التطبيق.',
             style: TextStyle(fontSize: 11, color: Colors.black54)),
           const SelectableText('لوحة Firebase: https://console.firebase.google.com/project/alshaikha/usage'),
@@ -130,37 +118,17 @@ class _ServiceUsagePanelState extends State<ServiceUsagePanel> {
         icon: Icons.cloud_done,
         color: const Color(0xFF00897B),
         children: [
-          FutureBuilder<Map<String, int>>(
-            future: _prontoUsage,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(padding: EdgeInsets.all(8),
-                  child: LinearProgressIndicator());
-              }
-              if (snapshot.hasError || !snapshot.hasData) {
-                return const Text('تعذر جلب حجم الملفات حالياً. تحقق من اتصال API key وصلاحية القراءة.',
-                  style: TextStyle(color: Colors.deepOrange, fontSize: 12));
-              }
-              final bytes = snapshot.data!['bytes'] ?? 0;
-              final files = snapshot.data!['files'] ?? 0;
-              final limit = 5 * 1024 * 1024 * 1024;
-              return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _line('التخزين المستخدم', '5 GB', _bytes(bytes),
-                  ratio: bytes / limit, note: 'مجموع أحجام الملفات المسجلة في حساب GetPronto.'),
-                _line('عدد الملفات', 'حسب الحساب', '$files ملف'),
-              ]);
-            },
-          ),
-          _line('النقل الشهري', '10 GB / شهر', 'غير متاح عبر Files API'),
-          _line('التحويلات', '2,500 / شهر', 'غير متاح عبر Files API'),
-          const Text('التخزين محسوب من بيانات الملفات. النقل والتحويلات لا تعرضهما واجهة Files API الموثقة.',
+          _line('التخزين', '5 GB', 'راجع لوحة GetPronto'),
+          _line('النقل الشهري', '10 GB / شهر', 'راجع لوحة GetPronto'),
+          _line('التحويلات', '2,500 / شهر', 'راجع لوحة GetPronto'),
+          const Text('مفتاح الرفع العام الموجود في التطبيق لا يملك صلاحية قراءة قائمة الملفات؛ لذلك لا نستخدمه لقراءة الاستهلاك. راجع الأرقام الفعلية من لوحة GetPronto.',
             style: TextStyle(fontSize: 11, color: Colors.black54)),
           const SelectableText('لوحة GetPronto: https://app.getpronto.io/'),
         ],
       ),
       const Padding(
         padding: EdgeInsets.only(bottom: 10),
-        child: Text('تنبيه: حدود الخطة ثابتة حسب الأسعار المنشورة، أما الاستهلاك الفعلي فيظهر فقط عندما توفر الخدمة واجهة قراءة موثوقة. لا تعرض هذه اللوحة قيماً فعلية مخمّنة.',
+        child: Text('حدود الخطة المجانية معروضة للمقارنة. مؤشرات الاستهلاك الفعلي لا تظهر إلا عند توفر صلاحية قراءة موثوقة من مزود الخدمة.',
           style: TextStyle(fontSize: 11, color: Colors.black54)),
       ),
     ]);
