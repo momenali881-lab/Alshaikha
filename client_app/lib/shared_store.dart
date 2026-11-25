@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +8,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class SharedStore {
   static const _channel = MethodChannel('al_sheikha/shared_store');
   static final _db = FirebaseFirestore.instance;
+  static const _notificationWebhookUrl =
+      String.fromEnvironment('ALSHAIKHA_NOTIFICATION_WEBHOOK_URL');
+
+  static Future<void> _dispatchNotificationImmediately(String notificationId) async {
+    if (_notificationWebhookUrl.isEmpty) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final idToken = await user.getIdToken();
+      if (idToken == null || idToken.isEmpty) return;
+      await http.post(
+        Uri.parse(_notificationWebhookUrl),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'notificationId': notificationId,
+          'idToken': idToken,
+        }),
+      ).timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // The one-minute Apps Script trigger remains the delivery fallback.
+    }
+  }
 
   // Convert Firestore-only values before passing records to Android/SQLite.
   static dynamic _toLocalSafeValue(dynamic value) {
@@ -106,9 +130,10 @@ class SharedStore {
       throw StateError('يجب تسجيل الدخول قبل حفظ البيانات المشتركة');
     }
     final id = (data['id'] as String?) ?? _db.collection(table).doc().id;
+    final isNewNotification = table == 'notifications' && data['id'] == null;
     final record = <String, dynamic>{...data, 'id': id};
     // Queue newly-created notifications for the free OneSignal dispatcher.
-    if (table == 'notifications' && data['id'] == null && !record.containsKey('pushStatus')) {
+    if (isNewNotification && !record.containsKey('pushStatus')) {
       record['pushStatus'] = 'pending';
       record['pushAttempts'] = 0;
     }
@@ -118,6 +143,9 @@ class SharedStore {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     await _cache(table, record);
+    if (isNewNotification && record['pushStatus'] == 'pending') {
+      unawaited(_dispatchNotificationImmediately(id));
+    }
     return id;
   }
 
