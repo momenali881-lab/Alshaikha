@@ -254,7 +254,7 @@ class _ClientHomeState extends State<ClientHome>{
    backgroundColor:Colors.white,
    elevation:5,
    padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
-   leading:const CircleAvatar(backgroundColor:Color(0xFFFFE4EF),child:Icon(Icons.notifications_active,color:rose)),
+   leading:ClipRRect(borderRadius:BorderRadius.circular(12),child:Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',width:48,height:48,fit:BoxFit.cover)),
    content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text((n['title']??'إشعار جديد').toString(),maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,color:plum)),
     Text((n['body']??'').toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.black87)),
