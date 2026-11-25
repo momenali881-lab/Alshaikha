@@ -41,25 +41,19 @@ for app, (package, activity_file) in apps.items():
             raise RuntimeError(f"Missing compileOptions block in {gradle_file}")
         insert_at = compile_options.end()
         gradle_text = (gradle_text[:insert_at] +
-                       "
-        isCoreLibraryDesugaringEnabled = true" +
+                       "\n        isCoreLibraryDesugaringEnabled = true" +
                        gradle_text[insert_at:])
     if "desugar_jdk_libs" not in gradle_text:
         dependencies = re.search(r"dependencies\s*\{", gradle_text)
         if dependencies:
             insert_at = dependencies.end()
             gradle_text = (gradle_text[:insert_at] +
-                           '
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")' +
+                           '\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")' +
                            gradle_text[insert_at:])
         else:
-            gradle_text += ('
-dependencies {
-' +
-                            '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-' +
-                            '}
-')
+            gradle_text += ('\ndependencies {\n' +
+                            '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n' +
+                            '}\n')
     gradle_file.write_text(gradle_text, encoding="utf-8")
 
     manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
@@ -76,10 +70,8 @@ dependencies {
         if line.split('"')[1] not in text
     ]
     if missing_permissions:
-        text = (text[:close + 1] + '
-    ' +
-                '
-    '.join(missing_permissions) + text[close + 1:])
+        text = (text[:close + 1] + '\n    ' +
+                '\n    '.join(missing_permissions) + text[close + 1:])
     if app == "admin_app":
         marker = '<application'
         addition = '''<permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" android:protectionLevel="normal" />
@@ -96,8 +88,7 @@ dependencies {
         text = text.replace(app_close, provider + app_close, 1)
     else:
         marker = '<application'
-        permission = '<uses-permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" />
-    '
+        permission = '<uses-permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" />\n    '
         text = text.replace(marker, permission + marker, 1)
     # Ensure Android resizes the Flutter window instead of panning content
     # behind the soft keyboard. This applies to both generated Android apps.
