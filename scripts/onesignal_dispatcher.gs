@@ -130,7 +130,7 @@ function processAlshaikhaNotification_(token, projectId, document) {
     const data = {};
     [
       'type', 'bookingId', 'customerId', 'createdBy',
-      'conversationId', 'target', 'id'
+      'conversationId', 'target', 'id', 'senderName', 'senderImageUrl'
     ].forEach(function (key) {
       if (fields[key] !== undefined && fields[key] !== null) {
         data[key === 'id' ? 'notificationId' : key] = String(fields[key]);
@@ -182,6 +182,7 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
       data: data,
+      ...(data.senderImageUrl ? { large_icon: data.senderImageUrl, big_picture: data.senderImageUrl, ios_attachments: { sender: data.senderImageUrl } } : {}),
       idempotency_key: idempotencyKey
     }),
     muteHttpExceptions: true
