@@ -397,7 +397,7 @@ Future<void> openNotifications()async{
   final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...members.map((m)=>ListTile(leading:photo(m,size:48),title:Text('${m['name']??''}'),subtitle:Text('ملف العضو'),onTap:()=>Navigator.pop(ctx,m)))]))));
   if(chosen==null)return;
   await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'memberProfile','memberId':chosen['id'],'memberName':chosen['name'],'text':'ملف العضو: ${chosen['name']}','createdAt':DateTime.now().toIso8601String()});
-  await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'type':'message','title':'مشاركة ملف عضو جديدة','body':'شارك العميل ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
+  await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'customerId':FirebaseAuth.instance.currentUser!.uid,'conversationId':conversationId,'type':'message','title':'مشاركة ملف عضو جديدة','body':'شارك العميل ملف العضو ${chosen['name']}','createdAt':DateTime.now().toIso8601String(),'read':false});
   _trackActivity('message');
   await load(silent:true);note('تم إرسال ملف العضو داخل المحادثة');
  }
