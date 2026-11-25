@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'shared/one_signal_service.dart';
 
 class NotificationService {
   NotificationService._();
@@ -30,8 +31,7 @@ class NotificationService {
       onDidReceiveNotificationResponse: (response) => _emitPayload(response.payload));
     final android = _local.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(_channel);
-    await android?.requestNotificationsPermission();
-    await FirebaseMessaging.instance.requestPermission(alert:true,badge:true,sound:true);
+    OneSignalService.addNotificationClickListener(_emit);
     FirebaseMessaging.onMessage.listen((message) {
       final title = message.notification?.title ?? message.data['title']?.toString();
       final body = message.notification?.body ?? message.data['body']?.toString();
