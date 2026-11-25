@@ -124,7 +124,7 @@ exports.deliverAppNotification = onDocumentCreated("notifications/{notificationI
     return;
   }
   const data = {};
-  for (const key of ["type","bookingId","customerId","createdBy","conversationId","target","title","body"]) {
+  for (const key of ["type","bookingId","customerId","createdBy","conversationId","target","title","body","senderName","senderImageUrl"]) {
     if (notification[key] !== undefined && notification[key] !== null) data[key] = String(notification[key]);
   }
   data.notificationId = snapshot.id;
@@ -132,7 +132,7 @@ exports.deliverAppNotification = onDocumentCreated("notifications/{notificationI
     const batch=entries.slice(start,start+500);
     const result=await getMessaging().sendEachForMulticast({
       tokens:batch.map(([token])=>token),
-      notification:{title:String(notification.title||"الشيخة"),body:String(notification.body||"لديك إشعار جديد")},
+      notification:{title:String(notification.title||"الشيخة"),body:String(notification.body||"لديك إشعار جديد"),...(notification.senderImageUrl?{image:String(notification.senderImageUrl)}:{})},
       data,
       android:{priority:"high",notification:{channelId:"alshaikha_notifications",sound:"default"}}
     });
