@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'get_pronto_uploader.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -16,6 +17,8 @@ class _AccountPageState extends State<AccountPage> {
   final _confirmPassword = TextEditingController();
   bool _loading = true, _saving = false, _changingPassword = false;
   String? _avatar;
+  String? _avatarUrl;
+  XFile? _avatarFile;
   String? _username;
   @override void initState() { super.initState(); _load(); }
   @override void dispose() {
@@ -35,6 +38,7 @@ class _AccountPageState extends State<AccountPage> {
       _name.text = (data['displayName'] ?? user.displayName ?? '').toString();
       _username = data['username']?.toString() ?? user.email?.split('@').first;
       _avatar = data['avatarBase64']?.toString();
+      _avatarUrl = (data['avatarUrl'] ?? data['photoUrl'])?.toString();
     } catch (e) { _message('تعذر تحميل بيانات الحساب: $e'); }
     if (mounted) setState(() => _loading = false);
   }
@@ -44,7 +48,7 @@ class _AccountPageState extends State<AccountPage> {
       if (file == null) return;
       final bytes = await file.readAsBytes();
       if (bytes.length > 700 * 1024) { _message('الصورة كبيرة؛ اختر صورة أصغر'); return; }
-      setState(() => _avatar = base64Encode(bytes));
+      setState(() { _avatar = base64Encode(bytes); _avatarFile = file; });
     } catch (e) { _message('تعذر اختيار الصورة: $e'); }
   }
   Future<void> _saveProfile() async {
@@ -54,14 +58,22 @@ class _AccountPageState extends State<AccountPage> {
     if (name.isEmpty) { _message('اكتب الاسم الذي سيظهر في حسابك'); return; }
     setState(() => _saving = true);
     try {
+      var uploadedAvatarUrl = _avatarUrl;
+      if (_avatarFile != null) {
+        uploadedAvatarUrl = await GetProntoUploader.upload(_avatarFile!);
+      }
       await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
         'uid': user.uid,
         'username': _username ?? user.email?.split('@').first ?? '',
         'displayName': name,
         if (_avatar != null) 'avatarBase64': _avatar,
+        if (uploadedAvatarUrl != null && uploadedAvatarUrl.isNotEmpty) 'avatarUrl': uploadedAvatarUrl,
+        if (uploadedAvatarUrl != null && uploadedAvatarUrl.isNotEmpty) 'photoUrl': uploadedAvatarUrl,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       await user.updateDisplayName(name);
+      _avatarUrl = uploadedAvatarUrl;
+      _avatarFile = null;
       _message('تم تحديث بيانات الحساب');
     } catch (e) { _message('تعذر حفظ بيانات الحساب: $e'); }
     finally { if (mounted) setState(() => _saving = false); }
