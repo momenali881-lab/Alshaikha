@@ -19,6 +19,40 @@ class GetProntoUploader {
     };
   }
 
+  /// Reads file metadata using the documented list-files endpoint.
+  /// Bandwidth and transformation totals are not exposed by this endpoint.
+  static Future<Map<String, int>> readStorageUsage() async {
+    var page = 1;
+    var totalPages = 1;
+    var fileCount = 0;
+    var totalBytes = 0;
+    do {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/files?page=$page&pageSize=100'),
+        headers: {
+          'Authorization': 'ApiKey $_apiKey',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('تعذر قراءة ملفات GetPronto (${response.statusCode})');
+      }
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final files = (body['files'] as List? ?? const []);
+      for (final item in files) {
+        if (item is Map) {
+          fileCount++;
+          final size = item['rawSize'];
+          if (size is num) totalBytes += size.toInt();
+        }
+      }
+      final pagination = body['pagination'] as Map? ?? const {};
+      totalPages = (pagination['totalPages'] as num?)?.toInt() ?? page;
+      page++;
+    } while (page <= totalPages);
+    return {'files': fileCount, 'bytes': totalBytes};
+  }
+
   static Future<String> upload(XFile file) async {
     final bytes = await file.readAsBytes();
     if (bytes.isEmpty) throw Exception('ملف الصورة فارغ');
