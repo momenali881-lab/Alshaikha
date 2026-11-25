@@ -241,7 +241,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_)=>load(silent:true));bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -366,7 +366,32 @@ Future<void> openNotifications()async{
   if(result==true){if(name.text.trim().isEmpty||phone.text.trim().isEmpty||selectedMember==null||selectedDate==null||selectedTime==null){note('أكمل الاسم ورقم الهاتف والعضو والتاريخ والوقت');}else{try{final dt=DateTime(selectedDate!.year,selectedDate!.month,selectedDate!.day,selectedTime!.hour,selectedTime!.minute);final bookingId=await SharedStore.save('bookings',{'customerId':FirebaseAuth.instance.currentUser!.uid,'customerName':name.text.trim(),'phone':phone.text.trim(),'memberId':selectedMember!['id'],'memberName':selectedMember!['name'],'date':dt.toIso8601String(),'notes':notes.text.trim(),'status':'قيد المراجعة'});try{await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'customerId':FirebaseAuth.instance.currentUser!.uid,'conversationId':conversationId,'type':'booking','title':'طلب حجز جديد','body':'${name.text.trim()} طلب حجزاً مع ${selectedMember!['name']}','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':bookingId});}catch(notificationError){debugPrint('Booking notification failed: $notificationError');}_trackActivity('booking');note('تم إرسال طلب الحجز إلى الإدارة');await load();}catch(e){note('تعذر إرسال طلب الحجز إلى الإدارة: $e');}}}
   name.dispose();phone.dispose();notes.dispose();
  }
- Future<void> sendMessage()async{final value=messageCtrl.text.trim();if(value.isEmpty)return;try{await SharedStore.save('messages',{'conversationId':conversationId,'senderId':FirebaseAuth.instance.currentUser!.uid,'sender':'عميل','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});try{await SharedStore.save('notifications',{'target':'admin','createdBy':FirebaseAuth.instance.currentUser!.uid,'customerId':FirebaseAuth.instance.currentUser!.uid,'conversationId':conversationId,'type':'message','title':'رسالة جديدة من العميل','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});}catch(notificationError){debugPrint('Message notification failed: $notificationError');}messageCtrl.clear();_trackActivity('message');await load(silent:true);WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});}catch(e){note('تعذر إرسال الرسالة: $e');}}
+ Future<void> sendMessage()async{
+  final value=messageCtrl.text.trim();
+  final user=FirebaseAuth.instance.currentUser;
+  if(value.isEmpty||user==null||sendingMessage)return;
+  final now=DateTime.now();
+  final localId='local_${now.microsecondsSinceEpoch}';
+  final optimistic=<String,dynamic>{'id':localId,'_localId':localId,'conversationId':conversationId,'senderId':user.uid,'sender':'عميل','type':'text','text':value,'createdAt':now.toIso8601String(),'pending':true};
+  messageCtrl.clear();
+  setState(()=>messages.add(optimistic));
+  WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.animateTo(0,duration:const Duration(milliseconds:180),curve:Curves.easeOut);});
+  try{
+    final savedId=await SharedStore.save('messages',{'conversationId':conversationId,'senderId':user.uid,'sender':'عميل','type':'text','text':value,'createdAt':now.toIso8601String()});
+    if(mounted){setState(()=>messages=messages.map((m)=>m['_localId']==localId?({...m,'id':savedId,'pending':false}):m).toList());}
+    unawaited(_trackActivity('message'));
+    unawaited(()async{
+      try{
+        final profile=await FirebaseFirestore.instance.collection('profiles').doc(user.uid).get();
+        final data=profile.data()??<String,dynamic>{};
+        final senderName=(data['displayName']??user.displayName??'عميل').toString();
+        await SharedStore.save('notifications',{'target':'admin','createdBy':user.uid,'customerId':user.uid,'conversationId':conversationId,'type':'message','title':'رسالة من $senderName','senderName':senderName,'senderImageUrl':data['avatarUrl']??data['photoUrl']??'','body':value,'createdAt':now.toIso8601String(),'read':false});
+      }catch(notificationError){debugPrint('Message notification failed: $notificationError');}
+    }());
+  }catch(e){
+    if(mounted){setState(()=>messages.removeWhere((m)=>m['_localId']==localId));if(messageCtrl.text.isEmpty)messageCtrl.text=value;note('تعذر إرسال الرسالة: $e');}
+  }
+}
  Future<void> shareMemberProfile()async{
   if(members.isEmpty){note('لا يوجد أعضاء متاحون للمشاركة');return;}
   final chosen=await showModalBottomSheet<Map<String,dynamic>>(context:context,isScrollControlled:true,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:ListView(shrinkWrap:true,children:[const Padding(padding:EdgeInsets.all(16),child:Text('اختر ملف العضو لإرساله',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),...members.map((m)=>ListTile(leading:photo(m,size:48),title:Text('${m['name']??''}'),subtitle:Text('ملف العضو'),onTap:()=>Navigator.pop(ctx,m)))]))));
