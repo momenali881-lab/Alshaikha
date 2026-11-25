@@ -107,6 +107,11 @@ class SharedStore {
     }
     final id = (data['id'] as String?) ?? _db.collection(table).doc().id;
     final record = <String, dynamic>{...data, 'id': id};
+    // New notification documents enter the free OneSignal dispatcher queue once.
+    if (table == 'notifications' && data['id'] == null && !record.containsKey('pushStatus')) {
+      record['pushStatus'] = 'pending';
+      record['pushAttempts'] = 0;
+    }
     // Firestore is the source of truth. Cache locally only after the cloud write succeeds.
     await _db.collection(table).doc(id).set({
       ...record,
