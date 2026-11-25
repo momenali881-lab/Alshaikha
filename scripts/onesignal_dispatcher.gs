@@ -180,6 +180,8 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       app_id: appId,
       include_aliases: { external_id: ids },
       target_channel: 'push',
+      android_channel_id: 'alshaikha_notifications',
+      priority: 10,
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
       data: data,
