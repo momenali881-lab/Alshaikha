@@ -558,14 +558,27 @@ class _AdminHomeState extends State<AdminHome> {
   }
   Future<void> sendAdminMessage() async {
     final value=chatController.text.trim();
-    if(value.isEmpty)return;
-    if(selectedConversationId==null){note('لا توجد محادثة عميل للرد عليها بعد');return;}
+    final customerId=selectedConversationId;
+    final user=FirebaseAuth.instance.currentUser;
+    if(value.isEmpty||user==null)return;
+    if(customerId==null){note('لا توجد محادثة عميل للرد عليها بعد');return;}
+    final now=DateTime.now();
+    final localId='local_${now.microsecondsSinceEpoch}';
+    final optimistic=<String,dynamic>{'id':localId,'_localId':localId,'conversationId':customerId,'senderId':user.uid,'sender':'الإدارة','type':'text','text':value,'createdAt':now.toIso8601String(),'pending':true};
+    chatController.clear();
+    setState(()=>rows.add(optimistic));
+    WidgetsBinding.instance.addPostFrameCallback((_){if(adminChatScrollController.hasClients)adminChatScrollController.animateTo(0,duration:const Duration(milliseconds:180),curve:Curves.easeOut);});
     try {
-      await SharedStore.save('messages', {'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'text','text':value,'createdAt':DateTime.now().toIso8601String()});
-      await SharedStore.save('notifications',{'target':'customer','customerId':selectedConversationId,'type':'message','title':'رسالة جديدة من الإدارة','body':value,'createdAt':DateTime.now().toIso8601String(),'read':false});
-      chatController.clear();
-      await refresh(silent:true);
-    } catch(e) { note('تعذر إرسال الرد: $e'); }
+      final savedId=await SharedStore.save('messages',{'conversationId':customerId,'senderId':user.uid,'sender':'الإدارة','type':'text','text':value,'createdAt':now.toIso8601String()});
+      if(mounted)setState(()=>rows=rows.map((m)=>m['_localId']==localId?({...m,'id':savedId,'pending':false}):m).toList());
+      unawaited(()async{
+        try{
+          await SharedStore.save('notifications',{'target':'customer','customerId':customerId,'conversationId':customerId,'type':'message','title':'رسالة جديدة من الإدارة','senderName':'الإدارة','body':value,'createdAt':now.toIso8601String(),'read':false});
+        }catch(notificationError){debugPrint('Admin message notification failed: $notificationError');}
+      }());
+    } catch(e) {
+      if(mounted){setState(()=>rows.removeWhere((m)=>m['_localId']==localId));if(chatController.text.isEmpty)chatController.text=value;note('تعذر إرسال الرد: $e');}
+    }
   }
   Future<void> createBookingFromChat() async {
     final previous=section;
