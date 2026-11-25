@@ -40,7 +40,7 @@ class NotificationService {
         DateTime.now().millisecondsSinceEpoch.remainder(2147483647), title, body ?? '',
         NotificationDetails(android:AndroidNotificationDetails(
           channelId,'إشعارات الشيخة',
-          channelDescription:'رسائل العملاء والحجوزات والتحديثات',\n          icon:'ic_stat_alshaikha',
+          channelDescription:'رسائل العملاء والحجوزات والتحديثات',
           importance:Importance.max,priority:Priority.high,playSound:true,
           styleInformation:BigTextStyleInformation(
             body ?? '',
