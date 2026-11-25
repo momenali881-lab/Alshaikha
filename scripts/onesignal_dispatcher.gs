@@ -294,8 +294,6 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
       data: data,
-      large_icon: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL,
-      big_picture: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL,
       ios_attachments: { sender: data.senderImageUrl || ALSHAIKHA_APP_IMAGE_URL },
       idempotency_key: idempotencyKey
     }),
