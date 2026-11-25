@@ -21,9 +21,25 @@ class SharedStore {
     }
   }
 
+  // Android's shared-storage channel accepts JSON-compatible values only.
+  // Convert Firestore Timestamp objects recursively before crossing the channel.
+  static dynamic _toLocalValue(dynamic value) {
+    if (value is Timestamp) return value.toDate().toIso8601String();
+    if (value is DateTime) return value.toIso8601String();
+    if (value is Map) {
+      return value.map((key, item) =>
+          MapEntry(key.toString(), _toLocalValue(item)));
+    }
+    if (value is Iterable) return value.map(_toLocalValue).toList();
+    return value;
+  }
+
   static Future<void> _cache(String table, Map<String, dynamic> data) async {
     try {
-      await _channel.invokeMethod<String>('save', {'table': table, 'data': data});
+      await _channel.invokeMethod<String>('save', {
+        'table': table,
+        'data': _toLocalValue(data),
+      });
     } on PlatformException {
       // The customer may install this app on a device without the admin provider.
     } on MissingPluginException {
