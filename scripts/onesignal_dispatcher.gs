@@ -15,7 +15,8 @@ const ALSHAIKHA_CLIENT_APP_ID = '603a9d8a-365a-4b6f-befd-b213f725c09e';
 const ALSHAIKHA_ADMIN_APP_ID = '5ccd4e96-a64c-4565-9ae5-964548bed976';
 const ALSHAIKHA_FIRESTORE_COLLECTION = 'notifications';
 const ALSHAIKHA_ONESIGNAL_ENDPOINT = 'https://api.onesignal.com/notifications';
-const ALSHAIKHA_NOTIFICATION_CHANNEL_ID = 'alshaikha_alerts_v2';
+const ALSHAIKHA_CLIENT_NOTIFICATION_CHANNEL_ID = '3263c9ec-b3e8-403c-8916-a510c2bb412f';
+const ALSHAIKHA_ADMIN_NOTIFICATION_CHANNEL_ID = '1cdc3e75-49a8-47ce-90e9-294b4d2bb663';
 // Small, optimized brand artwork; the login background image is intentionally not used.
 const ALSHAIKHA_APP_IMAGE_URL = 'https://raw.githubusercontent.com/momenali881-lab/Alshaikha/main/assets/launcher_icon.jpg';
 const ALSHAIKHA_FIREBASE_WEB_API_KEY = 'AIzaSyA97IxmVYLuB73jTZ7VDCwFI8keBTxZfA4';
@@ -286,7 +287,9 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
       app_id: appId,
       include_aliases: { external_id: ids },
       target_channel: 'push',
-      android_channel_id: ALSHAIKHA_NOTIFICATION_CHANNEL_ID,
+      android_channel_id: target === 'admin'
+        ? ALSHAIKHA_ADMIN_NOTIFICATION_CHANNEL_ID
+        : ALSHAIKHA_CLIENT_NOTIFICATION_CHANNEL_ID,
       priority: 10,
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
