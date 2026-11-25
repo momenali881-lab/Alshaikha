@@ -602,6 +602,10 @@ class _AdminHomeState extends State<AdminHome> {
     setState(()=>section=previous);
     await refresh();
   }
+  Color chatCategoryColor(String value)=>switch(value){'important'=>gold,'paid'=>teal,'unpaid'=>rose,_=>Colors.grey};
+  Future<void> setChatCategory(String customerId,String category)async{try{await FirebaseFirestore.instance.collection('profiles').doc(customerId).update({'chatCategory':category,'chatCategoryUpdatedAt':FieldValue.serverTimestamp()});final i=customerProfiles.indexWhere((p)=>p['id']?.toString()==customerId);if(i>=0)customerProfiles[i]={...customerProfiles[i],'chatCategory':category};if(mounted)setState((){});note('تم تحديث التصنيف');}catch(e){note('تعذر تحديث التصنيف: $e');}}
+  Future<void> showChatCategoryMenu(String id)async{final p=customerProfiles.where((x)=>x['id']?.toString()==id).toList();final current=p.isEmpty?'':(p.first['chatCategory']??'').toString();final v=await showModalBottomSheet<String>(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[const ListTile(title:Text('تصنيف المحادثة')),for(final x in const [('important','مهمة'),('paid','تم الدفع'),('unpaid','لم يدفع بعد'),('','إزالة التصنيف')])ListTile(leading:Icon(Icons.circle,color:x.$1.isEmpty?Colors.grey:chatCategoryColor(x.$1)),title:Text(x.$2),trailing:current==x.$1?const Icon(Icons.check):null,onTap:()=>Navigator.pop(ctx,x.$1))]))));if(v!=null)await setChatCategory(id,v);}
+  Future<void> deleteChatConversation(String id)async{final ok=await showDialog<bool>(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(title:const Text('حذف المحادثة بالكامل؟'),content:const Text('سيتم حذف جميع الرسائل لدى الطرفين ولا يمكن التراجع.'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('حذف نهائياً'))])));if(ok!=true)return;try{final db=FirebaseFirestore.instance;final docs=await db.collection('messages').where('conversationId',isEqualTo:id).get();for(var i=0;i<docs.docs.length;i+=450){final batch=db.batch();for(final d in docs.docs.skip(i).take(450))batch.delete(d.reference);await batch.commit();}for(final d in docs.docs){try{await SharedStore.delete('messages',d.id);}catch(_){}}if(mounted)setState((){rows.removeWhere((m)=>m['conversationId']?.toString()==id);if(selectedConversationId==id){selectedConversationId=null;showChatConversation=false;}});note('تم حذف المحادثة ورسائلها');}catch(e){note('تعذر حذف المحادثة: $e');}}
   Widget adminChat() {
     if(!showChatConversation){
       final grouped=<String,List<Map<String,dynamic>>>{};
@@ -615,12 +619,13 @@ class _AdminHomeState extends State<AdminHome> {
           final unread=notifications.where((n)=>n['createdBy']?.toString()==id&&n['read']!=true).length;
           return ListTile(contentPadding:const EdgeInsets.symmetric(horizontal:8,vertical:5),
             leading:CircleAvatar(radius:25,backgroundColor:rose.withOpacity(.12),child:const Icon(Icons.person,color:rose)),
-            title:Text(customerLabel(id),style:const TextStyle(fontWeight:FontWeight.bold)),
+            title:Row(children:[Expanded(child:Text(customerLabel(id),style:const TextStyle(fontWeight:FontWeight.bold))),if((customerProfiles.firstWhere((p)=>p['id']?.toString()==id,orElse:()=>{})['chatCategory']??'').toString().isNotEmpty)Icon(Icons.circle,size:11,color:chatCategoryColor((customerProfiles.firstWhere((p)=>p['id']?.toString()==id,orElse:()=>{})['chatCategory']??'').toString()))]),
             subtitle:Text(chatPreview(latest),maxLines:1,overflow:TextOverflow.ellipsis),
             trailing:Column(mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.end,children:[
               Text(chatTime(latest['createdAt']),style:const TextStyle(fontSize:11,color:Colors.black54)),
               if(unread>0)Padding(padding:const EdgeInsets.only(top:5),child:CircleAvatar(radius:10,backgroundColor:rose,child:Text('$unread',style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.bold))))
             ]),
+            onLongPress:()=>showModalBottomSheet<void>(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:Wrap(children:[ListTile(leading:const Icon(Icons.label,color:teal),title:const Text('تصنيف المحادثة'),onTap:(){Navigator.pop(ctx);showChatCategoryMenu(id);}),ListTile(leading:const Icon(Icons.delete_forever,color:rose),title:const Text('حذف المحادثة بالكامل'),onTap:(){Navigator.pop(ctx);deleteChatConversation(id);})])))),
             onTap:(){setState((){selectedConversationId=id;showChatConversation=true;});markConversationRead(id);}
           );
         }
