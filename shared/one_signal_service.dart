@@ -61,7 +61,11 @@ class OneSignalService {
 
   static Future<bool> requestPermission() async {
     try {
-      return await OneSignal.Notifications.requestPermission(true);
+      final granted = await OneSignal.Notifications.requestPermission(true);
+      if (granted) {
+        OneSignal.User.pushSubscription.optIn();
+      }
+      return granted;
     } catch (_) {
       return false;
     }
