@@ -58,11 +58,20 @@ for app, (package, activity_file) in apps.items():
 
     manifest = android / "app" / "src" / "main" / "AndroidManifest.xml"
     text = manifest.read_text()
-    internet = '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n'
-    if 'android.permission.INTERNET' not in text:
-        manifest_start = text.find('<manifest')
-        close = text.find('>', manifest_start)
-        text = text[:close + 1] + '\n    ' + internet + text[close + 1:]
+    manifest_start = text.find('<manifest')
+    close = text.find('>', manifest_start)
+    permission_lines = [
+        '<uses-permission android:name="android.permission.INTERNET" />',
+        '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+        '<uses-permission android:name="android.permission.VIBRATE" />',
+    ]
+    missing_permissions = [
+        line for line in permission_lines
+        if line.split('"')[1] not in text
+    ]
+    if missing_permissions:
+        text = (text[:close + 1] + '\n    ' +
+                '\n    '.join(missing_permissions) + text[close + 1:])
     if app == "admin_app":
         marker = '<application'
         addition = '''<permission android:name="com.example.al_sheikha_admin.permission.SHARED_DATA" android:protectionLevel="normal" />
