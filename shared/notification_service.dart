@@ -13,7 +13,7 @@ class NotificationService {
   static Stream<Map<String,dynamic>> get taps => _tapController.stream;
   static Map<String,dynamic>? _initialTap;
   static bool _initialized = false;
-  static const String channelId = 'alshaikha_notifications';
+  static const String channelId = 'alshaikha_alerts_v2';
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     channelId, 'إشعارات الشيخة',
     description: 'رسائل العملاء والحجوزات والتحديثات',
@@ -38,10 +38,15 @@ class NotificationService {
       if (title == null || title.isEmpty) return;
       unawaited(_local.show(
         DateTime.now().millisecondsSinceEpoch.remainder(2147483647), title, body ?? '',
-        const NotificationDetails(android:AndroidNotificationDetails(
+        NotificationDetails(android:AndroidNotificationDetails(
           channelId,'إشعارات الشيخة',
           channelDescription:'رسائل العملاء والحجوزات والتحديثات',
           importance:Importance.max,priority:Priority.high,playSound:true,
+          styleInformation:BigTextStyleInformation(
+            body ?? '',
+            contentTitle:title,
+            summaryText:'الشيخة',
+          ),
         )),
         payload:jsonEncode(message.data),
       ));
