@@ -93,6 +93,7 @@ exports.createAdminAccount = onCall(
 
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
+const APP_NOTIFICATION_IMAGE = "https://raw.githubusercontent.com/momenali881-lab/Alshaikha/main/client_app/file_00000000df048210b32f5dc7efa7f5ad.png";
 
 exports.deliverAppNotification = onDocumentCreated("notifications/{notificationId}", async (event) => {
   const snapshot = event.data;
@@ -132,7 +133,7 @@ exports.deliverAppNotification = onDocumentCreated("notifications/{notificationI
     const batch=entries.slice(start,start+500);
     const result=await getMessaging().sendEachForMulticast({
       tokens:batch.map(([token])=>token),
-      notification:{title:String(notification.title||"الشيخة"),body:String(notification.body||"لديك إشعار جديد"),...(notification.senderImageUrl?{image:String(notification.senderImageUrl)}:{})},
+      notification:{title:String(notification.title||"الشيخة"),body:String(notification.body||"لديك إشعار جديد"),...((notification.senderImageUrl||target==="customer")?{image:String(notification.senderImageUrl||APP_NOTIFICATION_IMAGE)}:{})},
       data,
       android:{priority:"high",notification:{channelId:"alshaikha_notifications",sound:"default"}}
     });
