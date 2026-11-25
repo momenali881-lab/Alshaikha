@@ -291,7 +291,6 @@ function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempot
         ? ALSHAIKHA_ADMIN_NOTIFICATION_CHANNEL_ID
         : ALSHAIKHA_CLIENT_NOTIFICATION_CHANNEL_ID,
       priority: 10,
-      small_icon: 'ic_stat_alshaikha',
       headings: { ar: title, en: title },
       contents: { ar: body, en: body },
       data: data,
