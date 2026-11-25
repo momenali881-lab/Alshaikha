@@ -17,8 +17,6 @@ const ALSHAIKHA_FIRESTORE_COLLECTION = 'notifications';
 const ALSHAIKHA_ONESIGNAL_ENDPOINT = 'https://api.onesignal.com/notifications';
 const ALSHAIKHA_CLIENT_NOTIFICATION_CHANNEL_ID = '3263c9ec-b3e8-403c-8916-a510c2bb412f';
 const ALSHAIKHA_ADMIN_NOTIFICATION_CHANNEL_ID = '1cdc3e75-49a8-47ce-90e9-294b4d2bb663';
-// Small, optimized brand artwork; the login background image is intentionally not used.
-const ALSHAIKHA_APP_IMAGE_URL = 'https://raw.githubusercontent.com/momenali881-lab/Alshaikha/main/assets/launcher_icon.jpg';
 const ALSHAIKHA_FIREBASE_WEB_API_KEY = 'AIzaSyA97IxmVYLuB73jTZ7VDCwFI8keBTxZfA4';
 
 function setupAlshaikhaNotifications() {
@@ -222,7 +220,7 @@ function processAlshaikhaNotification_(token, projectId, document) {
     const data = {};
     [
       'type', 'bookingId', 'customerId', 'createdBy',
-      'conversationId', 'target', 'id', 'senderName', 'senderImageUrl'
+      'conversationId', 'target', 'id', 'senderName'
     ].forEach(function (key) {
       if (fields[key] !== undefined && fields[key] !== null) {
         data[key === 'id' ? 'notificationId' : key] = String(fields[key]);
