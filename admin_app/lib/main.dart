@@ -12,6 +12,8 @@ import 'get_pronto_uploader.dart';
 import 'iraq_locations.dart';
 import 'analytics_screen.dart';
 import 'notification_service.dart';
+import 'shared/one_signal_service.dart';
+import 'shared/one_signal_subscription_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +22,11 @@ Future<void> main() async {
     await NotificationService.initialize();
   } catch (_) {
     // Push notifications are optional; never prevent the app from opening.
+  }
+  try {
+    OneSignalService.initialize('5ccd4e96-a64c-4565-9ae5-964548bed976');
+  } catch (_) {
+    // OneSignal is optional; never prevent the app from opening.
   }
   runApp(const SheikhaAdminApp());
 }
@@ -39,7 +46,7 @@ class SheikhaAdminApp extends StatelessWidget {
     debugShowCheckedModeBanner:false, title:'الشيخة - الإدارة',
     theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:plum,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.arefRuqaaTextTheme(),iconTheme:const IconThemeData(color:plum),inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(14)))),appBarTheme:const AppBarTheme(backgroundColor:rose,foregroundColor:Colors.white,elevation:0),cardTheme:CardThemeData(color:Colors.white,elevation:2,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:rose,foregroundColor:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(14)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:teal,foregroundColor:Colors.white)),
     darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:rose,brightness:Brightness.dark),textTheme:GoogleFonts.arefRuqaaTextTheme(ThemeData.dark().textTheme)),
-    themeMode:ThemeMode.system, home:const AdminAuthGate());
+    themeMode:ThemeMode.system, home:OneSignalSubscriptionGate(child:const AdminAuthGate()));
 }
 
 
