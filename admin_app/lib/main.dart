@@ -252,8 +252,10 @@ class _AdminHomeState extends State<AdminHome> {
     final customerId=(n['customerId']??n['createdBy']??'').toString();
     final matches=customerProfiles.where((p)=>p['id']?.toString()==customerId).toList();
     final avatar=(matches.isEmpty?'':(matches.first['avatarBase64']??'').toString());
+    final avatarUrl=(matches.isEmpty?'':(matches.first['avatarUrl']??matches.first['photoUrl']??'').toString());
     Widget leading=const CircleAvatar(backgroundColor:Color(0xFFFFE4EF),child:Icon(Icons.person,color:rose));
-    if(avatar.isNotEmpty){try{leading=CircleAvatar(backgroundImage:MemoryImage(base64Decode(avatar)));}catch(_){}}
+    if(avatarUrl.startsWith('https://')){leading=CircleAvatar(backgroundImage:NetworkImage(avatarUrl));}
+    else if(avatar.isNotEmpty){try{leading=CircleAvatar(backgroundImage:MemoryImage(base64Decode(avatar)));}catch(_){}}
     messenger.showMaterialBanner(MaterialBanner(
       backgroundColor:Colors.white,elevation:5,
       padding:const EdgeInsets.symmetric(horizontal:14,vertical:10),
