@@ -148,7 +148,7 @@ function processAlshaikhaNotification_(token, projectId, document) {
     chunks.forEach(function (ids, index) {
       if (sendAlshaikhaOneSignal_(
         restKey, appId, ids, title, body, data,
-        deterministicAlshaikhaUuid_(notificationId + ':' + index)
+        deterministicAlshaikhaUuid_(notificationId + ':' + index), target
       )) delivered = true;
     });
 
@@ -171,7 +171,7 @@ function processAlshaikhaNotification_(token, projectId, document) {
   }
 }
 
-function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempotencyKey) {
+function sendAlshaikhaOneSignal_(restKey, appId, ids, title, body, data, idempotencyKey, target) {
   const response = UrlFetchApp.fetch(ALSHAIKHA_ONESIGNAL_ENDPOINT, {
     method: 'post',
     contentType: 'application/json',
