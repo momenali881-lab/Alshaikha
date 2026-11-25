@@ -1,60 +1,69 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
-/// Centralized wrapper for all OneSignal SDK interactions.
+/// Centralized, failure-isolated wrapper for OneSignal SDK interactions.
 class OneSignalService {
   OneSignalService._();
 
   static bool _initialized = false;
   static String? _lastExternalId;
-  static StreamSubscription<auth.User?>? _authSubscription;
-  static void Function(String?)? _pushSubscriptionHandler;
 
   static void initialize(String appId) {
     if (_initialized) return;
+    try {
+      OneSignal.initialize(appId);
+      _initialized = true;
+    } catch (_) {
+      // Push setup must never prevent either app from opening.
+      return;
+    }
 
-    OneSignal.initialize(appId);
-    _authSubscription = auth.FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user == null) {
-        if (_lastExternalId != null) {
-          OneSignal.logout();
-          _lastExternalId = null;
+    auth.FirebaseAuth.instance.authStateChanges().listen((user) {
+      try {
+        if (user == null) {
+          if (_lastExternalId != null) {
+            OneSignal.logout();
+            _lastExternalId = null;
+          }
+          return;
         }
-        return;
+        if (_lastExternalId != user.uid) {
+          OneSignal.login(user.uid);
+          _lastExternalId = user.uid;
+        }
+      } catch (_) {
+        // Authentication and core app flows remain independent of push setup.
       }
-      if (_lastExternalId != user.uid) {
-        OneSignal.login(user.uid);
-        _lastExternalId = user.uid;
-      }
-    });
-    _initialized = true;
+    }, onError: (_) {});
   }
 
   static void addNotificationClickListener(
     void Function(Map<String, dynamic>) handler,
   ) {
-    OneSignal.Notifications.addClickListener((event) {
-      final data = event.notification.additionalData;
-      if (data != null) {
-        handler(Map<String, dynamic>.from(data));
-      }
-    });
+    try {
+      OneSignal.Notifications.addClickListener((event) {
+        final data = event.notification.additionalData;
+        if (data != null) {
+          handler(Map<String, dynamic>.from(data));
+        }
+      });
+    } catch (_) {}
   }
 
   static void addPushSubscriptionObserver(void Function(String?) handler) {
-    // Retain the callback for the lifetime of the app because the SDK observer
-    // is expected to remain active after this method returns.
-    _pushSubscriptionHandler = handler;
-    OneSignal.User.pushSubscription.addObserver((state) {
-      _pushSubscriptionHandler?.call(state.current.id);
-    });
-    // The server-assigned ID may already exist before the observer is attached.
-    _pushSubscriptionHandler?.call(OneSignal.User.pushSubscription.id);
+    try {
+      OneSignal.User.pushSubscription.addObserver((state) {
+        handler(state.current.id);
+      });
+      handler(OneSignal.User.pushSubscription.id);
+    } catch (_) {}
   }
 
   static Future<bool> requestPermission() async {
-    return OneSignal.Notifications.requestPermission(true);
+    try {
+      return await OneSignal.Notifications.requestPermission(true);
+    } catch (_) {
+      return false;
+    }
   }
 }

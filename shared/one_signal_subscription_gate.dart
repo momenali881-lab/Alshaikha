@@ -26,15 +26,14 @@ class _OneSignalSubscriptionGateState extends State<OneSignalSubscriptionGate> {
   }
 
   Future<void> _restoreAndObserve() async {
-    final preferences = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    _dialogShown = preferences.getBool(_shownKey) ?? false;
-    if (_dialogShown) return;
-
     try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      _dialogShown = preferences.getBool(_shownKey) ?? false;
+      if (_dialogShown) return;
       OneSignalService.addPushSubscriptionObserver(_onSubscriptionChanged);
     } catch (_) {
-      // The app remains usable if OneSignal is temporarily unavailable.
+      // The app remains usable if local preferences or OneSignal are unavailable.
     }
   }
 
@@ -50,22 +49,28 @@ class _OneSignalSubscriptionGateState extends State<OneSignalSubscriptionGate> {
     _dialogShown = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.setBool(_shownKey, true);
+      try {
+        final preferences = await SharedPreferences.getInstance();
+        await preferences.setBool(_shownKey, true);
+      } catch (_) {}
       if (!mounted) return;
 
       await showDialog<void>(
         context: context,
-        barrierDismissible: false,
+        barrierDismissible: true,
         builder: (dialogContext) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Text('تم ربط الإشعارات بنجاح'),
+            title: const Text('تفعيل إشعارات الشيخة'),
             content: const Text(
-              'أصبح التطبيق مسجلاً في OneSignal. اضغط أدناه لتفعيل استقبال الإشعارات.',
+              'هل ترغب في تفعيل الإشعارات لتصلك تحديثات الحجوزات والرسائل والإعلانات؟',
             ),
             actions: [
               TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('لاحقاً'),
+              ),
+              FilledButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
                   unawaited(OneSignalService.requestPermission());
