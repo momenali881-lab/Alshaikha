@@ -184,19 +184,20 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
     await showAdminSetupInstructions(context);
   }
 
-  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
-   const Icon(Icons.admin_panel_settings_rounded,size:68,color:plum),const SizedBox(height:12),
-   const Text('الشيخة - الإدارة',style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:plum)),
-   const SizedBox(height:24),
+  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(backgroundColor:Theme.of(context).scaffoldBackgroundColor,body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:440),child:GlassPanel(radius:30,child:Padding(padding:const EdgeInsets.all(22),child:Column(mainAxisSize:MainAxisSize.min,children:[
+   Container(width:82,height:82,decoration:BoxDecoration(color:Theme.of(context).colorScheme.primary.withOpacity(.13),borderRadius:BorderRadius.circular(26)),child:Icon(Icons.admin_panel_settings_rounded,size:48,color:Theme.of(context).colorScheme.primary)),const SizedBox(height:14),
+   Text('الشيخة - الإدارة',style:TextStyle(fontSize:27,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),
+   const SizedBox(height:6),Text('بوابة إدارة التطبيق',style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withOpacity(.6))),
+   const SizedBox(height:26),
    TextField(controller:username,autocorrect:false,decoration:const InputDecoration(labelText:'اسم المستخدم',prefixIcon:Icon(Icons.account_circle))),
    const SizedBox(height:12),
    TextField(controller:password,obscureText:obscure,decoration:InputDecoration(labelText:'كلمة المرور',prefixIcon:const Icon(Icons.lock),suffixIcon:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility:Icons.visibility_off)))),
    if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,style:const TextStyle(color:Colors.red))),
    const SizedBox(height:20),SizedBox(width:double.infinity,child:FilledButton(onPressed:loading?null:submit,child:loading?const CircularProgressIndicator():const Text('تسجيل الدخول'))),
-   const SizedBox(height:14),
+   const SizedBox(height:12),
    SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:loading?null:createFirstAdmin,icon:const Icon(Icons.info_outline),label:const Text('طريقة إنشاء أول حساب إداري'))),
-   const SizedBox(height:8),const Text('لأمان الحسابات، تتم إضافة المديرين من وحدة تحكم Firebase فقط.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:Colors.black54))
-  ])))))));
+   const SizedBox(height:8),Text('لأمان الحسابات، تتم إضافة المديرين من وحدة تحكم Firebase فقط.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurface.withOpacity(.58)))
+  ])))))))));
 }
 
 class AdminAccountsScreen extends StatefulWidget {
