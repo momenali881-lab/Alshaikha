@@ -588,7 +588,24 @@ class _AdminHomeState extends State<AdminHome> {
       Text('الحالة: ${m['status']??'قيد المراجعة'}',style:const TextStyle(fontWeight:FontWeight.bold,color:teal)),
     ])));}
     Widget? profile;
-    if(member!=null){final imgs=List<String>.from(member['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(10),child:appImage(imgs.first,width:58,height:58,fit:BoxFit.cover));}catch(_){}}profile=GlassPanel(radius:15,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[avatar,const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('بطاقة ملف العضو') ])),const Icon(Icons.badge_outlined,color:rose)])));}
+    if(member!=null){final imgs=List<String>.from(member['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(10),child:appImage(imgs.first,width:58,height:58,fit:BoxFit.cover));}catch(_){}}profile=GlassPanel(radius:15,child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+      Row(children:[
+       avatar,const SizedBox(width:10),
+       Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('${member['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
+        const SizedBox(height:4),
+        Text('${member['hourlyPrice']??0} د.ع / ساعة',style:const TextStyle(color:plum,fontWeight:FontWeight.w800,fontSize:13)),
+        if((member['nightlyPrice']??0).toString()!='0')Text('${member['nightlyPrice']} د.ع / ليلة',style:const TextStyle(fontSize:11,color:Colors.grey)),
+       ])),
+      ]),
+      const SizedBox(height:9),
+      SizedBox(width:double.infinity,child:OutlinedButton.icon(
+       onPressed:()=>openSharedMember(member!),
+       icon:const Icon(Icons.person_outline_rounded,size:18),
+       label:const Text('عرض الملف الشخصي'),
+       style:OutlinedButton.styleFrom(visualDensity:VisualDensity.compact,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(13))),
+      )),
+     ])));}
     return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),child:GlassPanel(radius:20,tint:mine?teal.withOpacity(.10):rose.withOpacity(.09),child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['sender']??'عميل'}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12,color:plum)),if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')Text('${m['text']??'تعذر العثور على ملف العضو'}'),Text('${m['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))])))));
   }
   Future<void> sendAdminMessage() async {
