@@ -712,7 +712,7 @@ Widget homePage(){
         IconButton(visualDensity:VisualDensity.compact,tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
        ]),
        if(tab==0)Padding(padding:const EdgeInsets.only(top:5),child:Container(height:43,decoration:BoxDecoration(color:dark?Colors.white.withOpacity(.07):const Color(0xFFF0E9DC),borderRadius:BorderRadius.circular(15),border:Border.all(color:gold.withOpacity(.25))),child:Row(children:[const SizedBox(width:10),Icon(Icons.search_rounded,color:gold,size:20),const SizedBox(width:8),Expanded(child:TextField(controller:searchCtrl,textInputAction:TextInputAction.search,onChanged:(v)=>setState(()=>search=v),decoration:const InputDecoration(hintText:'ابحث عن الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:10)))),if(search.isNotEmpty)IconButton(visualDensity:VisualDensity.compact,onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))]))),
-      ])),
+      ]))),
      Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage())),
      if(MediaQuery.of(context).viewInsets.bottom==0)Padding(padding:const EdgeInsets.fromLTRB(12,3,12,7),child:GlassPanel(radius:25,padding:const EdgeInsets.symmetric(horizontal:4,vertical:6),child:Row(mainAxisAlignment:MainAxisAlignment.spaceAround,children:[
       _navItem(0,Icons.home_rounded,'الرئيسية',tab,dark),
