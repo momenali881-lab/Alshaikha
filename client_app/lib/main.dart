@@ -427,15 +427,46 @@ Future<void> openNotifications()async{
   if((m['description']??'').toString().isNotEmpty)Padding(padding:const EdgeInsets.only(top:8),child:Text('${m['description']}')),
   const SizedBox(height:14),Row(children:[Expanded(child:OutlinedButton.icon(onPressed:(){Navigator.pop(c);openMember(m);},icon:const Icon(Icons.person),label:const Text('الملف الكامل'))),const SizedBox(width:8),Expanded(child:FilledButton.icon(onPressed:(){Navigator.pop(c);book(m);},icon:const Icon(Icons.calendar_month),label:const Text('احجز الآن')))])
  ])))));}
- Widget memberProfilePage(Map<String,dynamic> m)=>ListView(padding:const EdgeInsets.all(16),children:[
-  imageGallery(m,height:290),
-  const SizedBox(height:14),Text('${m['name']??''}',textAlign:TextAlign.center,style:const TextStyle(fontSize:24,fontWeight:FontWeight.bold)),
-  const SizedBox(height:14),
-  Card(child:Column(children:[ListTile(leading:const Icon(Icons.cake_outlined),title:const Text('العمر'),subtitle:Text('${m['age']??'-'}')),ListTile(leading:const Icon(Icons.payments_outlined),title:const Text('سعر الساعة'),subtitle:Text('${m['hourlyPrice']??0} د.ع')),ListTile(leading:const Icon(Icons.nights_stay_outlined),title:const Text('سعر الليلة'),subtitle:Text('${m['nightlyPrice']??0} د.ع')),ListTile(leading:const Icon(Icons.place_outlined),title:const Text('المكان'),subtitle:Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان')),if((m['address']??'').toString().isNotEmpty)ListTile(leading:const Icon(Icons.location_on_outlined),title:const Text('العنوان'),subtitle:Text('${m['address']}'))])),
-  if((m['description']??'').toString().isNotEmpty)Card(child:Padding(padding:const EdgeInsets.all(16),child:Text('${m['description']}'))),
-  FilledButton.icon(onPressed:()=>book(m),icon:const Icon(Icons.calendar_month),label:const Text('احجز موعداً')),
- ]);
- Widget memberCard(Map<String,dynamic> m)=>Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
+ Widget memberProfilePage(Map<String,dynamic> m)=>ListView(padding:const EdgeInsets.fromLTRB(14,14,14,28),children:[
+   ClipRRect(borderRadius:BorderRadius.circular(26),child:Stack(children:[
+    imageGallery(m,height:290),
+    Positioned(right:14,bottom:14,child:Container(padding:const EdgeInsets.symmetric(horizontal:14,vertical:8),decoration:BoxDecoration(color:Colors.black.withOpacity(.58),borderRadius:BorderRadius.circular(16),border:Border.all(color:gold.withOpacity(.55))),child:Text('${m['name']??'عضو الكادر'}',style:const TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.w900)))),
+   ])),
+   const SizedBox(height:14),
+   GlassPanel(padding:const EdgeInsets.all(14),radius:22,child:Column(children:[
+    Row(children:[
+     Expanded(child:_memberInfoTile(Icons.payments_outlined,'سعر الساعة','${m['hourlyPrice']??0} د.ع')),
+     const SizedBox(width:8),
+     Expanded(child:_memberInfoTile(Icons.nights_stay_outlined,'سعر الليلة','${m['nightlyPrice']??0} د.ع')),
+    ]),
+    const Divider(height:22),
+    Row(children:[
+     Expanded(child:_memberInfoTile(Icons.cake_outlined,'العمر','${m['age']??'-'}')),
+     const SizedBox(width:8),
+     Expanded(child:_memberInfoTile(Icons.place_outlined,'المكان',m['hasPlace']==true?'متاح':'لا يوجد')),
+    ]),
+    if((m['address']??'').toString().isNotEmpty)...[
+     const Divider(height:22),
+     _memberInfoTile(Icons.location_on_outlined,'العنوان','${m['address']}'),
+    ],
+   ])),
+   if((m['description']??'').toString().isNotEmpty)...[
+    const SizedBox(height:12),
+    GlassPanel(padding:const EdgeInsets.all(16),radius:22,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+     const Text('نبذة عن عضو الكادر',style:TextStyle(fontSize:16,fontWeight:FontWeight.w900)),
+     const SizedBox(height:8),Text('${m['description']}',style:const TextStyle(height:1.6)),
+    ])),
+   ],
+   const SizedBox(height:16),
+   GlassActionButton(onPressed:()=>book(m),child:const Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.calendar_month_rounded),SizedBox(width:8),Text('احجز موعداً',style:TextStyle(fontWeight:FontWeight.w900))])),
+  ]);
+Widget _memberInfoTile(IconData icon,String label,String value)=>Row(children:[
+ Icon(icon,color:gold,size:21),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+  Text(label,style:TextStyle(fontSize:11,color:Theme.of(context).hintColor)),
+  Text(value,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:14),maxLines:2,overflow:TextOverflow.ellipsis),
+ ])),
+]);
+Widget memberCard(Map<String,dynamic> m)=>Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
   photo(m,size:76),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',style:const TextStyle(color:plum))])),
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
