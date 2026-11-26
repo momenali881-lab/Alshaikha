@@ -400,7 +400,7 @@ Future<void> openNotifications()async{
   final stamp=DateTime.tryParse('${msg['createdAt']??''}');
   final timeLabel=stamp==null?'':TimeOfDay.fromDateTime(stamp.toLocal()).format(context);
   final senderLabel=mine?'أنت':'الإدارة';
-  final bubbleTint=mine?accent.withOpacity(.16):Theme.of(context).colorScheme.surface.withOpacity(.72);
+  final bubbleTint=mine?const Color(0x33D8B878):const Color(0x3359452F);
   return Align(
    alignment:mine?Alignment.centerRight:Alignment.centerLeft,
    child:Container(
@@ -412,7 +412,7 @@ Future<void> openNotifications()async{
      child:Container(
       decoration:BoxDecoration(
        borderRadius:BorderRadius.circular(mine?21:17),
-       border:Border.all(color:mine?accent.withOpacity(.32):Colors.white.withOpacity(.16),width:1)
+       border:Border.all(color:mine?const Color(0xFFD8B878).withOpacity(.72):const Color(0xFF80664A).withOpacity(.58),width:1.15)
       ),
       child:Padding(
        padding:const EdgeInsets.all(12),
@@ -420,7 +420,7 @@ Future<void> openNotifications()async{
         Row(mainAxisSize:MainAxisSize.min,children:[
          Icon(mine?Icons.person_rounded:Icons.support_agent_rounded,size:15,color:mine?accent:teal),
          const SizedBox(width:5),
-         Text(senderLabel,style:TextStyle(fontSize:11,fontWeight:FontWeight.w800,color:mine?accent:teal)),
+         Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:4),decoration:BoxDecoration(color:mine?const Color(0xFFD8B878).withOpacity(.22):const Color(0xFF59452F).withOpacity(.16),borderRadius:BorderRadius.circular(20)),child:Text(senderLabel,style:TextStyle(fontSize:11,fontWeight:FontWeight.w900,color:mine?const Color(0xFF80602D):const Color(0xFF59452F)))),
          if(msg['pending']==true)...[
           const SizedBox(width:7),
           const SizedBox(width:10,height:10,child:CircularProgressIndicator(strokeWidth:1.5))
