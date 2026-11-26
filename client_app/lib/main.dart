@@ -155,12 +155,11 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
   );
   return Directionality(textDirection:TextDirection.rtl,child:Scaffold(
    resizeToAvoidBottomInset:true,
-   body:DecoratedBox(
-    decoration:BoxDecoration(
-     image:const DecorationImage(image:AssetImage('file_00000000df048210b32f5dc7efa7f5ad.png'),fit:BoxFit.cover,alignment:Alignment.center),
-     gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,
-      colors:dark?[Colors.black.withOpacity(.58),const Color(0xCC17120D),Colors.black.withOpacity(.66)]:[const Color(0x66F7F0E3),const Color(0xA6F0E6D4),const Color(0x88F7F2E9)])),
-    child:SafeArea(child:LayoutBuilder(builder:(context,constraints)=>SingleChildScrollView(
+   body:Stack(fit:StackFit.expand,children:[
+    Container(color:dark?const Color(0xFF17130F):const Color(0xFFF7F2E9)),
+    Positioned(top:0,left:0,right:0,height:MediaQuery.sizeOf(context).height*.48,child:Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',fit:BoxFit.cover,alignment:Alignment.topCenter)),
+    Positioned(top:0,left:0,right:0,height:MediaQuery.sizeOf(context).height*.58,child:DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:dark?[Colors.black.withOpacity(.20),const Color(0xFF17130F)]:[Colors.transparent,const Color(0xFFF7F2E9)])))),
+    SafeArea(child:LayoutBuilder(builder:(context,constraints)=>SingleChildScrollView(
      padding:EdgeInsets.fromLTRB(20,compact?8:18,20,24),
      child:ConstrainedBox(constraints:BoxConstraints(minHeight:constraints.maxHeight-42),child:Column(
       mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.stretch,
@@ -206,7 +205,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
       ],
      )),
     ))),
-   ),
+   ]),
   ));
  }
 
