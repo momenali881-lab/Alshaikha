@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'get_pronto_uploader.dart';
+import 'glass_design.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -118,9 +119,9 @@ class _AccountPageState extends State<AccountPage> {
     child: _loading ? const Center(child: CircularProgressIndicator()) : ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(children: [
+        GlassPanel(radius:24,child: Padding(padding: const EdgeInsets.all(18), child: Column(children: [
           GestureDetector(onTap: _pickAvatar, child: Stack(children: [
-            CircleAvatar(radius: 48, backgroundColor: const Color(0xFFF1E7D7),
+            CircleAvatar(radius: 48, backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(.12),
               backgroundImage: _avatar == null || _avatar!.isEmpty ? null : MemoryImage(base64Decode(_avatar!)),
               child: _avatar == null || _avatar!.isEmpty ? const Icon(Icons.person, size: 48, color: Color(0xFF9C835D)) : null),
             const Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 16, child: Icon(Icons.camera_alt, size: 17))),
@@ -134,8 +135,8 @@ class _AccountPageState extends State<AccountPage> {
             icon: const Icon(Icons.save_outlined), label: Text(_saving ? 'جارٍ الحفظ...' : 'حفظ بيانات الحساب'))),
         ]))),
         const SizedBox(height: 10),
-        Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('تغيير كلمة المرور', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+        GlassPanel(radius:24,child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('تغيير كلمة المرور', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 10),
           TextField(controller: _currentPassword, obscureText: true, decoration: const InputDecoration(labelText: 'كلمة المرور الحالية', prefixIcon: Icon(Icons.lock_outline))),
           const SizedBox(height: 9),
