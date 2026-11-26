@@ -588,8 +588,8 @@ Widget homePage(){
    if(memberSort=='name')return '${a['name']??''}'.toLowerCase().compareTo('${b['name']??''}'.toLowerCase());
    return 0;
   });
+   final featuredMembers=members.where((m)=>m['featured']==true&&m['available']!=false).toList();
   return ListView(padding:const EdgeInsets.fromLTRB(12,14,12,18),children:[
-    final featuredMembers=members.where((m)=>m['featured']==true&&m['available']!=false).toList();
     if(featuredMembers.isNotEmpty)...[
      const Padding(padding:EdgeInsets.only(top:14,bottom:8),child:Text('الكادر المميز',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
      SizedBox(height:158,child:ListView.separated(scrollDirection:Axis.horizontal,itemCount:featuredMembers.length,separatorBuilder:(_,__)=>const SizedBox(width:10),itemBuilder:(ctx,i){final m=featuredMembers[i];return SizedBox(width:126,child:InkWell(onTap:()=>openMember(m),borderRadius:BorderRadius.circular(20),child:GlassPanel(radius:20,padding:const EdgeInsets.all(8),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Expanded(child:ClipRRect(borderRadius:BorderRadius.circular(14),child:photo(m,size:100))),const SizedBox(height:6),Text('${m['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:12)),Text('${m['hourlyPrice']??0} د.ع/ساعة',style:TextStyle(fontSize:10,color:Theme.of(context).hintColor))]))));})),
