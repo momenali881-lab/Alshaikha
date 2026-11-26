@@ -644,17 +644,72 @@ class _AdminHomeState extends State<AdminHome> {
     ]);
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-    appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFF0E3CA),Color(0xFFE7D5B5),Color(0xFFF7F2E9)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة | الإدارة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:21,letterSpacing:.2))]),actions:[IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout,color:Colors.black)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:Colors.black))]),
-    floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(backgroundColor:rose,foregroundColor:Colors.white,onPressed:()=>edit(),icon:const Icon(Icons.add_circle_rounded,color:Colors.white),label:const Text('إضافة سجل')),
+    backgroundColor:Theme.of(context).scaffoldBackgroundColor,
+    floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(
+      backgroundColor:gold,foregroundColor:const Color(0xFF2C2114),elevation:5,
+      onPressed:()=>edit(),icon:const Icon(Icons.add_rounded),label:const Text('إضافة سجل',style:TextStyle(fontWeight:FontWeight.w800))),
     resizeToAvoidBottomInset:true,
-    body:Column(children:[
-      SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Color(0xEFFFFFFF),side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(() {section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}))).toList())),
-      Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
-        Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
-        if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
-        if(rows.isEmpty)const Card(child:Padding(padding:EdgeInsets.all(20),child:Text('لا توجد بيانات بعد. استخدم زر الإضافة للبدء.'))),
-        ...rows.map(recordCard),const SizedBox(height:90)
-      ])))
-    ])
+    body:SafeArea(child:Column(children:[
+      Padding(padding:const EdgeInsets.fromLTRB(16,12,16,12),child:Container(
+        padding:const EdgeInsets.fromLTRB(16,16,16,14),
+        decoration:BoxDecoration(
+          gradient:const LinearGradient(begin:Alignment.topRight,end:Alignment.bottomLeft,colors:[Color(0xFF30271D),Color(0xFF6C5433),Color(0xFF9A7845)]),
+          borderRadius:BorderRadius.circular(27),border:Border.all(color:gold.withOpacity(.55)),
+          boxShadow:[BoxShadow(color:Colors.black.withOpacity(.12),blurRadius:22,offset:const Offset(0,8))]),
+        child:Column(children:[
+          Row(children:[
+            Container(width:46,height:46,decoration:BoxDecoration(color:Colors.white.withOpacity(.13),borderRadius:BorderRadius.circular(16),border:Border.all(color:Colors.white24)),
+              child:const Icon(Icons.spa_rounded,color:Color(0xFFF1D9A9),size:27)),
+            const SizedBox(width:11),const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text('الشيخة',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w900)),
+              Text('مركز إدارة الحجوزات والكادر',style:TextStyle(color:Color(0xFFE9DCC7),fontSize:11,fontWeight:FontWeight.w600)),
+            ])),
+            IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),
+              icon:const Icon(Icons.admin_panel_settings_outlined,color:Colors.white)),
+            Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),
+              child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded,color:Colors.white))),
+            IconButton(tooltip:'تحديث',onPressed:()=>refresh(),icon:const Icon(Icons.refresh_rounded,color:Colors.white)),
+            IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout_rounded,color:Colors.white)),
+          ]),
+          const SizedBox(height:12),
+          Row(children:[
+            Expanded(child:Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:10),decoration:BoxDecoration(color:Colors.white.withOpacity(.12),borderRadius:BorderRadius.circular(15)),
+              child:Row(children:[const Icon(Icons.dashboard_outlined,color:Color(0xFFE9DCC7),size:17),const SizedBox(width:8),
+                Expanded(child:Text(sections[section]??'لوحة الإدارة',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w800,fontSize:13))),
+                Text(section=='messages'?'':section=='analytics'?'': '${rows.length} سجل',style:const TextStyle(color:Color(0xFFE9DCC7),fontSize:11,fontWeight:FontWeight.w700))
+              ]))),
+          ]),
+        ]),
+      )),
+      SizedBox(height:57,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:12),
+        children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.symmetric(horizontal:4,vertical:5),child:ChoiceChip(
+          avatar:Icon(sectionIcons[e.key],size:17,color:section==e.key?const Color(0xFF302719):sectionColors[e.key]),
+          label:Text(e.value,style:TextStyle(color:section==e.key?const Color(0xFF302719):sectionColors[e.key],fontWeight:FontWeight.w800,fontSize:12)),
+          selected:section==e.key,selectedColor:const Color(0xFFE7D4AF),backgroundColor:Theme.of(context).cardColor,
+          side:BorderSide(color:section==e.key?gold:sectionColors[e.key]!.withOpacity(.25)),
+          shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16)),
+          onSelected:(_){setState((){section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}
+        ))).toList())),
+      Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(
+        onRefresh:refresh,color:gold,child:ListView(padding:const EdgeInsets.fromLTRB(14,12,14,90),children:[
+          Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(
+            color:Theme.of(context).cardColor,borderRadius:BorderRadius.circular(22),border:Border.all(color:gold.withOpacity(.25))),
+            child:Row(children:[
+              Container(width:42,height:42,decoration:BoxDecoration(color:gold.withOpacity(.16),borderRadius:BorderRadius.circular(14)),
+                child:Icon(sectionIcons[section]??Icons.dashboard_rounded,color:gold)),
+              const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Text(sections[section]??'الإدارة',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w900)),
+                Text('إدارة وتنظيم بيانات ${sections[section]??''}',style:TextStyle(fontSize:11,color:Theme.of(context).hintColor)),
+              ])),
+              Text('${rows.length}',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900,color:gold)),
+            ])),
+          const SizedBox(height:12),
+          if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
+          if(rows.isEmpty)Container(padding:const EdgeInsets.all(24),decoration:BoxDecoration(color:Theme.of(context).cardColor,borderRadius:BorderRadius.circular(22),border:Border.all(color:gold.withOpacity(.2))),
+            child:const Column(children:[Icon(Icons.inbox_rounded,size:42,color:Color(0xFFC49A55)),SizedBox(height:10),Text('لا توجد بيانات بعد',style:TextStyle(fontWeight:FontWeight.w800)),Text('استخدم زر إضافة سجل للبدء',style:TextStyle(fontSize:12,color:Colors.grey))])),
+          ...rows.map(recordCard),
+        ]))),
+    ])),
   ));
+
 }
