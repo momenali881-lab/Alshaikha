@@ -713,10 +713,10 @@ Widget homePage(){
        const SizedBox(height:4),
        Row(mainAxisAlignment:MainAxisAlignment.end,children:[
         if(tab==0)IconButton(visualDensity:VisualDensity.compact,tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
-        if(tab==0)IconButton(visualDensity:VisualDensity.compact,tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search_rounded)),
         Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(visualDensity:VisualDensity.compact,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
         IconButton(visualDensity:VisualDensity.compact,tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
        ]),
+        if(tab==0)Padding(padding:const EdgeInsets.only(top:5),child:Container(height:43,decoration:BoxDecoration(color:dark?Colors.white.withOpacity(.07):const Color(0xFFF0E9DC),borderRadius:BorderRadius.circular(15),border:Border.all(color:gold.withOpacity(.25))),child:Row(children:[const SizedBox(width:10),Icon(Icons.search_rounded,color:gold,size:20),const SizedBox(width:8),Expanded(child:TextField(controller:searchCtrl,textInputAction:TextInputAction.search,onChanged:(v)=>setState(()=>search=v),decoration:const InputDecoration(hintText:'ابحث عن الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:10)))),if(search.isNotEmpty)IconButton(visualDensity:VisualDensity.compact,onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))]))),
       ])
      )),
      Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage())),
