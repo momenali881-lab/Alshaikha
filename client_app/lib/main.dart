@@ -387,7 +387,6 @@ Future<void> openNotifications()async{
   final accent=Theme.of(context).colorScheme.primary;
   final stamp=DateTime.tryParse('${msg['createdAt']??''}');
   final timeLabel=stamp==null?'':TimeOfDay.fromDateTime(stamp.toLocal()).format(context);
-  final senderLabel=mine?'أنت':'الإدارة';
   final bubbleTint=mine?const Color(0x33D8B878):const Color(0x3359452F);
   return Align(
    alignment:mine?Alignment.centerRight:Alignment.centerLeft,
