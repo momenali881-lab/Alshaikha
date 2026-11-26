@@ -534,7 +534,7 @@ Widget _memberInfoTile(IconData icon,String label,String value)=>Row(children:[
 ]);
 Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:color.withOpacity(.13),borderRadius:BorderRadius.circular(10),border:Border.all(color:color.withOpacity(.24))),child:Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:color)));
  Widget memberCard(Map<String,dynamic> m)=>GlassPanel(radius:23,child:InkWell(borderRadius:BorderRadius.circular(23),onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Padding(padding:const EdgeInsets.all(10),child:Row(children:[
-  ClipRRect(borderRadius:BorderRadius.circular(16),child:photo(m,size:104)),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.w900,fontSize:16)),const SizedBox(height:4),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),const SizedBox(height:5),Wrap(spacing:6,runSpacing:4,children:[_memberInfoPill(m['available']==false?'غير متاح':'متاح للحجز',m['available']==false?Colors.grey:teal),_memberInfoPill(m['hasPlace']==true?'يوجد مكان':'بدون مكان',plum)])])),
+  ClipRRect(borderRadius:BorderRadius.circular(16),child:photo(m,size:104)),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.w900,fontSize:16)),const SizedBox(height:4),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),const SizedBox(height:5),Wrap(spacing:6,runSpacing:4,children:[_memberInfoPill(m['available']==false?'محجوز':'متاح',m['available']==false?Colors.grey:teal),if(('${m['province']??''} ${m['area']??m['district']??''}').trim().isNotEmpty)Text('${m['province']??''}${(m['area']??m['district']??'').toString().isNotEmpty?'، ':''}${m['area']??m['district']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:Theme.of(context).hintColor))])])),
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
   ]))));
@@ -545,10 +545,12 @@ Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeIn
    const SizedBox(height:3),
    Text('${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,color:plum,fontWeight:FontWeight.w800)),
    const SizedBox(height:5),
-   Wrap(spacing:5,runSpacing:4,children:[
-    _memberInfoPill(m['hasPlace']==true?'يوجد مكان':'بدون مكان',plum),
-    if((m['description']??'').toString().trim().isNotEmpty)Text('${m['description']}',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:10,color:Theme.of(context).hintColor)),
-   ])
+   if(('${m['province']??''} ${m['area']??m['district']??''}').trim().isNotEmpty)Row(children:[
+    Icon(Icons.location_on_outlined,size:14,color:plum),
+    const SizedBox(width:3),
+    Expanded(child:Text('${m['province']??''}${(m['area']??m['district']??'').toString().isNotEmpty?'، ':''}${m['area']??m['district']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:10,color:Theme.of(context).hintColor))),
+   ]),
+   if((m['description']??'').toString().trim().isNotEmpty)Text('${m['description']}',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:10,color:Theme.of(context).hintColor)),
   ]))
  ])));
  void openBanner(Map<String,dynamic> b){
