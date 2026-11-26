@@ -215,7 +215,7 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
   Widget build(BuildContext context) => Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          appBar: AppBar(flexibleSpace: const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.centerRight, end: Alignment.centerLeft, colors: [Color(0xFF3D126A), Color(0xFF6A1B9A), Color(0xFF914A9A)]))), backgroundColor: Colors.transparent, title: const Text('الحسابات الإدارية')),
+          appBar: AppBar(title: const Text('الحسابات الإدارية'), backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(.82), elevation: 0, surfaceTintColor: Colors.transparent),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: busy ? null : addAdmin,
             icon: const Icon(Icons.info_outline),
@@ -240,12 +240,13 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
               return ListView(
                 children: docs.map((d) {
                   final data = d.data();
-                  return Card(
-                    child: ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.admin_panel_settings)),
-                      title: Text('${data['displayName'] ?? data['username'] ?? 'مدير'}'),
-                      subtitle: Text('@${data['username'] ?? ''}'),
-                    ),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    child: GlassPanel(radius: 20, padding: const EdgeInsets.all(5), child: ListTile(
+                      leading: Container(width: 46, height: 46, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withOpacity(.12), borderRadius: BorderRadius.circular(15), border: Border.all(color: gold.withOpacity(.24))), child: Icon(Icons.admin_panel_settings_rounded, color: Theme.of(context).colorScheme.primary)),
+                      title: Text('${data['displayName'] ?? data['username'] ?? 'مدير'}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      subtitle: Text('@${data['username'] ?? ''}', style: TextStyle(color: Theme.of(context).hintColor)),
+                    )),
                   );
                 }).toList(),
               );
