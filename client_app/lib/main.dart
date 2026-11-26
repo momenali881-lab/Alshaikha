@@ -396,15 +396,16 @@ Future<void> openNotifications()async{
  Widget chatMessage(Map<String,dynamic> msg){
   final mine=msg['sender']=='عميل';
   final member=msg['type']=='memberProfile'?findMemberById(msg['memberId']):null;
-  return Align(alignment:mine?Alignment.centerRight:Alignment.centerLeft,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:mine?rose.withOpacity(.13):teal.withOpacity(.12),borderRadius:BorderRadius.circular(18)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-   Text('${msg['sender']??'الإدارة'}',style:const TextStyle(fontSize:12,fontWeight:FontWeight.bold,color:plum)),
-   if(member!=null)InkWell(onTap:()=>openMember(member),child:Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[photo(member,size:58),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('اضغط لفتح الملف الكامل') ])),const Icon(Icons.open_in_new,color:rose)])))),
+  final accent=Theme.of(context).colorScheme.primary;
+  return Align(alignment:mine?Alignment.centerRight:Alignment.centerLeft,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),child:GlassPanel(radius:20,tint:mine?accent.withOpacity(.10):null,child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+   Text('${msg['sender']??'الإدارة'}',style:TextStyle(fontSize:12,fontWeight:FontWeight.bold,color:accent)),
+   if(member!=null)InkWell(onTap:()=>openMember(member),child:GlassPanel(radius:15,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[photo(member,size:58),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('اضغط لفتح الملف الكامل') ])),Icon(Icons.open_in_new,color:accent)])))),
    if(msg['type']=='bookingCard')bookingMessageCard(msg),
    if(msg['type']!='memberProfile'&&msg['type']!='bookingCard'||member==null&&msg['type']=='memberProfile')Text('${msg['text']??'تعذر العثور على ملف العضو'}'),
    Text('${msg['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))
-  ])));
+  ])))));
  }
- Widget bookingMessageCard(Map<String,dynamic> msg)=>Card(color:Colors.white,child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+ Widget bookingMessageCard(Map<String,dynamic> msg)=>GlassPanel(radius:16,child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
   const Row(children:[Icon(Icons.event_available,color:teal),SizedBox(width:7),Text('بطاقة حجز',style:TextStyle(fontWeight:FontWeight.bold,color:plum))]),
   const SizedBox(height:6),
   Text('العميل: ${msg['customerName']??'-'}'),
@@ -560,14 +561,20 @@ Widget homePage(){
     itemBuilder:(context,index)=>memberGridCard(visible[index])),
   ]);
  }
- Widget sessionsPage()=>ListView(padding:const EdgeInsets.all(14),children:[
-  const Text('الجلسات',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),
-  const SizedBox(height:10),
-  if(sessions.isEmpty)const Center(child:Padding(padding:EdgeInsets.all(30),child:Text('لا توجد جلسات في الأرشيف حالياً'))),
-  ...sessions.map((session)=>Card(clipBehavior:Clip.antiAlias,child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-   imageGallery(session,height:190),
-   ListTile(title:Text('${session['title']??'جلسة'}'),subtitle:Text('${session['date']??''} • ${session['description']??''}')),
-  ]))),
+ Widget sessionsPage()=>ListView(padding:const EdgeInsets.fromLTRB(14,16,14,24),children:[
+  const Text('أرشيف الجلسات',style:TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
+  const SizedBox(height:5),
+  const Text('استعرض الصور والتفاصيل المحفوظة للجلسات',style:TextStyle(color:Colors.grey)),
+  const SizedBox(height:14),
+  if(sessions.isEmpty)GlassPanel(child:Padding(padding:const EdgeInsets.all(28),child:Column(children:[Icon(Icons.photo_library_outlined,size:42,color:Theme.of(context).colorScheme.primary),const SizedBox(height:10),const Text('لا توجد جلسات في الأرشيف حالياً',style:TextStyle(fontWeight:FontWeight.bold))]))),
+  ...sessions.map((session)=>Padding(padding:const EdgeInsets.only(bottom:12),child:GlassPanel(radius:22,child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+   ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(22)),child:imageGallery(session,height:190)),
+   Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+    Text('${session['title']??'جلسة'}',style:const TextStyle(fontSize:17,fontWeight:FontWeight.bold)),
+    const SizedBox(height:5),
+    Text('${session['date']??''} • ${session['description']??''}',style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withOpacity(.65)))
+   ]))
+  ])))),
  ]);
 
  Widget bookingsPage()=>ListView(padding:const EdgeInsets.fromLTRB(14,16,14,24),children:[
