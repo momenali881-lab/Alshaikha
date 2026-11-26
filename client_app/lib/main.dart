@@ -157,7 +157,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
        const SizedBox(height:18),
        Container(padding:EdgeInsets.all(compact?18:22),decoration:BoxDecoration(
         color:dark?const Color(0xD925211B):const Color(0xDDFBF9F4),borderRadius:BorderRadius.circular(30),
-        border:Border.all(color:gold.withOpacity(.32)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(dark?.18:.07),blurRadius:28,offset:const Offset(0,12))]),
+        border:Border.all(color:gold.withOpacity(.32)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(dark ? .18 : .07),blurRadius:28,offset:const Offset(0,12))]),
         child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
          Row(children:[Container(width:4,height:34,decoration:BoxDecoration(color:gold,borderRadius:BorderRadius.circular(8))),
           const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -182,7 +182,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
            Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(register?Icons.person_add_alt_1:Icons.login_rounded),const SizedBox(width:9),
             Text(register?'إنشاء الحساب':'تسجيل الدخول',style:const TextStyle(fontSize:16,fontWeight:FontWeight.w900))]))),
          const SizedBox(height:10),
-         OutlinedButton(onPressed:loading?null:()=>setState(()=>{register=!register,error=null}),
+         OutlinedButton(onPressed:loading?null:()=>setState((){register=!register;error=null;}),
           style:OutlinedButton.styleFrom(foregroundColor:dark?const Color(0xFFE9D8B8):ink,side:BorderSide(color:gold.withOpacity(.55)),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)),minimumSize:const Size.fromHeight(48)),
           child:Text(register?'العودة لتسجيل الدخول':'إنشاء حساب جديد',style:const TextStyle(fontWeight:FontWeight.w800))),
          if(!register)Align(alignment:Alignment.center,child:TextButton(
