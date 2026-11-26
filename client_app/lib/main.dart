@@ -615,60 +615,30 @@ Widget homePage(){
   return Directionality(textDirection:TextDirection.rtl,child:Scaffold(
    extendBody:true,
    backgroundColor:dark?const Color(0xFF11100E):const Color(0xFFF7F2E9),
-   body:SafeArea(bottom:false,child:Column(children:[
-    Padding(padding:const EdgeInsets.fromLTRB(16,10,16,12),child:Container(
-     padding:const EdgeInsets.symmetric(horizontal:16,vertical:13),
-     decoration:BoxDecoration(
-      color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),
-      borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),
-      boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
-     child:Row(children:[
-      Container(width:43,height:43,decoration:BoxDecoration(
-       gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),
-       borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),
-      const SizedBox(width:11),
-      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-       const Text('الشيخة',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,letterSpacing:.2)),
-       Text(labels[tab],style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600)),
-      ])),
-      if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
-      if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search_rounded)),
-      Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
-      IconButton(tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
-     ]),
-    )),
-    Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(
-     onRefresh:load,color:gold,child:currentPage())),
-    SizedBox(height:MediaQuery.of(context).viewInsets.bottom>0?0:96),
-   ])),
-   bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:SafeArea(
-    minimum:const EdgeInsets.fromLTRB(14,0,14,10),child:Container(
-     padding:const EdgeInsets.symmetric(horizontal:6,vertical:8),
-     decoration:BoxDecoration(color:dark?const Color(0xF026231E):const Color(0xF7FFFEFA),
-      borderRadius:BorderRadius.circular(27),border:Border.all(color:gold.withOpacity(.38)),
-      boxShadow:[BoxShadow(color:Colors.black.withOpacity(.13),blurRadius:24,offset:const Offset(0,8))]),
-     child:Row(children:List.generate(labels.length,(i){
+   body:SafeArea(child:Row(children:[
+    Expanded(child:Column(children:[
+     Padding(padding:const EdgeInsets.fromLTRB(14,10,14,10),child:Container(
+      padding:const EdgeInsets.symmetric(horizontal:14,vertical:11),
+      decoration:BoxDecoration(color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
+      child:Row(children:[
+       Container(width:42,height:42,decoration:BoxDecoration(gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),
+       const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('الشيخة',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),Text(labels[tab],style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600))])),
+       if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
+       if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search_rounded)),
+       Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
+       IconButton(tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
+      ]),
+     )),
+     Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage())),
+    ])),
+    if(MediaQuery.of(context).viewInsets.bottom==0)Padding(padding:const EdgeInsets.fromLTRB(7,12,8,12),child:GlassPanel(radius:27,padding:const EdgeInsets.symmetric(horizontal:5,vertical:9),child:Column(mainAxisSize:MainAxisSize.min,children:List.generate(labels.length,(i){
       final active=tab==i;
-      return Expanded(child:Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:InkWell(
-       borderRadius:BorderRadius.circular(20),onTap:()=>setState(()=>tab=i),
-       child:AnimatedContainer(duration:const Duration(milliseconds:220),curve:Curves.easeOutCubic,
-        padding:EdgeInsets.symmetric(vertical:active?10:9),
-        decoration:BoxDecoration(
-         gradient:active?const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,
-         color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(19)),
-        child:Column(mainAxisSize:MainAxisSize.min,children:[
-         Stack(clipBehavior:Clip.none,children:[
-          Icon(icons[i],size:active?23:21,color:active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59))),
-          if(i==1&&unread>0)const Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52))),
-         ]),
-         const SizedBox(height:4),Text(labels[i],maxLines:1,style:TextStyle(fontSize:10,fontWeight:active?FontWeight.w900:FontWeight.w600,
-          color:active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59)))),
-        ]),
-       ),
-      )));
-     })),
-    )),
-   ),
+      return Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Tooltip(message:labels[i],child:InkWell(borderRadius:BorderRadius.circular(19),onTap:()=>setState(()=>tab=i),child:AnimatedContainer(duration:const Duration(milliseconds:260),curve:Curves.easeOutBack,width:active?62:54,height:active?65:55,decoration:BoxDecoration(gradient:active?const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:(dark?Colors.white.withOpacity(.035):Colors.black.withOpacity(.025)),borderRadius:BorderRadius.circular(active?20:17),border:Border.all(color:active?gold.withOpacity(.65):gold.withOpacity(.12))),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
+       Stack(clipBehavior:Clip.none,children:[Icon(icons[i],size:active?25:22,color:active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59))),if(i==1&&unread>0)const Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52)))]),
+       const SizedBox(height:3),Text(labels[i],maxLines:1,style:TextStyle(fontSize:active?9:8,fontWeight:FontWeight.w800,color:active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59))))
+      ])))));
+    })))),
+   ])),
   ));
  }
 
