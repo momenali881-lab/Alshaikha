@@ -230,7 +230,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;String search='';String memberSort='recommended';bool compactMembers=false;String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -513,7 +513,7 @@ Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeIn
  ]))
 ])));
 Widget homePage(){
-  final visible=members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
+  final visible=members.where((m)=>m['available']!=false&&(!onlyWithPlace||m['hasPlace']==true)&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
   visible.sort((a,b){
    final ap=double.tryParse('${a['hourlyPrice']??0}')??0, bp=double.tryParse('${b['hourlyPrice']??0}')??0;
    if(memberSort=='low')return ap.compareTo(bp);
@@ -544,6 +544,11 @@ Widget homePage(){
     ],onChanged:(v)=>setState(()=>memberSort=v??'recommended'))),
     const SizedBox(width:8),
     IconButton(tooltip:'مسح البحث',onPressed:search.isEmpty?null:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.filter_alt_off_rounded)),
+   ]),
+   const SizedBox(height:10),
+   Wrap(spacing:8,runSpacing:7,children:[
+    FilterChip(avatar:const Icon(Icons.place_outlined,size:18),label:const Text('يوجد مكان'),selected:onlyWithPlace,onSelected:(value)=>setState(()=>onlyWithPlace=value),showCheckmark:true,selectedColor:rose.withOpacity(.20),side:BorderSide(color:onlyWithPlace?rose:Theme.of(context).dividerColor)),
+    if(onlyWithPlace||search.isNotEmpty||memberSort!='recommended')ActionChip(avatar:const Icon(Icons.restart_alt_rounded,size:18),label:const Text('إعادة ضبط الفلاتر'),onPressed:(){setState(()=>{onlyWithPlace=false;search='';memberSort='recommended';});searchCtrl.clear();}),
    ]),
    const SizedBox(height:12),
    if(visible.isEmpty)GlassPanel(child:Column(children:[
