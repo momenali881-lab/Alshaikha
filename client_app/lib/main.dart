@@ -496,10 +496,6 @@ Widget homePage()=>ListView(padding:const EdgeInsets.fromLTRB(4,14,4,14),childre
   const icons=[Icons.home_rounded,Icons.forum_rounded,Icons.event_note_rounded,Icons.photo_library_rounded,Icons.person_rounded];
   final dark=Theme.of(context).brightness==Brightness.dark;
   final unread=notifications.where((n)=>n['read']!=true).length;
-  Widget navItem(int index){
-   final active=tab==index;
-   return Expanded(child,);
-  }
   return Directionality(textDirection:TextDirection.rtl,child:Scaffold(
    extendBody:true,
    backgroundColor:dark?const Color(0xFF11100E):const Color(0xFFF7F2E9),
