@@ -501,13 +501,13 @@ class _AdminHomeState extends State<AdminHome> {
           final items=grouped[id]!..sort((x,y)=>(y['date']?.toString()??'').compareTo(x['date']?.toString()??''));
           final legacy=id.startsWith('legacy:');
           final title=legacy?(items.first['customerName']??'عميل').toString():customerLabel(id);
-          return GlassPanel(child:ListTile(
-            leading:CircleAvatar(backgroundColor:rose.withOpacity(.12),child:const Icon(Icons.person,color:rose)),
-            title:Text(title,style:const TextStyle(fontWeight:FontWeight.bold)),
-            subtitle:Text('${items.length} حجز • آخر موعد: ${items.first['date']??'-'}'),
-            trailing:const Icon(Icons.chevron_left),
+          return Padding(padding:const EdgeInsets.only(bottom:9),child:GlassPanel(radius:21,padding:const EdgeInsets.symmetric(horizontal:5,vertical:4),child:ListTile(
+            leading:Container(width:48,height:48,decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[rose.withOpacity(.20),gold.withOpacity(.10)]),borderRadius:BorderRadius.circular(16),border:Border.all(color:gold.withOpacity(.22))),child:const Icon(Icons.person_rounded,color:rose)),
+            title:Text(title,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
+            subtitle:Padding(padding:const EdgeInsets.only(top:5),child:Text('${items.length} حجز • آخر موعد: ${items.first['date']??'-'}',style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurface.withOpacity(.65)))),
+            trailing:Container(width:34,height:34,decoration:BoxDecoration(color:gold.withOpacity(.12),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.arrow_back_ios_new_rounded,size:15,color:gold)),
             onTap:()=>setState(()=>selectedBookingCustomerId=id)
-          ));
+          )));
         })
       ]);
     }
