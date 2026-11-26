@@ -33,11 +33,11 @@ Future<void> main() async {
   runApp(const SheikhaAdminApp());
 }
 
-const rose = Color(0xFFE91E63);
-const plum = Color(0xFF6A1B9A);
-const cream = Color(0xFFFFF7FB);
-const teal = Color(0xFF00A6A6);
-const gold = Color(0xFFFFB300);
+const rose = Color(0xFFC49A55);
+const plum = Color(0xFF59452F);
+const cream = Color(0xFFF7F2E9);
+const teal = Color(0xFF9C835D);
+const gold = Color(0xFFD8B878);
 const sections = <String,String>{'members':'الكادر','sessions':'أرشيف الجلسات','banners':'البانرات','bookings':'الحجوزات','messages':'الدردشة','announcements':'الإعلانات','analytics':'الإحصاءات'};
 const sectionIcons=<String,IconData>{'members':Icons.groups_rounded,'sessions':Icons.photo_library_rounded,'banners':Icons.campaign_rounded,'bookings':Icons.event_available_rounded,'messages':Icons.forum_rounded,'announcements':Icons.notifications_active_rounded,'analytics':Icons.query_stats_rounded};
 const sectionColors=<String,Color>{'members':teal,'sessions':plum,'banners':gold,'bookings':rose,'messages':Color(0xFF3F51B5),'announcements':teal,'analytics':Color(0xFF6A1B9A)};
@@ -46,8 +46,8 @@ class SheikhaAdminApp extends StatelessWidget {
   const SheikhaAdminApp({super.key});
   @override Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner:false, title:'الشيخة - الإدارة',
-    theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:plum,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(),iconTheme:const IconThemeData(color:plum),inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:Colors.white,border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(14)))),appBarTheme:const AppBarTheme(backgroundColor:rose,foregroundColor:Colors.white,elevation:0),cardTheme:CardThemeData(color:Colors.white,elevation:2,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:rose,foregroundColor:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(14)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:teal,foregroundColor:Colors.white)),
-    darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:rose,brightness:Brightness.dark),textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(ThemeData.dark().textTheme)),
+    theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(),iconTheme:const IconThemeData(color:plum),inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:Color(0xDFFFFFFF),border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x66C49A55))),enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x55C49A55))),focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:gold,width:1.6))),appBarTheme:const AppBarTheme(backgroundColor:Color(0xCCF7F2E9),foregroundColor:plum,elevation:0,centerTitle:true),cardTheme:CardThemeData(color:Color(0xDFFFFFFF),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(24)),side:BorderSide(color:Color(0x66FFFFFF)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:Color(0xFF241B10),elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:gold,foregroundColor:Color(0xFF241B10))),
+    darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.dark),scaffoldBackgroundColor:Color(0xFF11100E),textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(ThemeData.dark().textTheme),cardTheme:CardThemeData(color:Color(0xCC29251F),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(24)),side:BorderSide(color:Color(0x44D8B878)))),appBarTheme:const AppBarTheme(backgroundColor:Color(0xCC171512),foregroundColor:Color(0xFFF2E5CC),elevation:0),iconTheme:const IconThemeData(color:Color(0xFFD8B878))),
     themeMode:ThemeMode.system, home:const OneSignalSubscriptionGate(child:AdminAuthGate()));
 }
 
