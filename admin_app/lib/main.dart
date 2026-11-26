@@ -541,15 +541,15 @@ class _AdminHomeState extends State<AdminHome> {
     final title=m['name']??m['title']??m['customerName']??m['sender']??'سجل';
     final subtitle=[m['description'],m['date'],m['status'],if(section=='bookings'&&m['address']!=null)m['address'],if(section=='members')'${m['hourlyPrice']??0} د.ع/ساعة',if(section=='members')'${m['nightlyPrice']??0} د.ع/ليلة'].where((x)=>x!=null&&x.toString().isNotEmpty).join(' • ');
     final imgs=List<String>.from(m['images']??[]);
-    return Card(child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
-      ListTile(leading:imgs.isNotEmpty?ClipRRect(borderRadius:BorderRadius.circular(8),child:appImage(imgs.first,width:52,height:52,fit:BoxFit.cover)):const CircleAvatar(child:Icon(Icons.spa)),title:Text('$title'),subtitle:Text(subtitle),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')edit(m);else if(v=='delete')remove(m);else if(v=='accept')updateBooking(m,'مؤكد');else updateBooking(m,'مرفوض');},itemBuilder:(_)=>[
+    return GlassPanel(radius:22,child:Padding(padding:const EdgeInsets.all(8),child:Column(children:[
+      ListTile(leading:imgs.isNotEmpty?ClipRRect(borderRadius:BorderRadius.circular(13),child:appImage(imgs.first,width:56,height:56,fit:BoxFit.cover)):Container(width:52,height:52,decoration:BoxDecoration(color:gold.withOpacity(.13),borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_outlined,color:gold)),title:Text('$title',style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Padding(padding:const EdgeInsets.only(top:4),child:Text(subtitle)),trailing:PopupMenuButton<String>(onSelected:(v){if(v=='edit')edit(m);else if(v=='delete')remove(m);else if(v=='accept')updateBooking(m,'مؤكد');else updateBooking(m,'مرفوض');},itemBuilder:(_)=>[
         if(section=='bookings')const PopupMenuItem(value:'accept',child:Text('تأكيد الحجز')),
         if(section=='bookings')const PopupMenuItem(value:'reject',child:Text('رفض الحجز')),
         const PopupMenuItem(value:'edit',child:Text('تعديل')),
         const PopupMenuItem(value:'delete',child:Text('حذف')),
       ])),
-      if(section=='messages')Align(alignment:Alignment.centerRight,child:Text('المحادثة: ${m['conversationId']??'-'}')),
-      if(section=='bookings'&&(m['address']??'').toString().isNotEmpty)Align(alignment:Alignment.centerRight,child:Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),child:Text('العنوان: ${m['address']}',style:const TextStyle(color:plum)))),
+      if(section=='messages')Align(alignment:Alignment.centerRight,child:Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),child:Text('المحادثة: ${m['conversationId']??'-'}',style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withOpacity(.65))))),
+      if(section=='bookings'&&(m['address']??'').toString().isNotEmpty)Align(alignment:Alignment.centerRight,child:Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),child:Text('العنوان: ${m['address']}',style:TextStyle(color:Theme.of(context).colorScheme.primary)))),
     ])));
   }
   Future<void> shareMemberProfile() async {
