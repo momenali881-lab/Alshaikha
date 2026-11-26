@@ -120,9 +120,9 @@ class _AccountPageState extends State<AccountPage> {
       children: [
         Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(children: [
           GestureDetector(onTap: _pickAvatar, child: Stack(children: [
-            CircleAvatar(radius: 48, backgroundColor: const Color(0xFFFCE4EC),
+            CircleAvatar(radius: 48, backgroundColor: const Color(0xFFF1E7D7),
               backgroundImage: _avatar == null || _avatar!.isEmpty ? null : MemoryImage(base64Decode(_avatar!)),
-              child: _avatar == null || _avatar!.isEmpty ? const Icon(Icons.person, size: 48, color: Color(0xFF6A1B9A)) : null),
+              child: _avatar == null || _avatar!.isEmpty ? const Icon(Icons.person, size: 48, color: Color(0xFF9C835D)) : null),
             const Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 16, child: Icon(Icons.camera_alt, size: 17))),
           ])),
           const SizedBox(height: 8), TextButton.icon(onPressed: _pickAvatar, icon: const Icon(Icons.photo_camera), label: const Text('تغيير صورة الحساب')),
