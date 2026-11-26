@@ -404,16 +404,8 @@ Future<void> openNotifications()async{
       child:Padding(
        padding:const EdgeInsets.all(12),
        child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(mainAxisSize:MainAxisSize.min,children:[
-         Icon(mine?Icons.person_rounded:Icons.support_agent_rounded,size:15,color:mine?accent:teal),
-         const SizedBox(width:5),
-         Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:4),decoration:BoxDecoration(color:mine?const Color(0xFFD8B878).withOpacity(.22):const Color(0xFF59452F).withOpacity(.16),borderRadius:BorderRadius.circular(20)),child:Text(senderLabel,style:TextStyle(fontSize:11,fontWeight:FontWeight.w900,color:mine?const Color(0xFF80602D):const Color(0xFF59452F)))),
-         if(msg['pending']==true)...[
-          const SizedBox(width:7),
-          const SizedBox(width:10,height:10,child:CircularProgressIndicator(strokeWidth:1.5))
-         ]
-        ]),
-        const SizedBox(height:8),
+        if(msg['pending']==true)const Align(alignment:Alignment.centerLeft,child:SizedBox(width:10,height:10,child:CircularProgressIndicator(strokeWidth:1.5))),
+        const SizedBox(height:4),
         if(member!=null)InkWell(onTap:()=>openMember(member),child:GlassPanel(radius:17,child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
          Row(children:[ClipRRect(borderRadius:BorderRadius.circular(13),child:photo(member,size:68)),const SizedBox(width:11),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),const SizedBox(height:5),Text('${member['hourlyPrice']??0} د.ع / ساعة',style:TextStyle(color:accent,fontWeight:FontWeight.w800)),const SizedBox(height:4),_memberInfoPill(member['available']==false?'غير متاح':'متاح للحجز',member['available']==false?Colors.grey:teal)])),Icon(Icons.open_in_new_rounded,color:accent)]),
          const SizedBox(height:9),Row(children:[Expanded(child:Text(member['hasPlace']==true?'يوجد مكان':'بدون مكان',style:TextStyle(fontSize:11,color:Theme.of(context).hintColor))),TextButton.icon(onPressed:()=>openMember(member),icon:const Icon(Icons.person_search_rounded,size:17),label:const Text('عرض الملف'))])
