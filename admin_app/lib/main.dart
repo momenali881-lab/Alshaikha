@@ -687,19 +687,19 @@ class _AdminHomeState extends State<AdminHome> {
           boxShadow:[BoxShadow(color:Colors.black.withOpacity(.12),blurRadius:22,offset:const Offset(0,8))]),
         child:Column(children:[
           Row(children:[
-            Container(width:46,height:46,decoration:BoxDecoration(color:Colors.white.withOpacity(.13),borderRadius:BorderRadius.circular(16),border:Border.all(color:Colors.white24)),
-              child:const Icon(Icons.spa_rounded,color:Color(0xFFF1D9A9),size:27)),
+            Container(width:46,height:46,decoration:BoxDecoration(color:Colors.white.withOpacity(.13),borderRadius:BorderRadius.circular(16),border:Border.all(color:Colors.white24)),child:const Icon(Icons.spa_rounded,color:Color(0xFFF1D9A9),size:27)),
             const SizedBox(width:11),const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text('الشيخة',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w900)),
-              Text('مركز إدارة الحجوزات والكادر',style:TextStyle(color:Color(0xFFE9DCC7),fontSize:11,fontWeight:FontWeight.w600)),
+              Text('الشيخة',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w900)),
+              Text('مركز إدارة الحجوزات والكادر',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:Color(0xFFE9DCC7),fontSize:11,fontWeight:FontWeight.w600)),
             ])),
-            IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),
-              icon:const Icon(Icons.admin_panel_settings_outlined,color:Colors.white)),
-            Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),
-              child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded,color:Colors.white))),
-            IconButton(tooltip:'تبديل المظهر',onPressed:()=>setAdminThemeMode(Theme.of(context).brightness==Brightness.dark?ThemeMode.light:ThemeMode.dark),icon:Icon(Theme.of(context).brightness==Brightness.dark?Icons.light_mode_rounded:Icons.dark_mode_rounded,color:Colors.white)),
-            IconButton(tooltip:'تحديث',onPressed:()=>refresh(),icon:const Icon(Icons.refresh_rounded,color:Colors.white)),
-            IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout_rounded,color:Colors.white)),
+          ]),
+          const SizedBox(height:4),
+          Row(mainAxisAlignment:MainAxisAlignment.end,children:[
+            IconButton(visualDensity:VisualDensity.compact,tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings_outlined,color:Colors.white)),
+            Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(visualDensity:VisualDensity.compact,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded,color:Colors.white))),
+            IconButton(visualDensity:VisualDensity.compact,tooltip:'تبديل المظهر',onPressed:()=>setAdminThemeMode(Theme.of(context).brightness==Brightness.dark?ThemeMode.light:ThemeMode.dark),icon:Icon(Theme.of(context).brightness==Brightness.dark?Icons.light_mode_rounded:Icons.dark_mode_rounded,color:Colors.white)),
+            IconButton(visualDensity:VisualDensity.compact,tooltip:'تحديث',onPressed:()=>refresh(),icon:const Icon(Icons.refresh_rounded,color:Colors.white)),
+            IconButton(visualDensity:VisualDensity.compact,tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout_rounded,color:Colors.white)),
           ]),
           const SizedBox(height:12),
           Row(children:[
