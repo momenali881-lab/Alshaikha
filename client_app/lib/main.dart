@@ -698,13 +698,19 @@ Widget homePage(){
      Padding(padding:const EdgeInsets.fromLTRB(14,10,14,10),child:Container(
       padding:const EdgeInsets.symmetric(horizontal:14,vertical:11),
       decoration:BoxDecoration(color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
-      child:Row(children:[
-       Container(width:42,height:42,decoration:BoxDecoration(gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),
-       const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('الشيخة',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),Text(labels[tab],style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600))])),
-       if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
-       if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search_rounded)),
-       Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
-       IconButton(tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
+      child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+       Row(children:[
+        Container(width:42,height:42,decoration:BoxDecoration(gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),
+        const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('الشيخة',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),Text(labels[tab],maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600))])),
+       ]),
+       const SizedBox(height:4),
+       Row(mainAxisAlignment:MainAxisAlignment.end,children:[
+        if(tab==0)IconButton(visualDensity:VisualDensity.compact,tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
+        if(tab==0)IconButton(visualDensity:VisualDensity.compact,tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search_rounded)),
+        Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(visualDensity:VisualDensity.compact,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
+        IconButton(visualDensity:VisualDensity.compact,tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
+       ]),
+      ])
       ]),
      )),
      Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage())),
