@@ -431,7 +431,8 @@ Future<void> openNotifications()async{
  Widget memberProfilePage(Map<String,dynamic> m)=>ListView(padding:const EdgeInsets.fromLTRB(14,14,14,28),children:[
    ClipRRect(borderRadius:BorderRadius.circular(26),child:Stack(children:[
     imageGallery(m,height:290),
-    Positioned(right:14,bottom:14,child:Container(padding:const EdgeInsets.symmetric(horizontal:14,vertical:8),decoration:BoxDecoration(color:Colors.black.withOpacity(.58),borderRadius:BorderRadius.circular(16),border:Border.all(color:gold.withOpacity(.55))),child:Text('${m['name']??'عضو الكادر'}',style:const TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.w900)))),
+    Positioned(right:14,bottom:14,left:68,child:Container(padding:const EdgeInsets.symmetric(horizontal:14,vertical:8),decoration:BoxDecoration(color:Colors.black.withOpacity(.58),borderRadius:BorderRadius.circular(16),border:Border.all(color:gold.withOpacity(.55))),child:Text('${m['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.w900)))),
+    Positioned(left:12,top:12,child:ClipRRect(borderRadius:BorderRadius.circular(18),child:Container(decoration:BoxDecoration(color:Colors.black.withOpacity(.42),border:Border.all(color:gold.withOpacity(.45)),borderRadius:BorderRadius.circular(18)),child:IconButton(tooltip:isFav(m)?'إزالة من المفضلة':'إضافة إلى المفضلة',onPressed:()=>toggleFav(m),icon:Icon(isFav(m)?Icons.favorite_rounded:Icons.favorite_border_rounded,color:isFav(m)?rose:Colors.white,size:23))))),
    ])),
    const SizedBox(height:14),
    GlassPanel(padding:const EdgeInsets.all(14),radius:22,child:Column(children:[
