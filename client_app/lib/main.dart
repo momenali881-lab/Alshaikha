@@ -467,17 +467,17 @@ Widget _memberInfoTile(IconData icon,String label,String value)=>Row(children:[
   Text(value,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:14),maxLines:2,overflow:TextOverflow.ellipsis),
  ])),
 ]);
-Widget memberCard(Map<String,dynamic> m)=>Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
-  photo(m,size:76),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',style:const TextStyle(color:plum))])),
+Widget memberCard(Map<String,dynamic> m)=>GlassPanel(radius:23,child:InkWell(borderRadius:BorderRadius.circular(23),onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Padding(padding:const EdgeInsets.all(10),child:Row(children:[
+  ClipRRect(borderRadius:BorderRadius.circular(16),child:photo(m,size:78)),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.w900,fontSize:16)),const SizedBox(height:4),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',style:const TextStyle(color:plum,fontSize:12))])),
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
   ]))));
- Widget memberGridCard(Map<String,dynamic> m)=>Card(clipBehavior:Clip.antiAlias,child:InkWell(onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-  Expanded(child:Stack(fit:StackFit.expand,children:[photo(m,size:180),Positioned(left:5,top:5,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(34,34),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19)))])),
-  Padding(padding:const EdgeInsets.fromLTRB(8,6,8,8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-   Text('${m['name']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:15)),
-   Text('${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,color:plum)),
-   Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',maxLines:1,style:const TextStyle(fontSize:11,color:Colors.black54))
+ Widget memberGridCard(Map<String,dynamic> m)=>GlassPanel(radius:22,child:InkWell(borderRadius:BorderRadius.circular(22),onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  Expanded(child:Stack(fit:StackFit.expand,children:[ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(21)),child:photo(m,size:180)),Positioned(left:7,top:7,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(36,36),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19)))])),
+  Padding(padding:const EdgeInsets.fromLTRB(10,8,10,10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+   Text('${m['name']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
+   Text('${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,color:plum,fontWeight:FontWeight.w700)),
+   Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',maxLines:1,style:TextStyle(fontSize:11,color:Theme.of(context).hintColor))
   ]))
  ])));
  void openBanner(Map<String,dynamic> b){
