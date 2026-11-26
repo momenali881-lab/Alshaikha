@@ -491,12 +491,74 @@ Widget homePage()=>ListView(padding:const EdgeInsets.fromLTRB(4,14,4,14),childre
  ]);
  Widget accountPage()=>const AccountPage();
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
- @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-  appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:23,letterSpacing:.3))]),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:Colors.black.withOpacity(.06)),icon:const Icon(Icons.favorite,color:Colors.black)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),]),
-  resizeToAvoidBottomInset:true,
-  body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
-  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Theme.of(context).colorScheme.surface.withOpacity(.92),indicatorColor:gold.withOpacity(.24),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
- ));
+ @override Widget build(BuildContext context){
+  const labels=['الرئيسية','المحادثات','حجوزاتي','الجلسات','حسابي'];
+  const icons=[Icons.home_rounded,Icons.forum_rounded,Icons.event_note_rounded,Icons.photo_library_rounded,Icons.person_rounded];
+  final dark=Theme.of(context).brightness==Brightness.dark;
+  final unread=notifications.where((n)=>n['read']!=true).length;
+  Widget navItem(int index){
+   final active=tab==index;
+   return Expanded(child,);
+  }
+  return Directionality(textDirection:TextDirection.rtl,child:Scaffold(
+   extendBody:true,
+   backgroundColor:dark?const Color(0xFF11100E):const Color(0xFFF7F2E9),
+   body:SafeArea(bottom:false,child:Column(children:[
+    Padding(padding:const EdgeInsets.fromLTRB(16,10,16,12),child:Container(
+     padding:const EdgeInsets.symmetric(horizontal:16,vertical:13),
+     decoration:BoxDecoration(
+      color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),
+      borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),
+      boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
+     child:Row(children:[
+      Container(width:43,height:43,decoration:BoxDecoration(
+       gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),
+       borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),
+      const SizedBox(width:11),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+       const Text('الشيخة',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,letterSpacing:.2)),
+       Text(labels[tab],style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600)),
+      ])),
+      if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
+      if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search_rounded)),
+      Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
+     ]),
+    )),
+    Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(
+     onRefresh:load,color:gold,child:currentPage())),
+    SizedBox(height:MediaQuery.of(context).viewInsets.bottom>0?0:96),
+   ])),
+   bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:SafeArea(
+    minimum:const EdgeInsets.fromLTRB(14,0,14,10),child:Container(
+     padding:const EdgeInsets.symmetric(horizontal:6,vertical:8),
+     decoration:BoxDecoration(color:dark?const Color(0xF026231E):const Color(0xF7FFFEFA),
+      borderRadius:BorderRadius.circular(27),border:Border.all(color:gold.withOpacity(.38)),
+      boxShadow:[BoxShadow(color:Colors.black.withOpacity(.13),blurRadius:24,offset:const Offset(0,8))]),
+     child:Row(children:List.generate(labels.length,(i){
+      final active=tab==i;
+      return Expanded(child:Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:InkWell(
+       borderRadius:BorderRadius.circular(20),onTap:()=>setState(()=>tab=i),
+       child:AnimatedContainer(duration:const Duration(milliseconds:220),curve:Curves.easeOutCubic,
+        padding:EdgeInsets.symmetric(vertical:active?10:9),
+        decoration:BoxDecoration(
+         gradient:active?const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,
+         color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(19)),
+        child:Column(mainAxisSize:MainAxisSize.min,children:[
+         Stack(clipBehavior:Clip.none,children:[
+          Icon(icons[i],size:active?23:21,color:active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59))),
+          if(i==1&&unread>0)const Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52))),
+         ]),
+         const SizedBox(height:4),Text(labels[i],maxLines:1,style:TextStyle(fontSize:10,fontWeight:active?FontWeight.w900:FontWeight.w600,
+          color:active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59)))),
+        ]),
+       ),
+      )));
+     })),
+    )),
+   ),
+  ));
+ }
+
 }
 class MemberSearch extends SearchDelegate<String>{
  final List<Map<String,dynamic>> members;final ValueChanged<String> onPick;
