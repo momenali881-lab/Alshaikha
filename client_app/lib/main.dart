@@ -520,12 +520,12 @@ Widget _memberInfoTile(IconData icon,String label,String value)=>Row(children:[
 ]);
 Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:color.withOpacity(.13),borderRadius:BorderRadius.circular(10),border:Border.all(color:color.withOpacity(.24))),child:Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:color)));
  Widget memberCard(Map<String,dynamic> m)=>GlassPanel(radius:23,child:InkWell(borderRadius:BorderRadius.circular(23),onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Padding(padding:const EdgeInsets.all(10),child:Row(children:[
-  ClipRRect(borderRadius:BorderRadius.circular(16),child:photo(m,size:78)),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.w900,fontSize:16)),const SizedBox(height:4),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),const SizedBox(height:5),Wrap(spacing:6,runSpacing:4,children:[_memberInfoPill(m['available']==false?'غير متاح':'متاح للحجز',m['available']==false?Colors.grey:teal),_memberInfoPill(m['hasPlace']==true?'يوجد مكان':'بدون مكان',plum)])])),
+  ClipRRect(borderRadius:BorderRadius.circular(16),child:photo(m,size:104)),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${m['name']??''}',style:const TextStyle(fontWeight:FontWeight.w900,fontSize:16)),const SizedBox(height:4),Text('العمر: ${m['age']??'-'} • ${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis),const SizedBox(height:5),Wrap(spacing:6,runSpacing:4,children:[_memberInfoPill(m['available']==false?'غير متاح':'متاح للحجز',m['available']==false?Colors.grey:teal),_memberInfoPill(m['hasPlace']==true?'يوجد مكان':'بدون مكان',plum)])])),
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
   ]))));
  Widget memberGridCard(Map<String,dynamic> m)=>GlassPanel(radius:22,child:InkWell(borderRadius:BorderRadius.circular(22),onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-  Expanded(child:Stack(fit:StackFit.expand,children:[ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(21)),child:photo(m,size:180)),Positioned(left:7,top:7,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(36,36),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19))),Positioned(right:8,top:9,child:_memberInfoPill(m['available']==false?'غير متاح':'متاح للحجز',m['available']==false?Colors.grey:teal))])),
+  Expanded(child:Stack(fit:StackFit.expand,children:[ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(21)),child:photo(m,size:230)),Positioned(left:7,top:7,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(36,36),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19))),Positioned(right:8,top:9,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(36,36),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19)))])),
   Padding(padding:const EdgeInsets.fromLTRB(10,8,10,10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
    Text('${m['name']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
    const SizedBox(height:3),
@@ -568,6 +568,23 @@ Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeIn
   if('${b['description']??''}'.toString().trim().isNotEmpty)Padding(padding:const EdgeInsets.only(top:3),child:Text('${b['description']}',maxLines:2,overflow:TextOverflow.ellipsis,style:GoogleFonts.cairo(color:Colors.white,fontSize:13,fontWeight:FontWeight.w600,)))
  ]))
 ])));
+ void openMemberFilters(){
+  showModalBottomSheet(context:context,isScrollControlled:true,backgroundColor:Colors.transparent,builder:(sheetContext)=>StatefulBuilder(builder:(sheetContext,setSheetState)=>Directionality(textDirection:TextDirection.rtl,child:GlassPanel(radius:26,margin:const EdgeInsets.all(10),padding:const EdgeInsets.all(18),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+   Row(children:[const Expanded(child:Text('تصفية الكادر',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),IconButton(onPressed:()=>Navigator.pop(sheetContext),icon:const Icon(Icons.close_rounded))]),
+   const SizedBox(height:12),const Text('حالة التوفر',style:TextStyle(fontWeight:FontWeight.w800)),
+   Wrap(spacing:8,children:[
+    ChoiceChip(label:const Text('الكل'),selected:availabilityFilter=='all',onSelected:(_){setState(()=>availabilityFilter='all');setSheetState((){});}),
+    ChoiceChip(label:const Text('متاح'),selected:availabilityFilter=='available',onSelected:(_){setState(()=>availabilityFilter='available');setSheetState((){});}),
+    ChoiceChip(label:const Text('محجوز'),selected:availabilityFilter=='booked',onSelected:(_){setState(()=>availabilityFilter='booked');setSheetState((){});}),
+   ]),
+   const SizedBox(height:12),const Text('المكان',style:TextStyle(fontWeight:FontWeight.w800)),
+   SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('يوجد مكان'),value:onlyWithPlace,onChanged:(v){setState(()=>onlyWithPlace=v);setSheetState((){});}),
+   const SizedBox(height:10),Row(children:[
+    Expanded(child:OutlinedButton(onPressed:(){setState((){onlyWithPlace=false;availabilityFilter='all';});setSheetState((){});},child:const Text('مسح الفلاتر'))),
+    const SizedBox(width:10),Expanded(child:FilledButton(onPressed:()=>Navigator.pop(sheetContext),child:const Text('عرض النتائج'))),
+   ])
+  ])))));
+ }
 Widget homePage(){
   final visible=members.where((m)=>(availabilityFilter=='all'||(availabilityFilter=='available'&&m['available']!=false)||(availabilityFilter=='booked'&&m['available']==false))&&(!onlyWithPlace||m['hasPlace']==true)&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
   visible.sort((a,b){
@@ -605,15 +622,7 @@ Widget homePage(){
      DropdownMenuItem(value:'name',child:Text('الاسم: أ إلى ي')),
     ],onChanged:(v)=>setState(()=>memberSort=v??'recommended'))),
     const SizedBox(width:8),
-    IconButton(tooltip:'مسح البحث',onPressed:search.isEmpty?null:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.filter_alt_off_rounded)),
-   ]),
-   const SizedBox(height:10),
-   Wrap(spacing:8,runSpacing:7,children:[
-    FilterChip(avatar:const Icon(Icons.place_outlined,size:18),label:const Text('يوجد مكان'),selected:onlyWithPlace,onSelected:(value)=>setState(()=>onlyWithPlace=value),showCheckmark:true,selectedColor:rose.withOpacity(.20),side:BorderSide(color:onlyWithPlace?rose:Theme.of(context).dividerColor)),
-     ChoiceChip(label:const Text('الكل'),selected:availabilityFilter=='all',onSelected:(_)=>setState(()=>availabilityFilter='all')),
-     ChoiceChip(label:const Text('متاح'),selected:availabilityFilter=='available',onSelected:(_)=>setState(()=>availabilityFilter='available')),
-     ChoiceChip(label:const Text('محجوز'),selected:availabilityFilter=='booked',onSelected:(_)=>setState(()=>availabilityFilter='booked')),
-    if(onlyWithPlace||availabilityFilter!='all'||search.isNotEmpty||memberSort!='recommended')ActionChip(avatar:const Icon(Icons.restart_alt_rounded,size:18),label:const Text('إعادة ضبط الفلاتر'),onPressed:(){setState((){onlyWithPlace=false;availabilityFilter='all';search='';memberSort='recommended';});searchCtrl.clear();}),
+    IconButton(tooltip:'الفلاتر',onPressed:openMemberFilters,icon:Badge(isLabelVisible:onlyWithPlace||availabilityFilter!='all',child:const Icon(Icons.filter_alt_rounded))),
    ]),
    const SizedBox(height:12),
    if(visible.isEmpty)GlassPanel(child:Column(children:[
@@ -630,7 +639,7 @@ Widget homePage(){
     trailing:IconButton(onPressed:()=>toggleFav(m),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose)),
    )))
    else GridView.builder(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),itemCount:visible.length,
-    gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,crossAxisSpacing:10,mainAxisSpacing:10,childAspectRatio:.72),
+    gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,crossAxisSpacing:10,mainAxisSpacing:10,childAspectRatio:.62),
     itemBuilder:(context,index)=>memberGridCard(visible[index])),
   ]);
  }
