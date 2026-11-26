@@ -457,7 +457,7 @@ Future<void> openNotifications()async{
       errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.broken_image_outlined,color:Colors.white,size:54)))
     )))),
     Positioned(top:18,right:18,child:IconButton(style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.14)),onPressed:()=>Navigator.pop(ctx),icon:const Icon(Icons.close,color:Colors.white,size:28))),
-    if(images.length>1)Positioned(top:25,left:18,child:Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:7),decoration:BoxDecoration(color:Colors.white.withOpacity(.15),borderRadius:BorderRadius.circular(20),border:Border.all(color:gold.withOpacity(.5))),child:Text('${(page.hasClients?page.page?.round()??initial:initial)+1}/${images.length}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w800)))),
+    if(images.length>1)Positioned(top:25,left:18,child:Container(padding:const EdgeInsets.symmetric(horizontal:13,vertical:7),decoration:BoxDecoration(color:Colors.white.withOpacity(.15),borderRadius:BorderRadius.circular(20),border:Border.all(color:gold.withOpacity(.5))),child:Text('${(page.hasClients ? (page.page?.round() ?? initial) : initial)+1}/${images.length}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w800)))),
     Positioned(bottom:22,left:0,right:0,child:Center(child:Container(padding:const EdgeInsets.symmetric(horizontal:16,vertical:9),decoration:BoxDecoration(color:Colors.white.withOpacity(.12),borderRadius:BorderRadius.circular(22),border:Border.all(color:gold.withOpacity(.35))),child:Text(images.length>1?'اسحب للتنقل بين الصور':'كبّر الصورة بإصبعين',style:const TextStyle(color:Colors.white,fontSize:12)))))
    ])
   ));
