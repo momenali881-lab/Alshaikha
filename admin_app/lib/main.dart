@@ -499,7 +499,7 @@ class _AdminHomeState extends State<AdminHome> {
           final items=grouped[id]!..sort((x,y)=>(y['date']?.toString()??'').compareTo(x['date']?.toString()??''));
           final legacy=id.startsWith('legacy:');
           final title=legacy?(items.first['customerName']??'عميل').toString():customerLabel(id);
-          return Card(child:ListTile(
+          return GlassPanel(child:ListTile(
             leading:CircleAvatar(backgroundColor:rose.withOpacity(.12),child:const Icon(Icons.person,color:rose)),
             title:Text(title,style:const TextStyle(fontWeight:FontWeight.bold)),
             subtitle:Text('${items.length} حجز • آخر موعد: ${items.first['date']??'-'}'),
@@ -517,8 +517,8 @@ class _AdminHomeState extends State<AdminHome> {
       ListTile(contentPadding:EdgeInsets.zero,leading:IconButton(onPressed:()=>setState(() {selectedBookingCustomerId=null;selectedBookingId=null;}),icon:const Icon(Icons.arrow_back,color:rose)),title:Text('$title',style:const TextStyle(fontSize:19,fontWeight:FontWeight.bold)),subtitle:Text('${items.length} حجز مرتبط بهذا الحساب')),
       const Divider(),
       if(items.isEmpty)const Text('لا توجد حجوزات لهذا العميل'),
-      ...items.map((booking)=>Card(
-        color:booking['id']?.toString()==selectedBookingId?const Color(0xFFF1E7D7):Colors.white,
+      ...items.map((booking)=>GlassPanel(
+        tint:booking['id']?.toString()==selectedBookingId?gold.withOpacity(.12):null,
         child:ListTile(
           leading:const CircleAvatar(backgroundColor:Color(0xFFF1E7D7),child:Icon(Icons.event_available,color:rose)),
           title:Text('${booking['memberName']??'حجز'}',style:const TextStyle(fontWeight:FontWeight.bold)),
@@ -654,12 +654,12 @@ class _AdminHomeState extends State<AdminHome> {
         ]))
       ])),
       Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال أول رد')):ListView.builder(controller:adminChatScrollController,reverse:true,padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index)=>adminMessageBubble(messages[messages.length-1-index]))),
-      SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
-        IconButton(tooltip:'تسجيل حجز للعميل',onPressed:createBookingFromChat,icon:const Icon(Icons.event_available,color:teal)),
-        IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),
-        Expanded(child:TextField(controller:chatController,focusNode:chatFocusNode,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رد الإدارة...',border:OutlineInputBorder()),onTap:(){WidgetsBinding.instance.addPostFrameCallback((_){if(adminChatScrollController.hasClients)adminChatScrollController.jumpTo(0);});},onSubmitted:(_)=>sendAdminMessage())),
-        IconButton(onPressed:sendAdminMessage,icon:const Icon(Icons.send,color:plum))
-      ])))
+      SafeArea(child:Padding(padding:const EdgeInsets.fromLTRB(10,6,10,10),child:GlassPanel(radius:24,child:Row(children:[
+        IconButton(tooltip:'تسجيل حجز للعميل',onPressed:createBookingFromChat,icon:Icon(Icons.event_available_rounded,color:Theme.of(context).colorScheme.primary)),
+        IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:Icon(Icons.person_add_alt_1_rounded,color:Theme.of(context).colorScheme.primary)),
+        Expanded(child:TextField(controller:chatController,focusNode:chatFocusNode,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رد الإدارة...',border:InputBorder.none,contentPadding:EdgeInsets.symmetric(horizontal:8,vertical:12)),onTap:(){WidgetsBinding.instance.addPostFrameCallback((_){if(adminChatScrollController.hasClients)adminChatScrollController.jumpTo(0);});},onSubmitted:(_)=>sendAdminMessage())),
+        IconButton(onPressed:sendAdminMessage,tooltip:'إرسال',icon:Icon(Icons.send_rounded,color:Theme.of(context).colorScheme.primary))
+      ]))))
     ]);
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
