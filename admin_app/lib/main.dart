@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'shared_store.dart';
 import 'image_utils.dart';
@@ -30,7 +31,18 @@ Future<void> main() async {
   } catch (_) {
     // Push notifications are optional; never prevent the app from opening.
   }
+  final themePrefs = await SharedPreferences.getInstance();
+  final savedTheme = themePrefs.getString('admin_theme_mode');
+  adminThemeMode.value = savedTheme == 'dark' ? ThemeMode.dark : savedTheme == 'light' ? ThemeMode.light : ThemeMode.system;
   runApp(const SheikhaAdminApp());
+}
+
+final ValueNotifier<ThemeMode> adminThemeMode = ValueNotifier<ThemeMode>(ThemeMode.system);
+
+Future<void> setAdminThemeMode(ThemeMode mode) async {
+  adminThemeMode.value = mode;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('admin_theme_mode', mode == ThemeMode.dark ? 'dark' : mode == ThemeMode.light ? 'light' : 'system');
 }
 
 const rose = Color(0xFFC49A55);
@@ -44,11 +56,36 @@ const sectionColors=<String,Color>{'members':teal,'sessions':plum,'banners':gold
 
 class SheikhaAdminApp extends StatelessWidget {
   const SheikhaAdminApp({super.key});
-  @override Widget build(BuildContext context) => MaterialApp(
-    debugShowCheckedModeBanner:false, title:'الشيخة - الإدارة',
-    theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(),iconTheme:const IconThemeData(color:plum),inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:Color(0xDFFFFFFF),border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x66C49A55))),enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x55C49A55))),focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:gold,width:1.6))),appBarTheme:const AppBarTheme(backgroundColor:Color(0xCCF7F2E9),foregroundColor:plum,elevation:0,centerTitle:true),cardTheme:CardThemeData(color:Color(0xDFFFFFFF),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(24)),side:BorderSide(color:Color(0x66FFFFFF)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:Color(0xFF241B10),elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:gold,foregroundColor:Color(0xFF241B10))),
-    darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.dark),scaffoldBackgroundColor:Color(0xFF11100E),textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(ThemeData.dark().textTheme),cardTheme:CardThemeData(color:Color(0xCC29251F),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(24)),side:BorderSide(color:Color(0x44D8B878)))),appBarTheme:const AppBarTheme(backgroundColor:Color(0xCC171512),foregroundColor:Color(0xFFF2E5CC),elevation:0),iconTheme:const IconThemeData(color:Color(0xFFD8B878))),
-    themeMode:ThemeMode.system, home:const OneSignalSubscriptionGate(child:AdminAuthGate()));
+  @override Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
+    valueListenable: adminThemeMode,
+    builder: (context, mode, _) => MaterialApp(
+      debugShowCheckedModeBanner:false,
+      title:'الشيخة - الإدارة',
+      theme:ThemeData(
+        useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.light),
+        scaffoldBackgroundColor:cream,textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(),
+        iconTheme:const IconThemeData(color:plum),
+        inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:const Color(0xDFFFFFFF),
+          border:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x66C49A55))),
+          enabledBorder:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x55C49A55))),
+          focusedBorder:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:gold,width:1.6))),
+        appBarTheme:const AppBarTheme(backgroundColor:Color(0xCCF7F2E9),foregroundColor:plum,elevation:0,centerTitle:true),
+        cardTheme:CardThemeData(color:const Color(0xDFFFFFFF),surfaceTintColor:Colors.transparent,elevation:0,
+          shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(24),side:const BorderSide(color:Color(0x66FFFFFF)))),
+        filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF241B10),elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)))),
+        floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:gold,foregroundColor:Color(0xFF241B10))),
+      darkTheme:ThemeData(
+        useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.dark),
+        scaffoldBackgroundColor:const Color(0xFF11100E),
+        textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(ThemeData.dark().textTheme),
+        cardTheme:CardThemeData(color:const Color(0xCC29251F),surfaceTintColor:Colors.transparent,elevation:0,
+          shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(24),side:const BorderSide(color:Color(0x44D8B878)))),
+        appBarTheme:const AppBarTheme(backgroundColor:Color(0xCC171512),foregroundColor:Color(0xFFF2E5CC),elevation:0),
+        iconTheme:const IconThemeData(color:Color(0xFFD8B878))),
+      themeMode:mode,
+      home:const OneSignalSubscriptionGate(child:AdminAuthGate()),
+    ),
+  );
 }
 
 
@@ -668,6 +705,7 @@ class _AdminHomeState extends State<AdminHome> {
               icon:const Icon(Icons.admin_panel_settings_outlined,color:Colors.white)),
             Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),
               child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded,color:Colors.white))),
+            IconButton(tooltip:'تبديل المظهر',onPressed:()=>setAdminThemeMode(Theme.of(context).brightness==Brightness.dark?ThemeMode.light:ThemeMode.dark),icon:Icon(Theme.of(context).brightness==Brightness.dark?Icons.light_mode_rounded:Icons.dark_mode_rounded,color:Colors.white)),
             IconButton(tooltip:'تحديث',onPressed:()=>refresh(),icon:const Icon(Icons.refresh_rounded,color:Colors.white)),
             IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout_rounded,color:Colors.white)),
           ]),
