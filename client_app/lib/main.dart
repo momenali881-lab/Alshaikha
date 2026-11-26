@@ -230,7 +230,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;String search='';String memberSort='recommended';bool compactMembers=false;String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -479,23 +479,56 @@ Future<void> openNotifications()async{
   if('${b['description']??''}'.toString().trim().isNotEmpty)Padding(padding:const EdgeInsets.only(top:3),child:Text('${b['description']}',maxLines:2,overflow:TextOverflow.ellipsis,style:GoogleFonts.cairo(color:Colors.white,fontSize:13,fontWeight:FontWeight.w600,)))
  ]))
 ])));
-Widget homePage()=>ListView(padding:const EdgeInsets.fromLTRB(4,14,4,14),children:[
-  if(banners.isNotEmpty)...[SizedBox(height:210,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
-  if(banners.isEmpty)const SizedBox.shrink(),
-  if(announcements.isNotEmpty)const Padding(padding:EdgeInsets.only(top:12,bottom:6),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),
-  ...announcements.map((a)=>Card(clipBehavior:Clip.antiAlias,child:Column(children:[if(imageList(a).isNotEmpty)imageGallery(a,height:150),ListTile(leading:const Icon(Icons.campaign,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}'))]))),
-  const SizedBox(height:12),const Text('الكادر المتوفر',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),
-  GridView.builder(
-    shrinkWrap:true,
-    physics:const NeverScrollableScrollPhysics(),
-    itemCount:members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).length,
-    gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,crossAxisSpacing:9,mainAxisSpacing:9,childAspectRatio:.72),
-    itemBuilder:(context,index){
-      final visible=members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
-      return memberGridCard(visible[index]);
-    },
-  ),
- ]);
+Widget homePage(){
+  final visible=members.where((m)=>m['available']!=false&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
+  visible.sort((a,b){
+   final ap=double.tryParse('${a['hourlyPrice']??0}')??0, bp=double.tryParse('${b['hourlyPrice']??0}')??0;
+   if(memberSort=='low')return ap.compareTo(bp);
+   if(memberSort=='high')return bp.compareTo(ap);
+   return 0;
+  });
+  return ListView(padding:const EdgeInsets.fromLTRB(12,14,12,18),children:[
+   if(banners.isNotEmpty)...[SizedBox(height:210,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
+   if(announcements.isNotEmpty)...[
+    const Padding(padding:EdgeInsets.only(top:14,bottom:8),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
+    ...announcements.map((a)=>Card(clipBehavior:Clip.antiAlias,child:Column(children:[if(imageList(a).isNotEmpty)imageGallery(a,height:150),ListTile(leading:const Icon(Icons.campaign_rounded,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}'))]))),
+   ],
+   const SizedBox(height:18),
+   Row(children:[
+    const Expanded(child:Text('اكتشف الكادر',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900))),
+    Text('${visible.length} نتيجة',style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurface.withOpacity(.65),fontWeight:FontWeight.w700)),
+    const SizedBox(width:8),
+    IconButton(tooltip:compactMembers?'عرض البطاقات':'عرض مختصر',onPressed:()=>setState(()=>compactMembers=!compactMembers),icon:Icon(compactMembers?Icons.grid_view_rounded:Icons.view_agenda_rounded)),
+   ]),
+   const SizedBox(height:8),
+   Row(children:[
+    Expanded(child:DropdownButtonFormField<String>(value:memberSort,decoration:const InputDecoration(prefixIcon:Icon(Icons.sort_rounded),contentPadding:EdgeInsets.symmetric(horizontal:12,vertical:8),isDense:true),items:const[
+     DropdownMenuItem(value:'recommended',child:Text('الترتيب المقترح')),
+     DropdownMenuItem(value:'low',child:Text('السعر: الأقل أولاً')),
+     DropdownMenuItem(value:'high',child:Text('السعر: الأعلى أولاً')),
+    ],onChanged:(v)=>setState(()=>memberSort=v??'recommended'))),
+    const SizedBox(width:8),
+    IconButton(tooltip:'مسح البحث',onPressed:search.isEmpty?null:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.filter_alt_off_rounded)),
+   ]),
+   const SizedBox(height:12),
+   if(visible.isEmpty)GlassPanel(child:Column(children:[
+    const Icon(Icons.search_off_rounded,size:38),
+    const SizedBox(height:8),
+    const Text('لا توجد نتائج مطابقة',style:TextStyle(fontWeight:FontWeight.w800,fontSize:16)),
+    const Text('جرّب تغيير عبارة البحث أو إعادة ضبط الترتيب'),
+    const SizedBox(height:8),
+    TextButton.icon(onPressed:()=>setState(()=>search=''),icon:const Icon(Icons.refresh_rounded),label:const Text('عرض الكادر المتوفر')),
+   ]))
+   else if(compactMembers) ...visible.map((m)=>Card(child:ListTile(
+    onTap:()=>openMember(m),leading:photo(m,size:54),title:Text('${m['name']??'عضو الكادر'}',style:const TextStyle(fontWeight:FontWeight.w800)),
+    subtitle:Text('${m['hourlyPrice']??0} د.ع/ساعة • ${m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان'}'),
+    trailing:IconButton(onPressed:()=>toggleFav(m),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose)),
+   )))
+   else GridView.builder(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),itemCount:visible.length,
+    gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,crossAxisSpacing:10,mainAxisSpacing:10,childAspectRatio:.72),
+    itemBuilder:(context,index)=>memberGridCard(visible[index])),
+  ]);
+ }
  Widget sessionsPage()=>ListView(padding:const EdgeInsets.all(14),children:[
   const Text('الجلسات',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),
   const SizedBox(height:10),
