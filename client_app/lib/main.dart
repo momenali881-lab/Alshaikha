@@ -399,7 +399,25 @@ Future<void> openNotifications()async{
   final accent=Theme.of(context).colorScheme.primary;
   return Align(alignment:mine?Alignment.centerRight:Alignment.centerLeft,child:Container(constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:6),child:GlassPanel(radius:20,tint:mine?accent.withOpacity(.10):null,child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
    Text('${msg['sender']??'الإدارة'}',style:TextStyle(fontSize:12,fontWeight:FontWeight.bold,color:accent)),
-   if(member!=null)InkWell(onTap:()=>openMember(member),child:GlassPanel(radius:15,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[photo(member,size:58),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('اضغط لفتح الملف الكامل') ])),Icon(Icons.open_in_new,color:accent)])))),
+   if(member!=null)GlassPanel(radius:15,child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+    Row(children:[
+     photo(member,size:68),
+     const SizedBox(width:11),
+     Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Text('${member['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
+      const SizedBox(height:5),
+      Text('${member['hourlyPrice']??0} د.ع / ساعة',style:TextStyle(color:accent,fontWeight:FontWeight.w800,fontSize:13)),
+      if((member['nightlyPrice']??0).toString()!='0')Text('${member['nightlyPrice']} د.ع / ليلة',style:TextStyle(color:Theme.of(context).hintColor,fontSize:11)),
+     ])),
+    ]),
+    const SizedBox(height:10),
+    SizedBox(width:double.infinity,child:OutlinedButton.icon(
+     onPressed:()=>openMember(member),
+     icon:const Icon(Icons.person_outline_rounded,size:18),
+     label:const Text('عرض الملف الشخصي'),
+     style:OutlinedButton.styleFrom(visualDensity:VisualDensity.compact,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(13))),
+    )),
+   ]))),
    if(msg['type']=='bookingCard')bookingMessageCard(msg),
    if(msg['type']!='memberProfile'&&msg['type']!='bookingCard'||member==null&&msg['type']=='memberProfile')Text('${msg['text']??'تعذر العثور على ملف العضو'}'),
    Text('${msg['createdAt']??''}',style:const TextStyle(fontSize:10,color:Colors.grey))
