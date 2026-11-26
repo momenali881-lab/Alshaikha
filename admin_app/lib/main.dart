@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
+import 'glass_design.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
@@ -61,27 +62,8 @@ class SheikhaAdminApp extends StatelessWidget {
     builder: (context, mode, _) => MaterialApp(
       debugShowCheckedModeBanner:false,
       title:'الشيخة - الإدارة',
-      theme:ThemeData(
-        useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.light),
-        scaffoldBackgroundColor:cream,textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(),
-        iconTheme:const IconThemeData(color:plum),
-        inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:const Color(0xDFFFFFFF),
-          border:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x66C49A55))),
-          enabledBorder:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x55C49A55))),
-          focusedBorder:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:gold,width:1.6))),
-        appBarTheme:const AppBarTheme(backgroundColor:Color(0xCCF7F2E9),foregroundColor:plum,elevation:0,centerTitle:true),
-        cardTheme:CardThemeData(color:const Color(0xDFFFFFFF),surfaceTintColor:Colors.transparent,elevation:0,
-          shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(24),side:const BorderSide(color:Color(0x66FFFFFF)))),
-        filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF241B10),elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)))),
-        floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:gold,foregroundColor:Color(0xFF241B10))),
-      darkTheme:ThemeData(
-        useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.dark),
-        scaffoldBackgroundColor:const Color(0xFF11100E),
-        textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(ThemeData.dark().textTheme),
-        cardTheme:CardThemeData(color:const Color(0xCC29251F),surfaceTintColor:Colors.transparent,elevation:0,
-          shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(24),side:const BorderSide(color:Color(0x44D8B878)))),
-        appBarTheme:const AppBarTheme(backgroundColor:Color(0xCC171512),foregroundColor:Color(0xFFF2E5CC),elevation:0),
-        iconTheme:const IconThemeData(color:Color(0xFFD8B878))),
+      theme:GlassDesign.light,
+      darkTheme:GlassDesign.dark,
       themeMode:mode,
       home:const OneSignalSubscriptionGate(child:AdminAuthGate()),
     ),
