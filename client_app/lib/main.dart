@@ -527,6 +527,8 @@ Widget homePage(){
     ...announcements.map((a)=>Card(clipBehavior:Clip.antiAlias,child:Column(children:[if(imageList(a).isNotEmpty)imageGallery(a,height:150),ListTile(leading:const Icon(Icons.campaign_rounded,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}'))]))),
    ],
    const SizedBox(height:18),
+   GlassPanel(radius:18,padding:const EdgeInsets.symmetric(horizontal:13,vertical:4),child:Row(children:[Icon(Icons.search_rounded,color:Theme.of(context).colorScheme.primary),const SizedBox(width:9),Expanded(child:TextField(controller:searchCtrl, textInputAction:TextInputAction.search, onChanged:(value)=>setState(()=>search=value),decoration:const InputDecoration(hintText:'ابحث عن عضو الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:13)))),if(search.isNotEmpty)IconButton(tooltip:'مسح البحث',onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))])),
+   const SizedBox(height:15),
    Row(children:[
     const Expanded(child:Text('اكتشف الكادر',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900))),
     Text('${visible.length} نتيجة',style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurface.withOpacity(.65),fontWeight:FontWeight.w700)),
