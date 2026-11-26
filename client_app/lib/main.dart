@@ -458,7 +458,7 @@ Future<void> openNotifications()async{
     ])),
    ],
    const SizedBox(height:16),
-   GlassActionButton(onPressed:()=>book(m),child:const Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.calendar_month_rounded),SizedBox(width:8),Text('احجز موعداً',style:TextStyle(fontWeight:FontWeight.w900))])),
+   GlassActionButton(onPressed:()=>book(m),label:'احجز موعداً',icon:Icons.calendar_month_rounded,expanded:true),
   ]);
 Widget _memberInfoTile(IconData icon,String label,String value)=>Row(children:[
  Icon(icon,color:gold,size:21),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
