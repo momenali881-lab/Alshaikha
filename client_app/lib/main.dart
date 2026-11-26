@@ -570,10 +570,33 @@ Widget homePage(){
   ]))),
  ]);
 
- Widget bookingsPage()=>ListView(padding:const EdgeInsets.all(12),children:[const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:22,fontWeight:FontWeight.bold)),FilledButton.icon(onPressed:()=>book(),icon:const Icon(Icons.add_circle_outline),label:const Text('حجز موعد جديد')),const SizedBox(height:10),...bookings.map((b)=>Card(color:b['id']?.toString()==selectedBookingId?const Color(0xFFFFE4EF):Colors.white,child:ListTile(onTap:()=>showClientBooking(b),leading:const Icon(Icons.event_available),title:Text('${b['memberName']??'حجز'}'),subtitle:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')))),if(bookings.isEmpty)const Text('لا توجد حجوزات حتى الآن.')]);
+ Widget bookingsPage()=>ListView(padding:const EdgeInsets.fromLTRB(14,16,14,24),children:[
+  const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
+  const SizedBox(height:5),
+  Text('تابع حالة مواعيدك وتفاصيل كل حجز',style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withOpacity(.62))),
+  const SizedBox(height:16),
+  GlassActionButton(label:'حجز موعد جديد',icon:Icons.add_circle_outline,onPressed:()=>book()),
+  const SizedBox(height:14),
+  if(bookings.isEmpty)GlassPanel(child:Padding(padding:const EdgeInsets.symmetric(vertical:28),child:Column(children:[Icon(Icons.event_busy_rounded,size:42,color:Theme.of(context).colorScheme.primary),const SizedBox(height:12),const Text('لا توجد حجوزات حتى الآن',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16)),const SizedBox(height:5),const Text('يمكنك إنشاء حجز جديد من الزر أعلاه',style:TextStyle(color:Colors.grey))]))),
+  ...bookings.map((b){
+   final selected=b['id']?.toString()==selectedBookingId;
+   return Padding(padding:const EdgeInsets.only(bottom:10),child:GlassPanel(tint:selected?Theme.of(context).colorScheme.primary.withOpacity(.10):null,child:ListTile(
+    contentPadding:const EdgeInsets.symmetric(horizontal:12,vertical:5),
+    leading:Container(width:44,height:44,decoration:BoxDecoration(color:Theme.of(context).colorScheme.primary.withOpacity(.12),borderRadius:BorderRadius.circular(15)),child:Icon(Icons.event_available_rounded,color:Theme.of(context).colorScheme.primary)),
+    title:Text('${b['memberName']??'حجز'}',style:const TextStyle(fontWeight:FontWeight.bold)),
+    subtitle:Padding(padding:const EdgeInsets.only(top:5),child:Text('${b['date']??''} • ${b['status']??'قيد المراجعة'}')),
+    trailing:const Icon(Icons.chevron_left_rounded),
+    onTap:()=>showClientBooking(b)
+   )));
+  })
+ ]);
  Widget chatPage()=>Column(children:[
-  Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView.builder(controller:clientChatScrollController,reverse:true,padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index)=>chatMessage(messages[messages.length-1-index]))),
-  SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,focusNode:chatFocusNode,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onTap:(){WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});},onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
+  Expanded(child:messages.isEmpty?Center(child:GlassPanel(margin:const EdgeInsets.all(20),child:Padding(padding:const EdgeInsets.symmetric(vertical:30),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.forum_rounded,size:42,color:Theme.of(context).colorScheme.primary),const SizedBox(height:12),const Text('ابدأ المحادثة',style:TextStyle(fontSize:17,fontWeight:FontWeight.bold)),const SizedBox(height:5),const Text('اكتب رسالتك وسنكون معك',style:TextStyle(color:Colors.grey))])))):ListView.builder(controller:clientChatScrollController,reverse:true,padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index)=>chatMessage(messages[messages.length-1-index]))),
+  SafeArea(child:Padding(padding:const EdgeInsets.fromLTRB(10,6,10,10),child:GlassPanel(radius:24,child:Row(children:[
+   IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:Icon(Icons.person_add_alt_1_rounded,color:Theme.of(context).colorScheme.primary)),
+   Expanded(child:TextField(controller:messageCtrl,focusNode:chatFocusNode,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:InputBorder.none,contentPadding:EdgeInsets.symmetric(horizontal:8,vertical:12)),onTap:(){WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});},onSubmitted:(_)=>sendMessage())),
+   IconButton(onPressed:sendMessage,tooltip:'إرسال',icon:Icon(Icons.send_rounded,color:Theme.of(context).colorScheme.primary))
+  ])))),
  ]);
  Widget accountPage()=>const AccountPage();
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
