@@ -165,7 +165,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
      child:ConstrainedBox(constraints:BoxConstraints(minHeight:constraints.maxHeight-42),child:Column(
       mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.stretch,
       children:[
-       const SizedBox(height:compact?8:18),
+       SizedBox(height:compact?8:18),
        Container(padding:EdgeInsets.all(compact?18:22),decoration:BoxDecoration(
         color:dark?const Color(0xB925211B):const Color(0xBFFBF9F4),borderRadius:BorderRadius.circular(30),
         border:Border.all(color:gold.withOpacity(.32)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(dark ? .18 : .07),blurRadius:28,offset:const Offset(0,12))]),
