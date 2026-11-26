@@ -597,8 +597,7 @@ class _AdminHomeState extends State<AdminHome> {
       child:GlassPanel(radius:mine?21:17,tint:tint,child:Container(
        decoration:BoxDecoration(borderRadius:BorderRadius.circular(mine?21:17),border:Border.all(color:edge.withOpacity(.65),width:1.2)),
        padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(mainAxisSize:MainAxisSize.min,children:[Icon(mine?Icons.support_agent_rounded:Icons.person_rounded,size:15,color:mine?const Color(0xFF80602D):const Color(0xFF59452F)),const SizedBox(width:6),Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:4),decoration:BoxDecoration(color:edge.withOpacity(.18),borderRadius:BorderRadius.circular(20)),child:Text(mine?'الإدارة':'العميل',style:TextStyle(fontSize:11,fontWeight:FontWeight.w900,color:mine?const Color(0xFF80602D):const Color(0xFF59452F))))]),
-        const SizedBox(height:8),if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,
+        const SizedBox(height:4),if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,
         if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')Text('${m['text']??'تعذر العثور على ملف العضو'}',style:const TextStyle(height:1.45)),
         const SizedBox(height:6),Text('${m['createdAt']??''}',style:TextStyle(fontSize:10,color:Theme.of(context).hintColor))
        ])
