@@ -552,6 +552,12 @@ class _AdminHomeState extends State<AdminHome> {
         const PopupMenuItem(value:'edit',child:Text('تعديل')),
         const PopupMenuItem(value:'delete',child:Text('حذف')),
       ])),
+      if(section=='banners')Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:Row(children:[
+        Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:(m['active']==false?Colors.grey:teal).withOpacity(.12),borderRadius:BorderRadius.circular(10),border:Border.all(color:(m['active']==false?Colors.grey:teal).withOpacity(.24))),child:Text(m['active']==false?'مخفي':'نشط',style:TextStyle(fontSize:11,fontWeight:FontWeight.w800,color:m['active']==false?Colors.grey:teal))),
+        const SizedBox(width:8),Expanded(child:Text(m['targetType']=='member'?'مرتبط بملف عضو الكادر':m['targetType']=='session'?'مرتبط بجلسة':'بانر مستقل',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:Theme.of(context).hintColor))),
+      ])),
+      if(section=='sessions'&&(m['memberName']??'').toString().isNotEmpty)Align(alignment:Alignment.centerRight,child:Padding(padding:const EdgeInsets.fromLTRB(12,0,12,8),child:Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.spa_outlined,size:15,color:gold),const SizedBox(width:6),Text('الكادر: ${m['memberName']}',style:TextStyle(fontSize:12,color:Theme.of(context).hintColor))]))),
+      if((section=='banners'||section=='sessions')&&imgs.length>1)SizedBox(height:72,child:ListView.separated(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),itemCount:imgs.length,separatorBuilder:(_,__)=>const SizedBox(width:7),itemBuilder:(_,i)=>ClipRRect(borderRadius:BorderRadius.circular(11),child:appImage(imgs[i],width:76,height:60,fit:BoxFit.cover)))),
       if(section=='messages')Align(alignment:Alignment.centerRight,child:Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),child:Text('المحادثة: ${m['conversationId']??'-'}',style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withOpacity(.65))))),
       if(section=='bookings'&&(m['address']??'').toString().isNotEmpty)Align(alignment:Alignment.centerRight,child:Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),child:Text('العنوان: ${m['address']}',style:TextStyle(color:Theme.of(context).colorScheme.primary)))),
     ])));
