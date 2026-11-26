@@ -477,8 +477,13 @@ Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeIn
   Expanded(child:Stack(fit:StackFit.expand,children:[ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(21)),child:photo(m,size:180)),Positioned(left:7,top:7,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(36,36),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19))),Positioned(right:8,top:9,child:_memberInfoPill(m['available']==false?'غير متاح':'متاح للحجز',m['available']==false?Colors.grey:teal))])),
   Padding(padding:const EdgeInsets.fromLTRB(10,8,10,10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
    Text('${m['name']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
-   Text('${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,color:plum,fontWeight:FontWeight.w700)),
-   Text(m['hasPlace']==true?'يوجد مكان':'لا يوجد مكان',maxLines:1,style:TextStyle(fontSize:11,color:Theme.of(context).hintColor))
+   const SizedBox(height:3),
+   Text('${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,color:plum,fontWeight:FontWeight.w800)),
+   const SizedBox(height:5),
+   Wrap(spacing:5,runSpacing:4,children:[
+    _memberInfoPill(m['hasPlace']==true?'يوجد مكان':'بدون مكان',plum),
+    if((m['description']??'').toString().trim().isNotEmpty)Text('${m['description']}',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:10,color:Theme.of(context).hintColor)),
+   ])
   ]))
  ])));
  void openBanner(Map<String,dynamic> b){
