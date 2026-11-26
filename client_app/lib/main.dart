@@ -518,6 +518,7 @@ Widget homePage(){
    final ap=double.tryParse('${a['hourlyPrice']??0}')??0, bp=double.tryParse('${b['hourlyPrice']??0}')??0;
    if(memberSort=='low')return ap.compareTo(bp);
    if(memberSort=='high')return bp.compareTo(ap);
+   if(memberSort=='name')return '${a['name']??''}'.toLowerCase().compareTo('${b['name']??''}'.toLowerCase());
    return 0;
   });
   return ListView(padding:const EdgeInsets.fromLTRB(12,14,12,18),children:[
@@ -541,6 +542,7 @@ Widget homePage(){
      DropdownMenuItem(value:'recommended',child:Text('الترتيب المقترح')),
      DropdownMenuItem(value:'low',child:Text('السعر: الأقل أولاً')),
      DropdownMenuItem(value:'high',child:Text('السعر: الأعلى أولاً')),
+     DropdownMenuItem(value:'name',child:Text('الاسم: أ إلى ي')),
     ],onChanged:(v)=>setState(()=>memberSort=v??'recommended'))),
     const SizedBox(width:8),
     IconButton(tooltip:'مسح البحث',onPressed:search.isEmpty?null:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.filter_alt_off_rounded)),
