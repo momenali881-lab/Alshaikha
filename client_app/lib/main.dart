@@ -32,12 +32,54 @@ Future<void> main() async {
   }
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:Colors.transparent,statusBarIconBrightness:Brightness.dark,systemNavigationBarColor:Colors.transparent,systemNavigationBarIconBrightness:Brightness.dark));
+  final themePrefs = await SharedPreferences.getInstance();
+  final savedTheme = themePrefs.getString('client_theme_mode');
+  clientThemeMode.value = savedTheme == 'dark' ? ThemeMode.dark : savedTheme == 'light' ? ThemeMode.light : ThemeMode.system;
   runApp(const SheikhaClientApp());
 }
+final ValueNotifier<ThemeMode> clientThemeMode = ValueNotifier<ThemeMode>(ThemeMode.system);
+
+Future<void> setClientThemeMode(ThemeMode mode) async {
+  clientThemeMode.value = mode;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('client_theme_mode', mode == ThemeMode.dark ? 'dark' : mode == ThemeMode.light ? 'light' : 'system');
+}
+
 const rose=Color(0xFFC49A55), plum=Color(0xFF59452F), cream=Color(0xFFF7F2E9), teal=Color(0xFF9C835D), gold=Color(0xFFD8B878);
-class SheikhaClientApp extends StatelessWidget{
+class SheikhaClientApp extends StatelessWidget {
  const SheikhaClientApp({super.key});
- @override Widget build(BuildContext context)=>MaterialApp(debugShowCheckedModeBanner:false,title:'الشيخة',theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.light),scaffoldBackgroundColor:cream,textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(),iconTheme:const IconThemeData(color:plum),inputDecorationTheme:InputDecorationTheme(filled:true,fillColor:Color(0xDFFFFFFF),border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x66C49A55))),enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x55C49A55))),focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:gold,width:1.6))),appBarTheme:const AppBarTheme(backgroundColor:Color(0xCCF7F2E9),foregroundColor:plum,elevation:0,centerTitle:true),cardTheme:CardThemeData(color:Color(0xDFFFFFFF),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(24)),side:BorderSide(color:Color(0x66FFFFFF)))),filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:Color(0xFF241B10),elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)))),floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:gold,foregroundColor:Color(0xFF241B10))),darkTheme:ThemeData(useMaterial3:true,brightness:Brightness.dark,colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.dark),scaffoldBackgroundColor:Color(0xFF11100E),textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(ThemeData.dark().textTheme),cardTheme:CardThemeData(color:Color(0xCC29251F),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(24)),side:BorderSide(color:Color(0x44D8B878)))),appBarTheme:const AppBarTheme(backgroundColor:Color(0xCC171512),foregroundColor:Color(0xFFF2E5CC),elevation:0),iconTheme:const IconThemeData(color:Color(0xFFD8B878))),themeMode:ThemeMode.system,home:const OneSignalSubscriptionGate(child:ClientAuthGate()));
+ @override Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
+  valueListenable: clientThemeMode,
+  builder: (context, mode, _) => MaterialApp(
+   debugShowCheckedModeBanner:false,
+   title:'الشيخة',
+   theme:ThemeData(
+    useMaterial3:true,
+    colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.light),
+    scaffoldBackgroundColor:cream,
+    textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(),
+    iconTheme:const IconThemeData(color:plum),
+    inputDecorationTheme:InputDecorationTheme(
+     filled:true,fillColor:const Color(0xDFFFFFFF),
+     border:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x66C49A55))),
+     enabledBorder:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:Color(0x55C49A55))),
+     focusedBorder:const OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(18)),borderSide:BorderSide(color:gold,width:1.6))),
+    appBarTheme:const AppBarTheme(backgroundColor:Color(0xCCF7F2E9),foregroundColor:plum,elevation:0,centerTitle:true),
+    cardTheme:CardThemeData(color:const Color(0xDFFFFFFF),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(24),side:const BorderSide(color:Color(0x66FFFFFF)))),
+    filledButtonTheme:FilledButtonThemeData(style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF241B10),elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)))),
+    floatingActionButtonTheme:const FloatingActionButtonThemeData(backgroundColor:gold,foregroundColor:Color(0xFF241B10))),
+   darkTheme:ThemeData(
+    useMaterial3:true,brightness:Brightness.dark,
+    colorScheme:ColorScheme.fromSeed(seedColor:gold,brightness:Brightness.dark),
+    scaffoldBackgroundColor:const Color(0xFF11100E),
+    textTheme:GoogleFonts.ibmPlexSansArabicTextTheme(ThemeData.dark().textTheme),
+    cardTheme:CardThemeData(color:const Color(0xCC29251F),surfaceTintColor:Colors.transparent,elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(24),side:const BorderSide(color:Color(0x44D8B878)))),
+    appBarTheme:const AppBarTheme(backgroundColor:Color(0xCC171512),foregroundColor:Color(0xFFF2E5CC),elevation:0),
+    iconTheme:const IconThemeData(color:Color(0xFFD8B878))),
+   themeMode:mode,
+   home:const OneSignalSubscriptionGate(child:ClientAuthGate()),
+  ),
+ );
 }
 
 String _accountEmail(String username) => '${username.trim().toLowerCase()}@alshaikha.app';
@@ -518,6 +560,7 @@ Widget homePage()=>ListView(padding:const EdgeInsets.fromLTRB(4,14,4,14),childre
       if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
       if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search_rounded)),
       Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
+      IconButton(tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
      ]),
     )),
     Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(
