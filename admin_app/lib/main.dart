@@ -394,7 +394,7 @@ class _AdminHomeState extends State<AdminHome> {
     String? selectedMemberId=old?['memberId']?.toString()??(bookingMembers.isNotEmpty?bookingMembers.first['id']?.toString():null);
     String? selectedCustomerId=old?['customerId']?.toString()??(fromChatBooking?selectedConversationId:null);
     DateTime? bookingDate=DateTime.tryParse('${old?['date']??''}');
-    bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, active=old?['active']!=false;
+    bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, featured=old?['featured']==true, active=old?['active']!=false;
     List<String> images=List<String>.from(old?['images']??[]);
     final result=await showDialog<bool>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,ds)=>AlertDialog(
       backgroundColor:Theme.of(ctx).colorScheme.surface.withOpacity(.96),surfaceTintColor:Colors.transparent,elevation:0,shadowColor:Colors.black.withOpacity(.16),
@@ -435,6 +435,7 @@ class _AdminHomeState extends State<AdminHome> {
         if(section=='members')...[
           SwitchListTile(value:hasPlace,onChanged:(v)=>ds(()=>hasPlace=v),title:const Text('يوجد مكان')),
           SwitchListTile(value:available,onChanged:(v)=>ds(()=>available=v),title:const Text('متاح للحجز')),
+          SwitchListTile(value:featured,onChanged:(v)=>ds(()=>featured=v),title:const Text('إظهار في الكادر المميز'),subtitle:const Text('يظهر ضمن الشريط الأفقي في الصفحة الرئيسية')),
         ],
         if(section=='banners')SwitchListTile(value:active,onChanged:(v)=>ds(()=>active=v),title:const Text('عرض البانر للعملاء')),
         if(section=='banners')...[
@@ -459,7 +460,7 @@ class _AdminHomeState extends State<AdminHome> {
       for(final key in fields.keys){if(key=='available'||key=='hasPlace'||(section=='members'&&key=='address'))continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=(key=='age'||key=='durationMinutes')?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?v:v;}
       if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];final customer=customerProfiles.where((p)=>p['id']?.toString()==selectedCustomerId).toList();if(customer.isNotEmpty){data['customerId']=selectedCustomerId;if((data['customerName']??'').toString().trim().isEmpty)data['customerName']=customer.first['displayName']??customer.first['username']??'عميل';}}
       if(section=='sessions'){final chosen=sessionMembers.where((m)=>m['id']?.toString()==sessionMemberId).toList();data['memberId']=sessionMemberId==null||sessionMemberId!.isEmpty?null:sessionMemberId;data['memberName']=chosen.isEmpty?'':chosen.first['name'];data['date']=sessionDate?.toIso8601String()??'';}
-      if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;data['province']=selectedProvince??'';data['area']=areaName.text.trim();data['district']=areaName.text.trim();data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,areaName.text.trim(),data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
+      if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;data['featured']=featured;data['province']=selectedProvince??'';data['area']=areaName.text.trim();data['district']=areaName.text.trim();data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,areaName.text.trim(),data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
       if(section=='banners')data['active']=active;
       if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
       if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['linkedSessionId']=(linkedSessionId==null||linkedSessionId!.isEmpty)?null:linkedSessionId;data['targetType']=data['linkedMemberId']!=null?'member':data['linkedSessionId']!=null?'session':'none';data['targetId']=data['linkedMemberId']??data['linkedSessionId'];}
