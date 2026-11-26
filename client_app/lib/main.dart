@@ -156,29 +156,18 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
   return Directionality(textDirection:TextDirection.rtl,child:Scaffold(
    resizeToAvoidBottomInset:true,
    body:DecoratedBox(
-    decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topRight,end:Alignment.bottomLeft,
-     colors:dark?const[Color(0xFF100F0D),Color(0xFF211C15),Color(0xFF14120F)]:const[Color(0xFFF8F3E9),Color(0xFFEDE2CF),Color(0xFFF9F6F0)])),
+    decoration:BoxDecoration(
+     image:const DecorationImage(image:AssetImage('file_00000000df048210b32f5dc7efa7f5ad.png'),fit:BoxFit.cover,alignment:Alignment.center),
+     gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,
+      colors:dark?[Colors.black.withOpacity(.58),const Color(0xCC17120D),Colors.black.withOpacity(.66)]:[const Color(0x66F7F0E3),const Color(0xA6F0E6D4),const Color(0x88F7F2E9)])),
     child:SafeArea(child:LayoutBuilder(builder:(context,constraints)=>SingleChildScrollView(
      padding:EdgeInsets.fromLTRB(20,compact?8:18,20,24),
      child:ConstrainedBox(constraints:BoxConstraints(minHeight:constraints.maxHeight-42),child:Column(
       mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.stretch,
       children:[
-       SizedBox(height:compact?116:210,child:ClipRRect(borderRadius:BorderRadius.circular(30),child:Stack(fit:StackFit.expand,children:[
-        Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',fit:BoxFit.cover,alignment:Alignment.center,
-         errorBuilder:(_,__,___)=>DecoratedBox(decoration:const BoxDecoration(gradient:LinearGradient(colors:[Color(0xFF4B3A27),Color(0xFFB38A4A)])),child:const Center(child:Icon(Icons.spa_rounded,size:52,color:Color(0xFFF5E8CD))))),
-        DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,
-         colors:[Colors.black.withOpacity(.08),Colors.black.withOpacity(.66)]))),
-        Positioned(right:20,bottom:18,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-         const Text('الشيخة',style:TextStyle(color:Colors.white,fontSize:30,fontWeight:FontWeight.w900,letterSpacing:1)),
-         Text('مساحتك للراحة والاسترخاء',style:TextStyle(color:Colors.white.withOpacity(.92),fontSize:13,fontWeight:FontWeight.w600)),
-        ])),
-        Positioned(left:15,top:15,child:Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:7),
-         decoration:BoxDecoration(color:Colors.white.withOpacity(.17),borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white.withOpacity(.35))),
-         child:const Text('WELLNESS • BOOKING',style:TextStyle(color:Colors.white,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1)))),
-       ]))),
-       const SizedBox(height:18),
+       const SizedBox(height:compact?8:18),
        Container(padding:EdgeInsets.all(compact?18:22),decoration:BoxDecoration(
-        color:dark?const Color(0xD925211B):const Color(0xDDFBF9F4),borderRadius:BorderRadius.circular(30),
+        color:dark?const Color(0xB925211B):const Color(0xBFFBF9F4),borderRadius:BorderRadius.circular(30),
         border:Border.all(color:gold.withOpacity(.32)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(dark ? .18 : .07),blurRadius:28,offset:const Offset(0,12))]),
         child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
          Row(children:[Container(width:4,height:34,decoration:BoxDecoration(color:gold,borderRadius:BorderRadius.circular(8))),
