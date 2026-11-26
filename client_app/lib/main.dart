@@ -727,6 +727,11 @@ Widget homePage(){
    ));
  }
 
+ Widget _navItem(int index,IconData icon,String label,int activeTab,bool dark,{int unread=0}){
+  final active=activeTab==index;
+  final fg=active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59));
+  return InkWell(borderRadius:BorderRadius.circular(17),onTap:()=>setState(()=>tab=index),child:AnimatedContainer(duration:const Duration(milliseconds:220),padding:EdgeInsets.symmetric(horizontal:active?13:10,vertical:7),decoration:BoxDecoration(gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(17)),child:Column(mainAxisSize:MainAxisSize.min,children:[Stack(clipBehavior:Clip.none,children:[Icon(icon,size:22,color:fg),if(index==1&&unread>0)Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52)))]),const SizedBox(height:3),Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:fg))])));
+ }
 }
 class MemberSearch extends SearchDelegate<String>{
  final List<Map<String,dynamic>> members;final ValueChanged<String> onPick;
@@ -736,10 +741,5 @@ class MemberSearch extends SearchDelegate<String>{
  @override Widget buildResults(BuildContext context)=>buildSuggestions(context);
  @override Widget buildSuggestions(BuildContext context)=>ListView(children:members.where((m)=>'${m['name']} ${m['description']}'.toLowerCase().contains(query.toLowerCase())).map((m)=>ListTile(title:Text('${m['name']}'),subtitle:Text('${m['address']??''}'),onTap:(){onPick(query);close(context,query);})).toList());
 
- Widget _navItem(int index,IconData icon,String label,int activeTab,bool dark,{int unread=0}){
-  final active=activeTab==index;
-  final fg=active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59));
-  return InkWell(borderRadius:BorderRadius.circular(17),onTap:()=>setState(()=>tab=index),child:AnimatedContainer(duration:const Duration(milliseconds:220),padding:EdgeInsets.symmetric(horizontal:active?13:10,vertical:7),decoration:BoxDecoration(gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(17)),child:Column(mainAxisSize:MainAxisSize.min,children:[Stack(clipBehavior:Clip.none,children:[Icon(icon,size:22,color:fg),if(index==1&&unread>0)Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52)))]),const SizedBox(height:3),Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:fg))])));
- }
 
 }
