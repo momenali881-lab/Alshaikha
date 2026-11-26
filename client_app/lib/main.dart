@@ -230,7 +230,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -580,7 +580,7 @@ Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeIn
  ]))
 ])));
 Widget homePage(){
-  final visible=members.where((m)=>m['available']!=false&&(!onlyWithPlace||m['hasPlace']==true)&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
+  final visible=members.where((m)=>(availabilityFilter=='all'||(availabilityFilter=='available'&&m['available']!=false)||(availabilityFilter=='booked'&&m['available']==false))&&(!onlyWithPlace||m['hasPlace']==true)&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
   visible.sort((a,b){
    final ap=double.tryParse('${a['hourlyPrice']??0}')??0, bp=double.tryParse('${b['hourlyPrice']??0}')??0;
    if(memberSort=='low')return ap.compareTo(bp);
@@ -589,13 +589,17 @@ Widget homePage(){
    return 0;
   });
   return ListView(padding:const EdgeInsets.fromLTRB(12,14,12,18),children:[
+    final featuredMembers=members.where((m)=>m['featured']==true&&m['available']!=false).toList();
+    if(featuredMembers.isNotEmpty)...[
+     const Padding(padding:EdgeInsets.only(top:14,bottom:8),child:Text('الكادر المميز',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
+     SizedBox(height:158,child:ListView.separated(scrollDirection:Axis.horizontal,itemCount:featuredMembers.length,separatorBuilder:(_,__)=>const SizedBox(width:10),itemBuilder:(ctx,i){final m=featuredMembers[i];return SizedBox(width:126,child:InkWell(onTap:()=>openMember(m),borderRadius:BorderRadius.circular(20),child:GlassPanel(radius:20,padding:const EdgeInsets.all(8),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Expanded(child:ClipRRect(borderRadius:BorderRadius.circular(14),child:photo(m,size:100))),const SizedBox(height:6),Text('${m['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:12)),Text('${m['hourlyPrice']??0} د.ع/ساعة',style:TextStyle(fontSize:10,color:Theme.of(context).hintColor))]))));})),
+    ],
    if(banners.isNotEmpty)...[SizedBox(height:210,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
    if(announcements.isNotEmpty)...[
     const Padding(padding:EdgeInsets.only(top:14,bottom:8),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
     ...announcements.map((a)=>Card(clipBehavior:Clip.antiAlias,child:Column(children:[if(imageList(a).isNotEmpty)imageGallery(a,height:150),ListTile(leading:const Icon(Icons.campaign_rounded,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}'))]))),
    ],
    const SizedBox(height:18),
-   GlassPanel(radius:18,padding:const EdgeInsets.symmetric(horizontal:13,vertical:4),child:Row(children:[Icon(Icons.search_rounded,color:Theme.of(context).colorScheme.primary),const SizedBox(width:9),Expanded(child:TextField(controller:searchCtrl, textInputAction:TextInputAction.search, onChanged:(value)=>setState(()=>search=value),decoration:const InputDecoration(hintText:'ابحث عن عضو الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:13)))),if(search.isNotEmpty)IconButton(tooltip:'مسح البحث',onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))])),
    const SizedBox(height:15),
    Row(children:[
     const Expanded(child:Text('اكتشف الكادر',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900))),
@@ -617,7 +621,10 @@ Widget homePage(){
    const SizedBox(height:10),
    Wrap(spacing:8,runSpacing:7,children:[
     FilterChip(avatar:const Icon(Icons.place_outlined,size:18),label:const Text('يوجد مكان'),selected:onlyWithPlace,onSelected:(value)=>setState(()=>onlyWithPlace=value),showCheckmark:true,selectedColor:rose.withOpacity(.20),side:BorderSide(color:onlyWithPlace?rose:Theme.of(context).dividerColor)),
-    if(onlyWithPlace||search.isNotEmpty||memberSort!='recommended')ActionChip(avatar:const Icon(Icons.restart_alt_rounded,size:18),label:const Text('إعادة ضبط الفلاتر'),onPressed:(){setState((){onlyWithPlace=false;search='';memberSort='recommended';});searchCtrl.clear();}),
+     ChoiceChip(label:const Text('الكل'),selected:availabilityFilter=='all',onSelected:(_)=>setState(()=>availabilityFilter='all')),
+     ChoiceChip(label:const Text('متاح'),selected:availabilityFilter=='available',onSelected:(_)=>setState(()=>availabilityFilter='available')),
+     ChoiceChip(label:const Text('محجوز'),selected:availabilityFilter=='booked',onSelected:(_)=>setState(()=>availabilityFilter='booked')),
+    if(onlyWithPlace||availabilityFilter!='all'||search.isNotEmpty||memberSort!='recommended')ActionChip(avatar:const Icon(Icons.restart_alt_rounded,size:18),label:const Text('إعادة ضبط الفلاتر'),onPressed:(){setState((){onlyWithPlace=false;availabilityFilter='all';search='';memberSort='recommended';});searchCtrl.clear();}),
    ]),
    const SizedBox(height:12),
    if(visible.isEmpty)GlassPanel(child:Column(children:[
