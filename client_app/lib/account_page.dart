@@ -123,7 +123,7 @@ class _AccountPageState extends State<AccountPage> {
           GestureDetector(onTap: _pickAvatar, child: Stack(children: [
             CircleAvatar(radius: 48, backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(.12),
               backgroundImage: _avatar == null || _avatar!.isEmpty ? null : MemoryImage(base64Decode(_avatar!)),
-              child: _avatar == null || _avatar!.isEmpty ? const Icon(Icons.person, size: 48, color: Color(0xFF9C835D)) : null),
+              child: _avatar == null || _avatar!.isEmpty ? Icon(Icons.person, size: 48, color: Theme.of(context).colorScheme.primary) : null),
             const Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 16, child: Icon(Icons.camera_alt, size: 17))),
           ])),
           const SizedBox(height: 8), TextButton.icon(onPressed: _pickAvatar, icon: const Icon(Icons.photo_camera), label: const Text('تغيير صورة الحساب')),
