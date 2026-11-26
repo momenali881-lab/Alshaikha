@@ -702,15 +702,10 @@ class _AdminHomeState extends State<AdminHome> {
           ]),
         ]),
       )),
-      SizedBox(height:57,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:12),
-        children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.symmetric(horizontal:4,vertical:5),child:ChoiceChip(
-          avatar:Icon(sectionIcons[e.key],size:17,color:section==e.key?const Color(0xFF302719):sectionColors[e.key]),
-          label:Text(e.value,style:TextStyle(color:section==e.key?const Color(0xFF302719):sectionColors[e.key],fontWeight:FontWeight.w800,fontSize:12)),
-          selected:section==e.key,selectedColor:const Color(0xFFE7D4AF),backgroundColor:Theme.of(context).cardColor,
-          side:BorderSide(color:section==e.key?gold:sectionColors[e.key]!.withOpacity(.25)),
-          shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16)),
-          onSelected:(_){setState((){section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}
-        ))).toList())),
+      Padding(padding:const EdgeInsets.fromLTRB(12,0,12,10),child:GlassPanel(radius:22,padding:const EdgeInsets.symmetric(horizontal:7,vertical:7),child:SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(children:sections.entries.map((e){
+        final active=section==e.key;
+        return Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:InkWell(borderRadius:BorderRadius.circular(16),onTap:(){setState((){section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();},child:AnimatedContainer(duration:const Duration(milliseconds:220),curve:Curves.easeOutCubic,padding:EdgeInsets.symmetric(horizontal:active?13:11,vertical:10),decoration:BoxDecoration(gradient:active?const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(15),border:Border.all(color:active?gold.withOpacity(.5):sectionColors[e.key]!.withOpacity(.18))),child:Row(mainAxisSize:MainAxisSize.min,children:[Icon(sectionIcons[e.key],size:18,color:active?const Color(0xFF302719):sectionColors[e.key]),const SizedBox(width:7),Text(e.value,style:TextStyle(color:active?const Color(0xFF302719):sectionColors[e.key],fontWeight:FontWeight.w800,fontSize:12))]))));
+      })).toList()))),
       Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(
         onRefresh:refresh,color:gold,child:ListView(padding:const EdgeInsets.fromLTRB(14,12,14,90),children:[
           GlassPanel(padding:const EdgeInsets.all(18),radius:24,child:Row(children:[
