@@ -219,7 +219,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;bool headerVisible=true;String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -690,7 +690,7 @@ Widget homePage(){
    extendBody:true,
    backgroundColor:dark?const Color(0xFF11100E):const Color(0xFFF7F2E9),
     body:SafeArea(child:Column(children:[
-     Padding(padding:const EdgeInsets.fromLTRB(14,10,14,8),child:Container(
+     if(tab!=1&&headerVisible)Padding(padding:const EdgeInsets.fromLTRB(14,10,14,8),child:Container(
       padding:const EdgeInsets.symmetric(horizontal:14,vertical:11),
       decoration:BoxDecoration(color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
       child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
@@ -702,8 +702,8 @@ Widget homePage(){
        ]),
        if(tab==0)Padding(padding:const EdgeInsets.only(top:5),child:Container(height:43,decoration:BoxDecoration(color:dark?Colors.white.withOpacity(.07):const Color(0xFFF0E9DC),borderRadius:BorderRadius.circular(15),border:Border.all(color:gold.withOpacity(.25))),child:Row(children:[const SizedBox(width:10),Icon(Icons.search_rounded,color:gold,size:20),const SizedBox(width:8),Expanded(child:TextField(controller:searchCtrl,textInputAction:TextInputAction.search,onChanged:(v)=>setState(()=>search=v),decoration:const InputDecoration(hintText:'ابحث عن الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:10)))),if(search.isNotEmpty)IconButton(visualDensity:VisualDensity.compact,onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))]))),
       ]))),
-     Expanded(child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage())),
-     if(MediaQuery.of(context).viewInsets.bottom==0)Padding(padding:const EdgeInsets.fromLTRB(12,3,12,7),child:GlassPanel(radius:25,padding:const EdgeInsets.symmetric(horizontal:4,vertical:6),child:Row(mainAxisAlignment:MainAxisAlignment.spaceAround,children:[
+     Expanded(child:NotificationListener<ScrollNotification>(onNotification:(n){if(tab==1)return false;if(n is ScrollUpdateNotification&&n.scrollDelta!=null&&n.depth==0){final next=n.scrollDelta!<0;if(next!=headerVisible)setState(()=>headerVisible=next);}if(n is ScrollStartNotification&&n.metrics.pixels<=0&&!headerVisible)setState(()=>headerVisible=true);return false;},child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage()))),
+     if(tab!=1&&MediaQuery.of(context).viewInsets.bottom==0)Padding(padding:const EdgeInsets.fromLTRB(12,3,12,7),child:GlassPanel(radius:25,padding:const EdgeInsets.symmetric(horizontal:4,vertical:6),child:Row(mainAxisAlignment:MainAxisAlignment.spaceAround,children:[
       _navItem(0,Icons.home_rounded,'الرئيسية',tab,dark),
       _navItem(1,Icons.forum_rounded,'المحادثات',tab,dark,unread:unread),
       _navItem(3,Icons.photo_library_rounded,'الجلسات',tab,dark),
