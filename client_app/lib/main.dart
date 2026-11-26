@@ -113,11 +113,11 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
  }
  @override
  Widget build(BuildContext context) {
-  const pink=Color(0xFFD41483), deepPink=Color(0xFF9F075F), ink=Color(0xFF74324F);
+  const pink=Color(0xFFC49A55), deepPink=Color(0xFF59452F), ink=Color(0xFF59452F);
   return Directionality(
    textDirection:TextDirection.rtl,
    child:Scaffold(
-    backgroundColor:const Color(0xFFFFD7EA),
+    backgroundColor:const Color(0xFFF7F2E9),
     resizeToAvoidBottomInset:true,
     body:LayoutBuilder(builder:(context,constraints){
      final h=constraints.maxHeight;
@@ -131,9 +131,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
       hintStyle:TextStyle(color:ink,fontSize:compact?14:16,fontWeight:FontWeight.w700),
       prefixIcon:Icon(icon,color:pink,size:compact?21:23),
       suffixIcon:trailing,
-      filled:true,fillColor:const Color(0xFFFFF9FC),
+      filled:true,fillColor:const Color(0xEFFFFFFF),
       isDense:true,contentPadding:EdgeInsets.symmetric(horizontal:14,vertical:compact?7:10),
-      enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(24),borderSide:const BorderSide(color:Color(0xFFD65AA5),width:1.5)),
+      enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(24),borderSide:const BorderSide(color:Color(0x99C49A55),width:1.5)),
       focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(24),borderSide:const BorderSide(color:pink,width:2)),
      );
      Widget field(TextEditingController c,String hint,IconData icon,{bool secret=false,Widget? trailing,TextInputAction action=TextInputAction.next})=>SizedBox(
@@ -152,7 +152,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
        Column(mainAxisSize:MainAxisSize.min,children:[
         Text(register?'إنشاء حساب جديد':'الشيخة',textAlign:TextAlign.center,
          style:TextStyle(color:deepPink,fontSize:compact?19:23,fontWeight:FontWeight.w900)),
-        if(!register)Padding(padding:const EdgeInsets.only(top:2),child:Text('مرحباً بك في عالم الجمال والتميز',
+        if(!register)Padding(padding:const EdgeInsets.only(top:2),child:Text('مساحتك للراحة والاسترخاء',
          textAlign:TextAlign.center,style:TextStyle(color:ink,fontSize:compact?11:13,fontWeight:FontWeight.w700))),
        ]),
        if(register)field(displayName,'الاسم الكامل',Icons.badge_outlined),
@@ -173,7 +173,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
        SizedBox(height:buttonHeight,child:FilledButton(
         onPressed:loading?null:submit,
         style:FilledButton.styleFrom(backgroundColor:pink,foregroundColor:Colors.white,elevation:3,
-         shadowColor:const Color(0x669F075F),
+         shadowColor:const Color(0x33A8874B),
          shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(26),
           side:const BorderSide(color:deepPink,width:1.1))),
         child:loading?const SizedBox(width:19,height:19,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):
@@ -184,9 +184,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
          ]),
        )),
        Row(children:[
-        const Expanded(child:Divider(indent:18,endIndent:9,color:Color(0xFFD65AA5),thickness:1.2)),
+        const Expanded(child:Divider(indent:18,endIndent:9,color:Color(0x99C49A55),thickness:1.2)),
         Text('أو',style:TextStyle(color:deepPink,fontSize:compact?12:14,fontWeight:FontWeight.w900)),
-        const Expanded(child:Divider(indent:9,endIndent:18,color:Color(0xFFD65AA5),thickness:1.2)),
+        const Expanded(child:Divider(indent:9,endIndent:18,color:Color(0x99C49A55),thickness:1.2)),
        ]),
        SizedBox(height:buttonHeight-2,child:OutlinedButton.icon(
         onPressed:loading?null:()=>setState((){register=!register;error=null;}),
@@ -212,7 +212,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
        child:Stack(fit:StackFit.expand,children:[
         Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',fit:BoxFit.cover,alignment:Alignment.center,filterQuality:FilterQuality.high,
          errorBuilder:(_,__,___)=>const ColoredBox(color:Color(0xFFF45EAE),child:Center(child:Icon(Icons.image_not_supported_outlined,color:Colors.white70,size:38)))),
-        const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xFFFFD7EA)])))
+        const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xFFF7F2E9)])))
        ]),
       ),
       Expanded(child:Container(
@@ -528,7 +528,7 @@ Widget homePage()=>ListView(padding:const EdgeInsets.fromLTRB(4,14,4,14),childre
   appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:23,letterSpacing:.3))]),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:Colors.black.withOpacity(.06)),icon:const Icon(Icons.favorite,color:Colors.black)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),]),
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
-  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
+  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Theme.of(context).colorScheme.surface.withOpacity(.92),indicatorColor:gold.withOpacity(.24),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
  ));
 }
 class MemberSearch extends SearchDelegate<String>{
