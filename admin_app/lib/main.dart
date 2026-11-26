@@ -712,16 +712,18 @@ class _AdminHomeState extends State<AdminHome> {
         ))).toList())),
       Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(
         onRefresh:refresh,color:gold,child:ListView(padding:const EdgeInsets.fromLTRB(14,12,14,90),children:[
-          Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(
-            color:Theme.of(context).cardColor,borderRadius:BorderRadius.circular(22),border:Border.all(color:gold.withOpacity(.25))),
-            child:Row(children:[
-              Container(width:42,height:42,decoration:BoxDecoration(color:gold.withOpacity(.16),borderRadius:BorderRadius.circular(14)),
-                child:Icon(sectionIcons[section]??Icons.dashboard_rounded,color:gold)),
-              const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Text(sections[section]??'الإدارة',style:const TextStyle(fontSize:17,fontWeight:FontWeight.w900)),
+          GlassPanel(padding:const EdgeInsets.all(18),radius:24,child:Row(children:[
+              Container(width:46,height:46,decoration:BoxDecoration(
+                gradient:LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[gold.withOpacity(.32),gold.withOpacity(.10)]),
+                borderRadius:BorderRadius.circular(16),border:Border.all(color:gold.withOpacity(.35))),
+                child:Icon(sectionIcons[section]??Icons.dashboard_rounded,color:gold,size:25)),
+              const SizedBox(width:13),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Text(sections[section]??'الإدارة',style:const TextStyle(fontSize:18,fontWeight:FontWeight.w900)),
                 Text('إدارة وتنظيم بيانات ${sections[section]??''}',style:TextStyle(fontSize:11,color:Theme.of(context).hintColor)),
               ])),
-              Text('${rows.length}',style:TextStyle(fontSize:22,fontWeight:FontWeight.w900,color:gold)),
+              Container(padding:const EdgeInsets.symmetric(horizontal:14,vertical:8),decoration:BoxDecoration(
+                color:gold.withOpacity(.14),borderRadius:BorderRadius.circular(14),border:Border.all(color:gold.withOpacity(.28))),
+                child:Text('${rows.length}',style:TextStyle(fontSize:21,fontWeight:FontWeight.w900,color:gold))),
             ])),
           const SizedBox(height:12),
           if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
