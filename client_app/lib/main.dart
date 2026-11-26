@@ -221,8 +221,41 @@ class _ClientHomeState extends State<ClientHome>{
  int tab=0;bool busy=true;bool sendingMessage=false;bool headerVisible=true;String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
- @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
+ @override void initState(){super.initState();WidgetsBinding.instance.addPostFrameCallback((_)=>_showFirstUseGuide());notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
  @override void dispose(){poll?.cancel();bannerAuto?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();chatFocusNode.dispose();clientChatScrollController.dispose();super.dispose();}
+ Future<void> _showFirstUseGuide() async {
+  final user=FirebaseAuth.instance.currentUser;
+  if(user==null||!mounted)return;
+  final prefs=await SharedPreferences.getInstance();
+  final key='client_first_guide_seen_${user.uid}';
+  if(prefs.getBool(key)==true||!mounted)return;
+  final steps=<Map<String,dynamic>>[
+   {'icon':Icons.waving_hand_rounded,'title':'مرحباً بك في الشيخة','body':'أهلاً بك! هذا دليل سريع يساعدك على استخدام التطبيق والعثور على الكادر وإدارة حجوزاتك والتواصل مع الإدارة.'},
+   {'icon':Icons.search_rounded,'title':'اكتشف الكادر','body':'من الرئيسية يمكنك البحث باسم عضو الكادر أو التخصص، واستخدام الترتيب والفلاتر لمعرفة المتاح أو المحجوز وتحديد الموقع.'},
+   {'icon':Icons.spa_rounded,'title':'تعرّف على ملف الكادر','body':'اضغط على بطاقة العضو لعرض الصور والتفاصيل والسعر والموقع. يمكنك تكبير الصور وإضافة العضو إلى المفضلة.'},
+   {'icon':Icons.event_available_rounded,'title':'كيف تحجز موعداً؟','body':'افتح ملف عضو الكادر واضغط زر الحجز، ثم راجع تفاصيل طلبك وأرسله. تابع حالة الطلب من «حجوزاتي» داخل «المزيد».'},
+   {'icon':Icons.chat_bubble_outline_rounded,'title':'تواصل مع الإدارة','body':'افتح «المحادثات» لإرسال استفسارك مباشرة إلى الإدارة. يمكنك أيضاً مشاركة ملف عضو الكادر داخل المحادثة.'},
+   {'icon':Icons.favorite_border_rounded,'title':'المفضلة والجلسات','body':'استخدم رمز القلب للوصول إلى الكادر المفضل، وافتح «الجلسات» لمشاهدة أرشيف الصور والتفاصيل المنشورة.'},
+   {'icon':Icons.tune_rounded,'title':'حسابك والإعدادات','body':'من «المزيد» تصل إلى حسابك وحجوزاتك. ومن رأس التطبيق يمكنك تغيير المظهر الفاتح أو الداكن ومراجعة الإشعارات.'},
+  ];
+  var page=0;
+  await showDialog<void>(context:context,barrierDismissible:false,builder:(dc)=>StatefulBuilder(builder:(dc,setGuideState){
+   final step=steps[page];
+   return Directionality(textDirection:TextDirection.rtl,child:Dialog(backgroundColor:Colors.transparent,insetPadding:const EdgeInsets.symmetric(horizontal:22,vertical:24),child:GlassPanel(radius:28,padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[
+    Row(children:[const Spacer(),const Text('دليل الاستخدام',style:TextStyle(fontWeight:FontWeight.w900)),const Spacer(),IconButton(onPressed:()async{await prefs.setBool(key,true);if(dc.mounted)Navigator.pop(dc);},icon:const Icon(Icons.close_rounded))]),
+    const SizedBox(height:8),Container(width:66,height:66,decoration:BoxDecoration(gradient:const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]),borderRadius:BorderRadius.circular(22)),child:Icon(step['icon'] as IconData,size:32,color:const Color(0xFF342719))),
+    const SizedBox(height:15),Text(step['title'] as String,textAlign:TextAlign.center,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
+    const SizedBox(height:10),Text(step['body'] as String,textAlign:TextAlign.center,style:TextStyle(fontSize:14,height:1.7,color:Theme.of(dc).colorScheme.onSurface.withOpacity(.78))),
+    const SizedBox(height:18),Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(steps.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:180),margin:const EdgeInsets.symmetric(horizontal:3),width:i==page?20:7,height:7,decoration:BoxDecoration(color:i==page?gold:gold.withOpacity(.28),borderRadius:BorderRadius.circular(10))))),
+    const SizedBox(height:18),Row(children:[
+     if(page>0)Expanded(child:OutlinedButton(onPressed:()=>setGuideState(()=>page--),child:const Text('السابق'))),
+     if(page>0)const SizedBox(width:8),
+     Expanded(child:FilledButton(onPressed:()async{if(page<steps.length-1){setGuideState(()=>page++);}else{await prefs.setBool(key,true);if(dc.mounted)Navigator.pop(dc);}},style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF342719)),child:Text(page==steps.length-1?'ابدأ الاستخدام':'التالي'))),
+    ]),
+    TextButton(onPressed:()async{await prefs.setBool(key,true);if(dc.mounted)Navigator.pop(dc);},child:const Text('تخطي الدليل')),
+   ]))));
+  }));
+ }
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
  void _showTopNotification(Map<String,dynamic> n){
   final messenger=ScaffoldMessenger.of(context);
