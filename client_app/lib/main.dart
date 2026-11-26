@@ -428,6 +428,20 @@ Future<void> openNotifications()async{
   if((m['description']??'').toString().isNotEmpty)Padding(padding:const EdgeInsets.only(top:8),child:Text('${m['description']}')),
   const SizedBox(height:14),Row(children:[Expanded(child:OutlinedButton.icon(onPressed:(){Navigator.pop(c);openMember(m);},icon:const Icon(Icons.person),label:const Text('الملف الكامل'))),const SizedBox(width:8),Expanded(child:FilledButton.icon(onPressed:(){Navigator.pop(c);book(m);},icon:const Icon(Icons.calendar_month),label:const Text('احجز الآن')))])
  ])))));}
+ Future<void> messageMember(Map<String,dynamic> m)async{
+  final user=FirebaseAuth.instance.currentUser;
+  if(user==null){note('يرجى تسجيل الدخول أولاً');return;}
+  try{
+   final now=DateTime.now();
+   await SharedStore.save('messages',{'conversationId':conversationId,'senderId':user.uid,'sender':'عميل','type':'memberProfile','memberId':m['id'],'memberName':m['name'],'text':'ملف العضو: ${m['name']}','createdAt':now.toIso8601String()});
+   await SharedStore.save('notifications',{'target':'admin','createdBy':user.uid,'customerId':user.uid,'conversationId':conversationId,'type':'message','title':'مشاركة ملف عضو جديدة','body':'يرغب العميل بمراسلة الإدارة حول عضو الكادر ${m['name']}','createdAt':now.toIso8601String(),'read':false});
+   _trackActivity('message');
+   if(!mounted)return;
+   setState(()=>tab=1);
+   await load(silent:true);
+   note('تم إرسال بطاقة ${m['name']} وفتح المحادثة');
+  }catch(e){if(mounted)note('تعذر إرسال بطاقة العضو: $e');}
+ }
  Widget memberProfilePage(Map<String,dynamic> m)=>ListView(padding:const EdgeInsets.fromLTRB(14,14,14,28),children:[
    ClipRRect(borderRadius:BorderRadius.circular(26),child:Stack(children:[
     imageGallery(m,height:290),
@@ -460,7 +474,11 @@ Future<void> openNotifications()async{
     ])),
    ],
    const SizedBox(height:16),
-   GlassActionButton(onPressed:()=>book(m),label:'احجز موعداً',icon:Icons.calendar_month_rounded,expanded:true),
+   Row(children:[
+    Expanded(child:GlassActionButton(onPressed:()=>book(m),label:'احجز موعداً',icon:Icons.calendar_month_rounded,expanded:true)),
+    const SizedBox(width:10),
+    Expanded(child:GlassActionButton(onPressed:()=>messageMember(m),label:'مراسلة',icon:Icons.chat_bubble_outline_rounded,expanded:true)),
+   ]),
   ]);
 Widget _memberInfoTile(IconData icon,String label,String value)=>Row(children:[
  Icon(icon,color:gold,size:21),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
