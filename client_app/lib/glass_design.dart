@@ -116,6 +116,17 @@ class GlassDesign {
         labelStyle: TextStyle(color: foreground, fontWeight: FontWeight.w700),
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: dark ? const Color(0xF024262B) : const Color(0xF9FFFEFA),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(26),
+          side: BorderSide(color: outline, width: .9),
+        ),
+        titleTextStyle: TextStyle(color: foreground, fontSize: 19, fontWeight: FontWeight.w900),
+        contentTextStyle: TextStyle(color: foreground, height: 1.5),
+      ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: dark ? const Color(0xF0222429) : const Color(0xF7F8F5EF),
         surfaceTintColor: Colors.transparent,
