@@ -113,123 +113,90 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
  }
  @override
  Widget build(BuildContext context) {
-  const pink=Color(0xFFC49A55), deepPink=Color(0xFF59452F), ink=Color(0xFF59452F);
-  return Directionality(
-   textDirection:TextDirection.rtl,
-   child:Scaffold(
-    backgroundColor:const Color(0xFFF7F2E9),
-    resizeToAvoidBottomInset:true,
-    body:LayoutBuilder(builder:(context,constraints){
-     final h=constraints.maxHeight;
-     final keyboard=MediaQuery.viewInsetsOf(context).bottom>0;
-     final compact=h<680||keyboard;
-     final imageHeight=math.min(h*(keyboard ? .12 : .38),keyboard ? 105.0 : 300.0);
-     final fieldHeight=compact?42.0:49.0;
-     final buttonHeight=compact?44.0:51.0;
-     InputDecoration decoration(String hint,IconData icon,{Widget? trailing})=>InputDecoration(
-      hintText:hint,
-      hintStyle:TextStyle(color:ink,fontSize:compact?14:16,fontWeight:FontWeight.w700),
-      prefixIcon:Icon(icon,color:pink,size:compact?21:23),
-      suffixIcon:trailing,
-      filled:true,fillColor:const Color(0xEFFFFFFF),
-      isDense:true,contentPadding:EdgeInsets.symmetric(horizontal:14,vertical:compact?7:10),
-      enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(24),borderSide:const BorderSide(color:Color(0x99C49A55),width:1.5)),
-      focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(24),borderSide:const BorderSide(color:pink,width:2)),
-     );
-     Widget field(TextEditingController c,String hint,IconData icon,{bool secret=false,Widget? trailing,TextInputAction action=TextInputAction.next})=>SizedBox(
-      height:fieldHeight,
-      child:TextField(
-       controller:c,obscureText:secret,autocorrect:false,textAlign:TextAlign.right,
-       textInputAction:action,style:TextStyle(color:ink,fontSize:compact?14:16,fontWeight:FontWeight.w700),
-       onSubmitted:action==TextInputAction.done?(_){if(!loading)submit();}:null,
-       decoration:decoration(hint,icon,trailing:trailing),
-      ),
-     );
-     final content=Column(
-      mainAxisAlignment:MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment:CrossAxisAlignment.stretch,
-      children:[
-       Column(mainAxisSize:MainAxisSize.min,children:[
-        Text(register?'إنشاء حساب جديد':'الشيخة',textAlign:TextAlign.center,
-         style:TextStyle(color:deepPink,fontSize:compact?19:23,fontWeight:FontWeight.w900)),
-        if(!register)Padding(padding:const EdgeInsets.only(top:2),child:Text('مساحتك للراحة والاسترخاء',
-         textAlign:TextAlign.center,style:TextStyle(color:ink,fontSize:compact?11:13,fontWeight:FontWeight.w700))),
-       ]),
-       if(register)field(displayName,'الاسم الكامل',Icons.badge_outlined),
-       field(username,'اسم المستخدم',Icons.person_outline),
-       field(password,'كلمة المرور',Icons.lock_outline,secret:obscure,
-        trailing:IconButton(padding:EdgeInsets.zero,constraints:const BoxConstraints(minWidth:42,minHeight:42),
-         onPressed:()=>setState(()=>obscure=!obscure),
-         icon:Icon(obscure?Icons.visibility_off_outlined:Icons.visibility_outlined,color:pink,size:21)),
-        action:register?TextInputAction.next:TextInputAction.done),
-       if(register)field(confirmPassword,'تأكيد كلمة المرور',Icons.verified_user_outlined,secret:obscureConfirm,
-        trailing:IconButton(padding:EdgeInsets.zero,constraints:const BoxConstraints(minWidth:42,minHeight:42),
-         onPressed:()=>setState(()=>obscureConfirm=!obscureConfirm),
-         icon:Icon(obscureConfirm?Icons.visibility_off_outlined:Icons.visibility_outlined,color:pink,size:21)),
-        action:TextInputAction.done),
-       if(error!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:6),child:Text(error!,
-        textAlign:TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,
-        style:const TextStyle(color:Color(0xFFB00020),fontSize:11,fontWeight:FontWeight.w700))),
-       SizedBox(height:buttonHeight,child:FilledButton(
-        onPressed:loading?null:submit,
-        style:FilledButton.styleFrom(backgroundColor:pink,foregroundColor:Colors.white,elevation:3,
-         shadowColor:const Color(0x33A8874B),
-         shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(26),
-          side:const BorderSide(color:deepPink,width:1.1))),
-        child:loading?const SizedBox(width:19,height:19,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):
-         Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-          Icon(register?Icons.person_add_alt_1:Icons.login,size:21),const SizedBox(width:9),
-          Text(register?'إنشاء الحساب':'تسجيل الدخول',
-           style:TextStyle(fontSize:compact?15:17,fontWeight:FontWeight.w900))
-         ]),
-       )),
-       Row(children:[
-        const Expanded(child:Divider(indent:18,endIndent:9,color:Color(0x99C49A55),thickness:1.2)),
-        Text('أو',style:TextStyle(color:deepPink,fontSize:compact?12:14,fontWeight:FontWeight.w900)),
-        const Expanded(child:Divider(indent:9,endIndent:18,color:Color(0x99C49A55),thickness:1.2)),
-       ]),
-       SizedBox(height:buttonHeight-2,child:OutlinedButton.icon(
-        onPressed:loading?null:()=>setState((){register=!register;error=null;}),
-        icon:Icon(register?Icons.arrow_back_rounded:Icons.person_add_alt_1,size:20),
-        label:Text(register?'العودة لتسجيل الدخول':'إنشاء حساب جديد',
-         style:TextStyle(fontSize:compact?14:16,fontWeight:FontWeight.w900)),
-        style:OutlinedButton.styleFrom(foregroundColor:deepPink,backgroundColor:const Color(0xFFFFF0F8),
-         side:const BorderSide(color:pink,width:1.6),shape:const StadiumBorder()),
-       )),
-       if(!register)TextButton(
-        onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),
-        style:TextButton.styleFrom(visualDensity:VisualDensity.compact,
-         padding:const EdgeInsets.symmetric(horizontal:8,vertical:0),
-         minimumSize:Size(0,compact?22:26),tapTargetSize:MaterialTapTargetSize.shrinkWrap),
-        child:Text('نسيت كلمة المرور؟',style:TextStyle(color:deepPink,fontSize:compact?12:14,
-         fontWeight:FontWeight.w800,decoration:TextDecoration.underline,decorationColor:pink)),
-       ),
-      ],
-     );
-     return Column(children:[
-      SizedBox(
-       height:imageHeight,width:double.infinity,
-       child:Stack(fit:StackFit.expand,children:[
-        Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',fit:BoxFit.cover,alignment:Alignment.center,filterQuality:FilterQuality.high,
-         errorBuilder:(_,__,___)=>const ColoredBox(color:Color(0xFFF45EAE),child:Center(child:Icon(Icons.image_not_supported_outlined,color:Colors.white70,size:38)))),
-        const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Colors.transparent,Color(0xFFF7F2E9)])))
-       ]),
-      ),
-      Expanded(child:Container(
-       width:double.infinity,
-       decoration:const BoxDecoration(
-        gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,
-         colors:[Color(0xFFFFF8FC),Color(0xFFFFD9EC)]),
-        borderRadius:BorderRadius.vertical(top:Radius.circular(26)),
-        border:Border(top:BorderSide(color:Color(0xFFE99BC8),width:1.5)),
-       ),
-       padding:EdgeInsets.fromLTRB(compact?17:22,compact?8:12,compact?17:22,compact?5:10),
-       child:content,
-      )),
-     ]);
-    }),
-   ),
+  const ink=Color(0xFF33291D), gold=Color(0xFFC49A55), muted=Color(0xFF806F59);
+  final dark=Theme.of(context).brightness==Brightness.dark;
+  final compact=MediaQuery.sizeOf(context).height<700||MediaQuery.viewInsetsOf(context).bottom>0;
+  InputDecoration decoration(String hint,IconData icon,{Widget? trailing})=>InputDecoration(
+   hintText:hint,hintStyle:TextStyle(color:muted,fontSize:14,fontWeight:FontWeight.w600),
+   prefixIcon:Icon(icon,color:gold,size:21),suffixIcon:trailing,filled:true,
+   fillColor:dark?const Color(0xFF24211D):const Color(0xFFF8F4EC),
+   contentPadding:const EdgeInsets.symmetric(horizontal:16,vertical:15),
+   border:OutlineInputBorder(borderRadius:BorderRadius.circular(19),borderSide:BorderSide(color:gold.withOpacity(.22))),
+   enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(19),borderSide:BorderSide(color:gold.withOpacity(.25))),
+   focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(19),borderSide:const BorderSide(color:gold,width:1.6)),
   );
+  Widget field(TextEditingController c,String hint,IconData icon,{bool secret=false,Widget? trailing,TextInputAction action=TextInputAction.next})=>TextField(
+   controller:c,obscureText:secret,autocorrect:false,textAlign:TextAlign.right,textInputAction:action,
+   style:const TextStyle(fontSize:15,fontWeight:FontWeight.w600),
+   onSubmitted:action==TextInputAction.done?(_){if(!loading)submit();}:null,
+   decoration:decoration(hint,icon,trailing:trailing),
+  );
+  return Directionality(textDirection:TextDirection.rtl,child:Scaffold(
+   resizeToAvoidBottomInset:true,
+   body:DecoratedBox(
+    decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topRight,end:Alignment.bottomLeft,
+     colors:dark?const[Color(0xFF100F0D),Color(0xFF211C15),Color(0xFF14120F)]:const[Color(0xFFF8F3E9),Color(0xFFEDE2CF),Color(0xFFF9F6F0)])),
+    child:SafeArea(child:LayoutBuilder(builder:(context,constraints)=>SingleChildScrollView(
+     padding:EdgeInsets.fromLTRB(20,compact?8:18,20,24),
+     child:ConstrainedBox(constraints:BoxConstraints(minHeight:constraints.maxHeight-42),child:Column(
+      mainAxisAlignment:MainAxisAlignment.center,crossAxisAlignment:CrossAxisAlignment.stretch,
+      children:[
+       SizedBox(height:compact?116:210,child:ClipRRect(borderRadius:BorderRadius.circular(30),child:Stack(fit:StackFit.expand,children:[
+        Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',fit:BoxFit.cover,alignment:Alignment.center,
+         errorBuilder:(_,__,___)=>DecoratedBox(decoration:const BoxDecoration(gradient:LinearGradient(colors:[Color(0xFF4B3A27),Color(0xFFB38A4A)])),child:const Center(child:Icon(Icons.spa_rounded,size:52,color:Color(0xFFF5E8CD))))),
+        DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,
+         colors:[Colors.black.withOpacity(.08),Colors.black.withOpacity(.66)]))),
+        Positioned(right:20,bottom:18,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+         const Text('الشيخة',style:TextStyle(color:Colors.white,fontSize:30,fontWeight:FontWeight.w900,letterSpacing:1)),
+         Text('مساحتك للراحة والاسترخاء',style:TextStyle(color:Colors.white.withOpacity(.92),fontSize:13,fontWeight:FontWeight.w600)),
+        ])),
+        Positioned(left:15,top:15,child:Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:7),
+         decoration:BoxDecoration(color:Colors.white.withOpacity(.17),borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white.withOpacity(.35))),
+         child:const Text('WELLNESS • BOOKING',style:TextStyle(color:Colors.white,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1)))),
+       ]))),
+       const SizedBox(height:18),
+       Container(padding:EdgeInsets.all(compact?18:22),decoration:BoxDecoration(
+        color:dark?const Color(0xD925211B):const Color(0xDDFBF9F4),borderRadius:BorderRadius.circular(30),
+        border:Border.all(color:gold.withOpacity(.32)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(dark?.18:.07),blurRadius:28,offset:const Offset(0,12))]),
+        child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+         Row(children:[Container(width:4,height:34,decoration:BoxDecoration(color:gold,borderRadius:BorderRadius.circular(8))),
+          const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+           Text(register?'انضم إلى الشيخة':'مرحباً بعودتك',style:const TextStyle(fontSize:23,fontWeight:FontWeight.w900,color:ink)),
+           const SizedBox(height:3),Text(register?'أنشئ حسابك وابدأ رحلتك':'سجّل الدخول لمتابعة حجوزاتك',style:const TextStyle(color:muted,fontSize:12)),
+          ])),
+          Icon(Icons.auto_awesome_rounded,color:gold.withOpacity(.9),size:25),
+         ]),
+         const SizedBox(height:20),
+         if(register)Padding(padding:const EdgeInsets.only(bottom:12),child:field(displayName,'الاسم الكامل',Icons.badge_outlined)),
+         Padding(padding:const EdgeInsets.only(bottom:12),child:field(username,'اسم المستخدم',Icons.person_outline)),
+         Padding(padding:const EdgeInsets.only(bottom:12),child:field(password,'كلمة المرور',Icons.lock_outline,secret:obscure,
+          trailing:IconButton(onPressed:()=>setState(()=>obscure=!obscure),icon:Icon(obscure?Icons.visibility_off_outlined:Icons.visibility_outlined,color:muted)),
+          action:register?TextInputAction.next:TextInputAction.done)),
+         if(register)Padding(padding:const EdgeInsets.only(bottom:12),child:field(confirmPassword,'تأكيد كلمة المرور',Icons.verified_user_outlined,secret:obscureConfirm,
+          trailing:IconButton(onPressed:()=>setState(()=>obscureConfirm=!obscureConfirm),icon:Icon(obscureConfirm?Icons.visibility_off_outlined:Icons.visibility_outlined,color:muted)),
+          action:TextInputAction.done)),
+         if(error!=null)Padding(padding:const EdgeInsets.only(bottom:12),child:Text(error!,textAlign:TextAlign.center,style:const TextStyle(color:Color(0xFFB3261E),fontSize:12,fontWeight:FontWeight.w700))),
+         SizedBox(height:52,child:FilledButton(onPressed:loading?null:submit,
+          style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF21190F),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)),elevation:0),
+          child:loading?const SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2,color:ink)):
+           Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(register?Icons.person_add_alt_1:Icons.login_rounded),const SizedBox(width:9),
+            Text(register?'إنشاء الحساب':'تسجيل الدخول',style:const TextStyle(fontSize:16,fontWeight:FontWeight.w900))]))),
+         const SizedBox(height:10),
+         OutlinedButton(onPressed:loading?null:()=>setState(()=>{register=!register,error=null}),
+          style:OutlinedButton.styleFrom(foregroundColor:dark?const Color(0xFFE9D8B8):ink,side:BorderSide(color:gold.withOpacity(.55)),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)),minimumSize:const Size.fromHeight(48)),
+          child:Text(register?'العودة لتسجيل الدخول':'إنشاء حساب جديد',style:const TextStyle(fontWeight:FontWeight.w800))),
+         if(!register)Align(alignment:Alignment.center,child:TextButton(
+          onPressed:()=>setState(()=>error='لاستعادة كلمة المرور، تواصلي مع إدارة الشيخة.'),
+          child:const Text('نسيت كلمة المرور؟',style:TextStyle(color:muted,fontWeight:FontWeight.w700)))),
+        ]),
+       ),
+       const SizedBox(height:16),
+       Text('راحة • عناية • تجربة حجز سهلة',textAlign:TextAlign.center,style:TextStyle(color:dark?Colors.white54:muted,fontSize:11,fontWeight:FontWeight.w600)),
+      ],
+     )),
+    ))),
+   ),
+  ));
  }
 
 }
