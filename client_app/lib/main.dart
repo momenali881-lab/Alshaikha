@@ -617,7 +617,7 @@ Widget homePage(){
    const SizedBox(height:10),
    Wrap(spacing:8,runSpacing:7,children:[
     FilterChip(avatar:const Icon(Icons.place_outlined,size:18),label:const Text('يوجد مكان'),selected:onlyWithPlace,onSelected:(value)=>setState(()=>onlyWithPlace=value),showCheckmark:true,selectedColor:rose.withOpacity(.20),side:BorderSide(color:onlyWithPlace?rose:Theme.of(context).dividerColor)),
-    if(onlyWithPlace||search.isNotEmpty||memberSort!='recommended')ActionChip(avatar:const Icon(Icons.restart_alt_rounded,size:18),label:const Text('إعادة ضبط الفلاتر'),onPressed:(){setState(()=>{onlyWithPlace=false;search='';memberSort='recommended';});searchCtrl.clear();}),
+    if(onlyWithPlace||search.isNotEmpty||memberSort!='recommended')ActionChip(avatar:const Icon(Icons.restart_alt_rounded,size:18),label:const Text('إعادة ضبط الفلاتر'),onPressed:(){setState((){onlyWithPlace=false;search='';memberSort='recommended';});searchCtrl.clear();}),
    ]),
    const SizedBox(height:12),
    if(visible.isEmpty)GlassPanel(child:Column(children:[
