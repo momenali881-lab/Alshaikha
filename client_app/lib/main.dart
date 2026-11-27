@@ -228,7 +228,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;double headerOpacity=1;DateTime? _lastBackPressedAt;final GlobalKey _homeNavGuideKey=GlobalKey();final GlobalKey _chatNavGuideKey=GlobalKey();final GlobalKey _sessionsNavGuideKey=GlobalKey();final GlobalKey _moreNavGuideKey=GlobalKey();final GlobalKey _searchGuideKey=GlobalKey();final GlobalKey _favoritesGuideKey=GlobalKey();final GlobalKey _notificationsGuideKey=GlobalKey();final GlobalKey _themeGuideKey=GlobalKey();final GlobalKey _chatHeaderGuideKey=GlobalKey();final GlobalKey _bookingsGuideKey=GlobalKey();final GlobalKey _accountGuideKey=GlobalKey();String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;double headerOpacity=1;DateTime? _lastBackPressedAt;final GlobalKey _homeNavGuideKey=GlobalKey();final GlobalKey _chatNavGuideKey=GlobalKey();final GlobalKey _sessionsNavGuideKey=GlobalKey();final GlobalKey _moreNavGuideKey=GlobalKey();final GlobalKey _searchGuideKey=GlobalKey();final GlobalKey _favoritesGuideKey=GlobalKey();final GlobalKey _notificationsGuideKey=GlobalKey();final GlobalKey _themeGuideKey=GlobalKey();final GlobalKey _chatHeaderGuideKey=GlobalKey();final GlobalKey _bookingsGuideKey=GlobalKey();final GlobalKey _accountGuideKey=GlobalKey();String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String priceFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();WidgetsBinding.instance.addPostFrameCallback((_)=>_showFirstUseGuide());notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -641,14 +641,21 @@ Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeIn
    ]),
    const SizedBox(height:12),const Text('المكان',style:TextStyle(fontWeight:FontWeight.w800)),
    SwitchListTile(contentPadding:EdgeInsets.zero,title:const Text('يوجد مكان'),value:onlyWithPlace,onChanged:(v){setState(()=>onlyWithPlace=v);setSheetState((){});}),
+   const SizedBox(height:12),const Text('السعر بالساعة',style:TextStyle(fontWeight:FontWeight.w800)),
+   const SizedBox(height:7),Wrap(spacing:8,runSpacing:7,children:[
+    ChoiceChip(label:const Text('أقل من 50,000'),selected:priceFilter=='lt50',onSelected:(_){setState(()=>priceFilter='lt50');setSheetState((){});}),
+    ChoiceChip(label:const Text('أكثر من 50,000'),selected:priceFilter=='gt50',onSelected:(_){setState(()=>priceFilter='gt50');setSheetState((){});}),
+    ChoiceChip(label:const Text('أقل من 100,000'),selected:priceFilter=='lt100',onSelected:(_){setState(()=>priceFilter='lt100');setSheetState((){});}),
+    ChoiceChip(label:const Text('أكثر من 100,000'),selected:priceFilter=='gt100',onSelected:(_){setState(()=>priceFilter='gt100');setSheetState((){});}),
+   ]),
    const SizedBox(height:10),Row(children:[
-    Expanded(child:OutlinedButton(onPressed:(){setState((){onlyWithPlace=false;availabilityFilter='all';});setSheetState((){});},child:const Text('مسح الفلاتر'))),
+    Expanded(child:OutlinedButton(onPressed:(){setState((){onlyWithPlace=false;availabilityFilter='all';priceFilter='all';});setSheetState((){});},child:const Text('مسح الفلاتر'))),
     const SizedBox(width:10),Expanded(child:FilledButton(onPressed:()=>Navigator.pop(sheetContext),child:const Text('عرض النتائج'))),
    ])
   ])))));
  }
 Widget homePage(){
-  final visible=members.where((m)=>(availabilityFilter=='all'||(availabilityFilter=='available'&&m['available']!=false)||(availabilityFilter=='booked'&&m['available']==false))&&(!onlyWithPlace||m['hasPlace']==true)&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase())).toList();
+  final visible=members.where((m){final price=double.tryParse('${m['hourlyPrice']??0}')??0;final matchesPrice=priceFilter=='all'||(priceFilter=='lt50'&&price<50000)||(priceFilter=='gt50'&&price>50000)||(priceFilter=='lt100'&&price<100000)||(priceFilter=='gt100'&&price>100000);return (availabilityFilter=='all'||(availabilityFilter=='available'&&m['available']!=false)||(availabilityFilter=='booked'&&m['available']==false))&&(!onlyWithPlace||m['hasPlace']==true)&&matchesPrice&&'${m['name']} ${m['description']}'.toLowerCase().contains(search.toLowerCase());}).toList();
   visible.sort((a,b){
    final ap=double.tryParse('${a['hourlyPrice']??0}')??0, bp=double.tryParse('${b['hourlyPrice']??0}')??0;
    if(memberSort=='low')return ap.compareTo(bp);
@@ -658,11 +665,11 @@ Widget homePage(){
   });
    final featuredMembers=members.where((m)=>m['featured']==true&&m['available']!=false).toList();
   return ListView(padding:const EdgeInsets.fromLTRB(12,14,12,18),children:[
-    if(featuredMembers.isNotEmpty)...[
+    if(banners.isNotEmpty)...[SizedBox(height:210,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
+   if(featuredMembers.isNotEmpty)...[
      const Padding(padding:EdgeInsets.only(top:14,bottom:8),child:Text('الكادر المميز',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
      SizedBox(height:158,child:ListView.separated(scrollDirection:Axis.horizontal,itemCount:featuredMembers.length,separatorBuilder:(_,__)=>const SizedBox(width:10),itemBuilder:(ctx,i){final m=featuredMembers[i];return SizedBox(width:126,child:InkWell(onTap:()=>openMember(m),borderRadius:BorderRadius.circular(20),child:GlassPanel(radius:20,padding:const EdgeInsets.all(8),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Expanded(child:ClipRRect(borderRadius:BorderRadius.circular(14),child:photo(m,size:100))),const SizedBox(height:6),Text('${m['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:12)),Text('${m['hourlyPrice']??0} د.ع/ساعة',style:TextStyle(fontSize:10,color:Theme.of(context).hintColor))]))));})),
     ],
-   if(banners.isNotEmpty)...[SizedBox(height:210,child:PageView.builder(controller:bannerPager,itemCount:banners.length,onPageChanged:(i)=>setState(()=>bannerIndex=i),itemBuilder:(ctx,i)=>bannerCard(banners[i]))),if(banners.length>1)Padding(padding:const EdgeInsets.only(top:8,bottom:2),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(banners.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:250),margin:const EdgeInsets.symmetric(horizontal:3),width:bannerIndex==i?18:6,height:6,decoration:BoxDecoration(color:bannerIndex==i?rose:plum.withOpacity(.25),borderRadius:BorderRadius.circular(8))))))],
    if(announcements.isNotEmpty)...[
     const Padding(padding:EdgeInsets.only(top:14,bottom:8),child:Text('الإعلانات والتنبيهات',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900))),
     ...announcements.map((a)=>Card(clipBehavior:Clip.antiAlias,child:Column(children:[if(imageList(a).isNotEmpty)imageGallery(a,height:150),ListTile(leading:const Icon(Icons.campaign_rounded,color:rose),title:Text('${a['title']??'إعلان'}'),subtitle:Text('${a['body']??''}'))]))),
@@ -684,7 +691,7 @@ Widget homePage(){
      DropdownMenuItem(value:'name',child:Text('الاسم: أ إلى ي')),
     ],onChanged:(v)=>setState(()=>memberSort=v??'recommended'))),
     const SizedBox(width:8),
-    IconButton(tooltip:'الفلاتر',onPressed:openMemberFilters,icon:Badge(isLabelVisible:onlyWithPlace||availabilityFilter!='all',child:const Icon(Icons.filter_alt_rounded))),
+    IconButton(tooltip:'الفلاتر',onPressed:openMemberFilters,icon:Badge(isLabelVisible:onlyWithPlace||availabilityFilter!='all'||priceFilter!='all',child:const Icon(Icons.filter_alt_rounded))),
    ]),
    const SizedBox(height:12),
    if(visible.isEmpty)GlassPanel(child:Column(children:[
@@ -768,20 +775,17 @@ Widget homePage(){
   ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(const SnackBar(content:Text('اضغطي مرة أخرى للخروج من التطبيق'),duration:Duration(seconds:2)));
  }
  @override Widget build(BuildContext context){
-  const labels=['الرئيسية','المحادثات','حجوزاتي','الجلسات','حسابي'];
   final dark=Theme.of(context).brightness==Brightness.dark;
   final unread=notifications.where((n)=>n['read']!=true).length;
-  final headerWidget=tab==1?const SizedBox.shrink():ClipRect(child:Align(alignment:Alignment.topCenter,heightFactor:headerOpacity,child:Opacity(opacity:headerOpacity,child:Padding(padding:const EdgeInsets.fromLTRB(14,10,14,8),child:Container(
-   padding:const EdgeInsets.symmetric(horizontal:14,vertical:11),
-   decoration:BoxDecoration(color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
-   child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-    Row(children:[Container(width:42,height:42,decoration:BoxDecoration(gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('الشيخة',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),Text(labels[tab],maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600))]))]),
-    Row(mainAxisAlignment:MainAxisAlignment.end,children:[
-     if(tab==0)IconButton(key:_favoritesGuideKey,visualDensity:VisualDensity.compact,tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
-     Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(key:_notificationsGuideKey,visualDensity:VisualDensity.compact,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
-     IconButton(key:_themeGuideKey,visualDensity:VisualDensity.compact,tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
-    ]),
-    if(tab==0)Padding(padding:const EdgeInsets.only(top:5),child:Container(key:_searchGuideKey,height:43,decoration:BoxDecoration(color:dark?Colors.white.withOpacity(.07):const Color(0xFFF0E9DC),borderRadius:BorderRadius.circular(15),border:Border.all(color:gold.withOpacity(.25))),child:Row(children:[const SizedBox(width:10),Icon(Icons.search_rounded,color:gold,size:20),const SizedBox(width:8),Expanded(child:TextField(controller:searchCtrl,textInputAction:TextInputAction.search,onChanged:(v)=>setState(()=>search=v),decoration:const InputDecoration(hintText:'ابحث عن الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:10)))),if(search.isNotEmpty)IconButton(visualDensity:VisualDensity.compact,onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))]))),
+  final headerWidget=tab==1?const SizedBox.shrink():ClipRect(child:Align(alignment:Alignment.topCenter,heightFactor:headerOpacity,child:Opacity(opacity:headerOpacity,child:Padding(padding:const EdgeInsets.fromLTRB(12,6,12,6),child:Container(
+   padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),
+   decoration:BoxDecoration(color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),borderRadius:BorderRadius.circular(22),border:Border.all(color:gold.withOpacity(.26)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.035),blurRadius:14,offset:const Offset(0,5))]),
+   child:Row(children:[
+    if(tab==0)Expanded(flex:5,child:Container(key:_searchGuideKey,height:42,decoration:BoxDecoration(color:dark?Colors.white.withOpacity(.07):const Color(0xFFF0E9DC),borderRadius:BorderRadius.circular(14),border:Border.all(color:gold.withOpacity(.25))),child:Row(children:[const SizedBox(width:9),Icon(Icons.search_rounded,color:gold,size:19),const SizedBox(width:6),Expanded(child:TextField(controller:searchCtrl,textInputAction:TextInputAction.search,onChanged:(v)=>setState(()=>search=v),style:const TextStyle(fontSize:13),decoration:const InputDecoration(hintText:'ابحث عن الكادر...',hintStyle:TextStyle(fontSize:12),border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:9)))),if(search.isNotEmpty)IconButton(visualDensity:VisualDensity.compact,constraints:const BoxConstraints.tightFor(width:30,height:38),padding:EdgeInsets.zero,onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded,size:18))]))),
+    if(tab==0)const SizedBox(width:3),
+    if(tab==0)IconButton(key:_favoritesGuideKey,visualDensity:VisualDensity.compact,constraints:const BoxConstraints.tightFor(width:40,height:40),padding:EdgeInsets.zero,tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded,size:22)),
+    Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(key:_notificationsGuideKey,visualDensity:VisualDensity.compact,constraints:const BoxConstraints.tightFor(width:40,height:40),padding:EdgeInsets.zero,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded,size:22))),
+    IconButton(key:_themeGuideKey,visualDensity:VisualDensity.compact,constraints:const BoxConstraints.tightFor(width:40,height:40),padding:EdgeInsets.zero,tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded,size:22)),
    ]),
   )))));
   return Directionality(textDirection:TextDirection.rtl,child:PopScope(
