@@ -257,7 +257,7 @@ class _ClientHomeState extends State<ClientHome>{
     final rect=_guideTargetRect(step['key'] as GlobalKey);
     return Material(color:Colors.transparent,child:Directionality(textDirection:TextDirection.rtl,child:Stack(fit:StackFit.expand,children:[
      CustomPaint(painter:_GuideSpotlightPainter(rect)),
-     Positioned(left:18,right:18,bottom:MediaQuery.of(dialogContext).padding.bottom+18,child:GlassPanel(radius:24,padding:const EdgeInsets.all(17),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+     Positioned(left:18,right:18,top:rect!=null&&rect.center.dy>MediaQuery.sizeOf(dialogContext).height*.55?MediaQuery.of(dialogContext).padding.top+14:null,bottom:rect==null||rect.center.dy<=MediaQuery.sizeOf(dialogContext).height*.55?MediaQuery.of(dialogContext).padding.bottom+18:null,child:GlassPanel(radius:24,padding:const EdgeInsets.all(17),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
       Row(children:[Container(width:42,height:42,decoration:BoxDecoration(color:const Color(0xFFEAD8B5),borderRadius:BorderRadius.circular(14)),child:Icon(step['icon'] as IconData,color:const Color(0xFF342719))),const SizedBox(width:10),Expanded(child:Text(step['title'] as String,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17))),IconButton(onPressed:()async{await prefs.setBool(prefKey,true);if(dialogContext.mounted)Navigator.pop(dialogContext);},icon:const Icon(Icons.close_rounded))]),
       const SizedBox(height:7),Text(step['body'] as String,style:TextStyle(fontSize:13,height:1.55,color:Theme.of(dialogContext).colorScheme.onSurface.withOpacity(.82))),
       const SizedBox(height:12),Row(children:[Expanded(child:Text('${page+1} من ${steps.length}',style:TextStyle(fontSize:11,color:Theme.of(dialogContext).hintColor))),TextButton(onPressed:()async{await prefs.setBool(prefKey,true);if(dialogContext.mounted)Navigator.pop(dialogContext);},child:const Text('تخطي')),const SizedBox(width:5),FilledButton(onPressed:()async{
@@ -804,6 +804,17 @@ Widget homePage(){
   final fg=active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59));
   return InkWell(key:key,borderRadius:BorderRadius.circular(17),onTap:()=>setState((){tab=index;headerOpacity=1;}),child:AnimatedContainer(duration:const Duration(milliseconds:220),padding:EdgeInsets.symmetric(horizontal:active?13:10,vertical:7),decoration:BoxDecoration(gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(17)),child:Column(mainAxisSize:MainAxisSize.min,children:[Stack(clipBehavior:Clip.none,children:[Icon(icon,size:22,color:fg),if(index==1&&unread>0)Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52)))]),const SizedBox(height:3),Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:fg))])));
  }
+}
+class _GuideSpotlightPainter extends CustomPainter {
+ final Rect? target;
+ const _GuideSpotlightPainter(this.target);
+ @override void paint(Canvas canvas,Size size){
+  final path=Path()..fillType=PathFillType.evenOdd..addRect(Offset.zero&size);
+  if(target!=null)path.addRRect(RRect.fromRectAndRadius(target!.inflate(8),const Radius.circular(18)));
+  canvas.drawPath(path,Paint()..color=Colors.black.withOpacity(.66));
+  if(target!=null)canvas.drawRRect(RRect.fromRectAndRadius(target!.inflate(8),const Radius.circular(18)),Paint()..color=gold..style=PaintingStyle.stroke..strokeWidth=2.5);
+ }
+ @override bool shouldRepaint(covariant _GuideSpotlightPainter oldDelegate)=>oldDelegate.target!=target;
 }
 class MemberSearch extends SearchDelegate<String>{
  final List<Map<String,dynamic>> members;final ValueChanged<String> onPick;
