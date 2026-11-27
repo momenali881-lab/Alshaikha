@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, notifications-bookings-polish]
+    branches: [main, notifications-bookings-polish, feature/back-navigation-user-guide]
 
 jobs:
   flutter:
