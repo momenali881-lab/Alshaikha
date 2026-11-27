@@ -591,20 +591,17 @@ class _AdminHomeState extends State<AdminHome> {
     Widget? profile;
     if(member!=null){final imgs=List<String>.from(member['images']??[]);Widget avatar=const CircleAvatar(child:Icon(Icons.spa));if(imgs.isNotEmpty){try{avatar=ClipRRect(borderRadius:BorderRadius.circular(10),child:appImage(imgs.first,width:58,height:58,fit:BoxFit.cover));}catch(_){}}profile=GlassPanel(radius:15,child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[avatar,const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'ملف العضو'}',style:const TextStyle(fontWeight:FontWeight.bold)),const Text('بطاقة ملف العضو') ])),const Icon(Icons.badge_outlined,color:rose)])));}
      final tint=mine?const Color(0x33D8B878):const Color(0x3359452F);
-     final edge=mine?const Color(0xFFD8B878):const Color(0xFF80664A);
-     return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(
+      return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(
       constraints:const BoxConstraints(maxWidth:280),margin:const EdgeInsets.symmetric(vertical:3),
-      child:GlassPanel(radius:mine?18:16,padding:const EdgeInsets.all(4),tint:tint,child:Container(
-       decoration:BoxDecoration(borderRadius:BorderRadius.circular(mine?18:16),border:Border.all(color:edge.withOpacity(.65),width:1)),
-       padding:const EdgeInsets.symmetric(horizontal:7,vertical:5),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisSize:MainAxisSize.min,children:[
-        if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,
-        if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')
-         Text.rich(TextSpan(children:[
-          TextSpan(text:'${m['text']??'تعذر العثور على ملف العضو'}'),
-          TextSpan(text:'  ${m['createdAt']??''}',style:TextStyle(fontSize:9,color:Theme.of(context).hintColor)),
-         ]),style:const TextStyle(fontSize:15,height:1.3)),
-       ])
-      ))
+      padding:const EdgeInsets.symmetric(horizontal:3,vertical:2),
+      child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisSize:MainAxisSize.min,children:[
+       if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,
+       if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')
+        Text.rich(TextSpan(children:[
+         TextSpan(text:'${m['text']??'تعذر العثور على ملف العضو'}'),
+         TextSpan(text:'  ${m['createdAt']??''}',style:TextStyle(fontSize:9,color:Theme.of(context).hintColor)),
+        ]),style:const TextStyle(fontSize:15,height:1.3)),
+      ])
      ));
   }
   Future<void> sendAdminMessage() async {
