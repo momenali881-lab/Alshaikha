@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'get_pronto_uploader.dart';
+import 'glass_design.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -16,6 +18,8 @@ class _AccountPageState extends State<AccountPage> {
   final _confirmPassword = TextEditingController();
   bool _loading = true, _saving = false, _changingPassword = false;
   String? _avatar;
+  String? _avatarUrl;
+  XFile? _avatarFile;
   String? _username;
   @override void initState() { super.initState(); _load(); }
   @override void dispose() {
@@ -35,6 +39,7 @@ class _AccountPageState extends State<AccountPage> {
       _name.text = (data['displayName'] ?? user.displayName ?? '').toString();
       _username = data['username']?.toString() ?? user.email?.split('@').first;
       _avatar = data['avatarBase64']?.toString();
+      _avatarUrl = (data['avatarUrl'] ?? data['photoUrl'])?.toString();
     } catch (e) { _message('تعذر تحميل بيانات الحساب: $e'); }
     if (mounted) setState(() => _loading = false);
   }
@@ -44,7 +49,7 @@ class _AccountPageState extends State<AccountPage> {
       if (file == null) return;
       final bytes = await file.readAsBytes();
       if (bytes.length > 700 * 1024) { _message('الصورة كبيرة؛ اختر صورة أصغر'); return; }
-      setState(() => _avatar = base64Encode(bytes));
+      setState(() { _avatar = base64Encode(bytes); _avatarFile = file; });
     } catch (e) { _message('تعذر اختيار الصورة: $e'); }
   }
   Future<void> _saveProfile() async {
@@ -54,14 +59,27 @@ class _AccountPageState extends State<AccountPage> {
     if (name.isEmpty) { _message('اكتب الاسم الذي سيظهر في حسابك'); return; }
     setState(() => _saving = true);
     try {
+      var uploadedAvatarUrl = _avatarUrl;
+      if (_avatarFile != null) {
+        uploadedAvatarUrl = await GetProntoUploader.upload(_avatarFile!);
+      } else if ((uploadedAvatarUrl == null || uploadedAvatarUrl.isEmpty) && _avatar != null && _avatar!.isNotEmpty) {
+        final legacyBytes = base64Decode(_avatar!);
+        uploadedAvatarUrl = await GetProntoUploader.upload(
+          XFile.fromData(legacyBytes, name: 'customer-avatar.jpg', mimeType: 'image/jpeg'),
+        );
+      }
       await FirebaseFirestore.instance.collection('profiles').doc(user.uid).set({
         'uid': user.uid,
         'username': _username ?? user.email?.split('@').first ?? '',
         'displayName': name,
         if (_avatar != null) 'avatarBase64': _avatar,
+        if (uploadedAvatarUrl != null && uploadedAvatarUrl.isNotEmpty) 'avatarUrl': uploadedAvatarUrl,
+        if (uploadedAvatarUrl != null && uploadedAvatarUrl.isNotEmpty) 'photoUrl': uploadedAvatarUrl,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       await user.updateDisplayName(name);
+      _avatarUrl = uploadedAvatarUrl;
+      _avatarFile = null;
       _message('تم تحديث بيانات الحساب');
     } catch (e) { _message('تعذر حفظ بيانات الحساب: $e'); }
     finally { if (mounted) setState(() => _saving = false); }
@@ -101,11 +119,11 @@ class _AccountPageState extends State<AccountPage> {
     child: _loading ? const Center(child: CircularProgressIndicator()) : ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(children: [
+        GlassPanel(radius:24,child: Padding(padding: const EdgeInsets.all(18), child: Column(children: [
           GestureDetector(onTap: _pickAvatar, child: Stack(children: [
-            CircleAvatar(radius: 48, backgroundColor: const Color(0xFFFCE4EC),
+            CircleAvatar(radius: 48, backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(.12),
               backgroundImage: _avatar == null || _avatar!.isEmpty ? null : MemoryImage(base64Decode(_avatar!)),
-              child: _avatar == null || _avatar!.isEmpty ? const Icon(Icons.person, size: 48, color: Color(0xFF6A1B9A)) : null),
+              child: _avatar == null || _avatar!.isEmpty ? Icon(Icons.person, size: 48, color: Theme.of(context).colorScheme.primary) : null),
             const Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 16, child: Icon(Icons.camera_alt, size: 17))),
           ])),
           const SizedBox(height: 8), TextButton.icon(onPressed: _pickAvatar, icon: const Icon(Icons.photo_camera), label: const Text('تغيير صورة الحساب')),
@@ -117,8 +135,8 @@ class _AccountPageState extends State<AccountPage> {
             icon: const Icon(Icons.save_outlined), label: Text(_saving ? 'جارٍ الحفظ...' : 'حفظ بيانات الحساب'))),
         ]))),
         const SizedBox(height: 10),
-        Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('تغيير كلمة المرور', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+        GlassPanel(radius:24,child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('تغيير كلمة المرور', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 10),
           TextField(controller: _currentPassword, obscureText: true, decoration: const InputDecoration(labelText: 'كلمة المرور الحالية', prefixIcon: Icon(Icons.lock_outline))),
           const SizedBox(height: 9),

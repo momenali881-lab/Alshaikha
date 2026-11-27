@@ -3,7 +3,7 @@ name: Build Android APKs
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, notifications-bookings-polish, feature/notifications-speed-display-2026-11-25]
   pull_request:
     branches: [main]
 
@@ -32,10 +32,10 @@ jobs:
           python3 scripts/prepare_android.py
       - name: Build administration APK
         working-directory: admin_app
-        run: flutter pub get && flutter build apk --release
+        run: flutter pub get && flutter build apk --release --dart-define=ALSHAIKHA_NOTIFICATION_WEBHOOK_URL=${{ secrets.ALSHAIKHA_NOTIFICATION_WEBHOOK_URL }}
       - name: Build client APK
         working-directory: client_app
-        run: flutter pub get && flutter build apk --release
+        run: flutter pub get && flutter build apk --release --dart-define=ALSHAIKHA_NOTIFICATION_WEBHOOK_URL=${{ secrets.ALSHAIKHA_NOTIFICATION_WEBHOOK_URL }}
       - name: Upload administration APK
         uses: actions/upload-artifact@v4
         with:
