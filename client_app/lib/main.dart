@@ -740,7 +740,7 @@ Widget homePage(){
    Padding(padding:const EdgeInsets.only(bottom:4),child:IconButton(onPressed:sendingMessage?null:sendMessage,tooltip:'إرسال',style:IconButton.styleFrom(backgroundColor:Theme.of(context).colorScheme.primary,foregroundColor:Colors.white,minimumSize:const Size(46,46)),icon:const Icon(Icons.send_rounded)))
   ])))),
  ]);
- Widget accountPage()=>const KeyedSubtree(key:_accountGuideKey,child:AccountPage());
+ Widget accountPage()=>KeyedSubtree(key:_accountGuideKey,child:const AccountPage());
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
   void _handleSystemBack(){
   if(tab!=0){
