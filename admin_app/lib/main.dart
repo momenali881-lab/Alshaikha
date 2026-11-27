@@ -697,19 +697,65 @@ class _AdminHomeState extends State<AdminHome> {
   }
   Widget adminBottomBar(){
     final showAdd=section!='analytics'&&section!='messages';
-    return SafeArea(top:false,child:Padding(padding:const EdgeInsets.fromLTRB(10,5,10,8),child:GlassPanel(radius:22,padding:const EdgeInsets.symmetric(horizontal:7,vertical:7),child:Row(children:[
-      Expanded(child:SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(mainAxisSize:MainAxisSize.min,children:sections.entries.map((e){
-        final active=section==e.key;
-        return Padding(padding:const EdgeInsets.symmetric(horizontal:2),child:InkWell(borderRadius:BorderRadius.circular(14),onTap:()=>selectAdminSection(e.key),child:AnimatedContainer(duration:const Duration(milliseconds:200),padding:const EdgeInsets.symmetric(horizontal:9,vertical:8),decoration:BoxDecoration(gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,borderRadius:BorderRadius.circular(14)),child:Column(mainAxisSize:MainAxisSize.min,children:[
-          Icon(sectionIcons[e.key],size:19,color:active?const Color(0xFF302719):sectionColors[e.key]),const SizedBox(height:3),
-          Text(e.value,style:TextStyle(fontSize:9,fontWeight:FontWeight.w800,color:active?const Color(0xFF302719):sectionColors[e.key]),maxLines:1,overflow:TextOverflow.ellipsis),
-        ]))));
-      }).toList()))),
-      if(showAdd)...[const SizedBox(width:6),SizedBox(width:104,height:48,child:FilledButton.icon(
-        style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF302719),padding:const EdgeInsets.symmetric(horizontal:8),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(15))),
-        onPressed:(){if(section!='members')setState(()=>section='members');edit();},icon:const Icon(Icons.person_add_alt_1_rounded,size:18),label:const Text('إضافة عضو',style:TextStyle(fontSize:11,fontWeight:FontWeight.w900)),
-      ))],
-    ]))));
+    return SafeArea(top:false,child:Padding(
+      padding:const EdgeInsets.fromLTRB(10,5,10,8),
+      child:GlassPanel(
+        radius:22,
+        padding:const EdgeInsets.symmetric(horizontal:8,vertical:8),
+        child:LayoutBuilder(builder:(context,constraints){
+          final itemWidth=(constraints.maxWidth-12)/4;
+          return Wrap(
+            spacing:4,
+            runSpacing:4,
+            children:[
+              ...sections.entries.map((e){
+                final active=section==e.key;
+                return SizedBox(
+                  width:itemWidth,
+                  height:43,
+                  child:InkWell(
+                    borderRadius:BorderRadius.circular(13),
+                    onTap:()=>selectAdminSection(e.key),
+                    child:AnimatedContainer(
+                      duration:const Duration(milliseconds:200),
+                      padding:const EdgeInsets.symmetric(horizontal:3,vertical:5),
+                      decoration:BoxDecoration(
+                        gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,
+                        borderRadius:BorderRadius.circular(13),
+                      ),
+                      child:Column(
+                        mainAxisAlignment:MainAxisAlignment.center,
+                        mainAxisSize:MainAxisSize.min,
+                        children:[
+                          Icon(sectionIcons[e.key],size:18,color:active?const Color(0xFF302719):sectionColors[e.key]),
+                          const SizedBox(height:2),
+                          Text(e.value,style:TextStyle(fontSize:9,fontWeight:FontWeight.w800,color:active?const Color(0xFF302719):sectionColors[e.key]),maxLines:1,overflow:TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              if(showAdd)SizedBox(
+                width:itemWidth,
+                height:43,
+                child:FilledButton.icon(
+                  style:FilledButton.styleFrom(
+                    backgroundColor:gold,
+                    foregroundColor:const Color(0xFF302719),
+                    padding:const EdgeInsets.symmetric(horizontal:3),
+                    shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(13)),
+                  ),
+                  onPressed:(){if(section!='members')setState(()=>section='members');edit();},
+                  icon:const Icon(Icons.person_add_alt_1_rounded,size:16),
+                  label:const Text('إضافة عضو',style:TextStyle(fontSize:9,fontWeight:FontWeight.w900)),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    ));
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:WillPopScope(onWillPop:handleSystemBack,child:Scaffold(
     backgroundColor:Theme.of(context).scaffoldBackgroundColor,resizeToAvoidBottomInset:true,
