@@ -66,7 +66,7 @@ class SheikhaAdminApp extends StatelessWidget {
       theme:GlassDesign.light,
       darkTheme:GlassDesign.dark,
       themeMode:mode,
-      home:const StaticFullScreenLaunch(child:OneSignalSubscriptionGate(child:AdminAuthGate())),
+      home:const OneSignalSubscriptionGate(child:AdminAuthGate()),
     ),
   );
 }
@@ -102,38 +102,6 @@ String _adminAccountEmail(String username) => '${username.trim().toLowerCase()}@
 
 
 
-
-/// A still, edge-to-edge launch artwork shown before the app's first screen.
-class StaticFullScreenLaunch extends StatefulWidget {
-  final Widget child;
-  const StaticFullScreenLaunch({super.key, required this.child});
-  @override
-  State<StaticFullScreenLaunch> createState() => _StaticFullScreenLaunchState();
-}
-
-class _StaticFullScreenLaunchState extends State<StaticFullScreenLaunch> {
-  bool _showArtwork = true;
-  @override
-  void initState() {
-    super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    Future.delayed(const Duration(milliseconds: 1100), () {
-      if (!mounted) return;
-      setState(() => _showArtwork = false);
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    });
-  }
-  @override
-  Widget build(BuildContext context) {
-    if (!_showArtwork) return widget.child;
-    return const Scaffold(
-      backgroundColor: Color(0xFFB9823D),
-      body: SizedBox.expand(
-        child: Image(image: AssetImage('assets/sheikha_intro.png'), fit: BoxFit.cover),
-      ),
-    );
-  }
-}
 
 class AdminAuthGate extends StatelessWidget {
  const AdminAuthGate({super.key});
