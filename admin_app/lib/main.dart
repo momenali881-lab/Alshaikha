@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -165,7 +166,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
     await showAdminSetupInstructions(context);
   }
 
-  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
+  @override Widget build(BuildContext context)=>PopScope(canPop:false,onPopInvokedWithResult:(didPop,result){if(!didPop)_handleBack();},child:Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
    const Icon(Icons.admin_panel_settings_rounded,size:68,color:plum),const SizedBox(height:12),
    const Text('الشيخة - الإدارة',style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:plum)),
    const SizedBox(height:24),
@@ -235,6 +236,17 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
       );
 }
 
+class _GuideStep { final GlobalKey key; final String title; final String description; const _GuideStep(this.key,this.title,this.description); }
+class _GuidePainter extends CustomPainter {
+ final Rect? target; const _GuidePainter(this.target);
+ @override void paint(Canvas canvas,Size size){
+  final path=Path()..addRect(Offset.zero&size);
+  if(target!=null){path.addRRect(RRect.fromRectAndRadius(target!.inflate(7),const Radius.circular(18)));path.fillType=PathFillType.evenOdd;}
+  canvas.drawPath(path,Paint()..color=Colors.black.withOpacity(.76));
+  if(target!=null)canvas.drawRRect(RRect.fromRectAndRadius(target!.inflate(7),const Radius.circular(18)),Paint()..color=const Color(0xFFFFC107)..style=PaintingStyle.stroke..strokeWidth=3);
+ }
+ @override bool shouldRepaint(covariant _GuidePainter old)=>old.target!=target;
+}
 class AdminHome extends StatefulWidget {
  const AdminHome({super.key});
  @override State<AdminHome> createState()=>_AdminHomeState();
@@ -244,7 +256,7 @@ class _AdminHomeState extends State<AdminHome> {
   bool showChatConversation=false;
   String section='members'; String? selectedConversationId; String? selectedBookingCustomerId; String? selectedBookingId; StreamSubscription<Map<String,dynamic>>? notificationTapSub; final Set<String> _seenNotificationIds=<String>{}; bool _notificationsInitialized=false; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> customerProfiles=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; Timer? topNotificationTimer; final chatController=TextEditingController(); final FocusNode chatFocusNode=FocusNode(); final ScrollController adminChatScrollController=ScrollController();
   @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});refresh();loadChatMembers();loadNotifications();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(section=='messages'&&chatFocusNode.hasFocus))refresh(silent:true);loadNotifications();});}
-  @override void dispose(){poll?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();chatController.dispose();chatFocusNode.dispose();adminChatScrollController.dispose();super.dispose();}
+  @override void dispose(){_closeGuide();poll?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();chatController.dispose();chatFocusNode.dispose();adminChatScrollController.dispose();super.dispose();}
   void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
   void _showTopNotification(Map<String,dynamic> n){
     final messenger=ScaffoldMessenger.of(context);
@@ -646,11 +658,11 @@ class _AdminHomeState extends State<AdminHome> {
     ]);
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-    appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة | الإدارة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:21,letterSpacing:.2))]),actions:[IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout,color:Colors.black)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:Colors.black))]),
+    appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة | الإدارة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:21,letterSpacing:.2))]),actions:[IconButton(key:_helpGuideKey,tooltip:'دليل الاستخدام',onPressed:_showGuide,icon:const Icon(Icons.help_outline,color:Colors.black)),IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout,color:Colors.black)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:Colors.black))]),
     floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(backgroundColor:rose,foregroundColor:Colors.white,onPressed:()=>edit(),icon:const Icon(Icons.add_circle_rounded,color:Colors.white),label:const Text('إضافة سجل')),
     resizeToAvoidBottomInset:true,
     body:Column(children:[
-      SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(() {section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}))).toList())),
+      SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(key:_sectionGuideKeys[e.key],avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(() {section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}))).toList())),
       Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
         Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
         if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
@@ -658,5 +670,5 @@ class _AdminHomeState extends State<AdminHome> {
         ...rows.map(recordCard),const SizedBox(height:90)
       ])))
     ])
-  ));
+  )));
 }
