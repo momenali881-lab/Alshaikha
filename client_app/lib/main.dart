@@ -562,13 +562,13 @@ Widget _memberInfoPill(String label,Color color)=>Container(padding:const EdgeIn
   IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:rose.withOpacity(.10)),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:isFav(m)?rose:plum)),
   const Icon(Icons.chevron_left)
   ]))));
- Widget memberGridCard(Map<String,dynamic> m)=>GlassPanel(radius:22,child:InkWell(borderRadius:BorderRadius.circular(22),onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-  Expanded(child:Stack(fit:StackFit.expand,children:[ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(21)),child:photo(m,size:230)),Positioned(left:7,top:7,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(36,36),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19))),const SizedBox.shrink()])),
-  Padding(padding:const EdgeInsets.fromLTRB(10,8,10,10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+ Widget memberGridCard(Map<String,dynamic> m)=>GlassPanel(radius:20,padding:const EdgeInsets.all(7),child:InkWell(borderRadius:BorderRadius.circular(20),onTap:()=>openMember(m),onLongPress:()=>previewMember(m),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  Expanded(child:Stack(fit:StackFit.expand,children:[ClipRRect(borderRadius:const BorderRadius.vertical(top:Radius.circular(14)),child:photo(m,size:230)),Positioned(left:7,top:7,child:IconButton(onPressed:()=>toggleFav(m),style:IconButton.styleFrom(backgroundColor:Colors.white.withOpacity(.92),minimumSize:const Size(36,36),padding:EdgeInsets.zero),icon:Icon(isFav(m)?Icons.favorite:Icons.favorite_border,color:rose,size:19))),const SizedBox.shrink()])),
+  Padding(padding:const EdgeInsets.fromLTRB(7,5,7,7),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
    Text('${m['name']??''}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
-   const SizedBox(height:3),
+   const SizedBox(height:2),
    Text('${m['hourlyPrice']??0} د.ع/ساعة',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,color:plum,fontWeight:FontWeight.w800)),
-   const SizedBox(height:5),
+   const SizedBox(height:3),
    if(('${m['province']??''} ${m['area']??m['district']??''}').trim().isNotEmpty)Row(children:[
     Icon(Icons.location_on_outlined,size:14,color:plum),
     const SizedBox(width:3),
