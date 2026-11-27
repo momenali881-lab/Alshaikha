@@ -145,58 +145,15 @@ for app, (package, activity_file) in apps.items():
             resized = original.convert("RGB").resize((size, size), Image.Resampling.LANCZOS)
             resized.save(mipmap / f"ic_launcher{icon_extension}", quality=100, subsampling=0)
 
-    # Use the supplied artwork as the static native launch screen. No Flutter intro
-    # animation or second splash screen is shown after Android starts the app.
+    # Keep Flutter/Android's original native launch screen.
+    # Do not copy a custom image, create a second splash, or replace launch resources.
     resources = android / "app" / "src" / "main" / "res"
-    intro_image = root / app / "assets" / "sheikha_intro.png"
-    if not intro_image.is_file():
-        raise FileNotFoundError(f"Missing intro artwork: {intro_image}")
-    drawable_nodpi = resources / "drawable-nodpi"
-    drawable_nodpi.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(intro_image, drawable_nodpi / "sheikha_intro.png")
-
-    launch_drawable = resources / "drawable" / "launch_background.xml"
-    launch_drawable.parent.mkdir(parents=True, exist_ok=True)
-    launch_drawable.write_text("""<?xml version="1.0" encoding="utf-8"?>
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-    android:src="@drawable/sheikha_intro"
-    android:gravity="fill" />
-""", encoding="utf-8")
-
-    # Android 12+ forces its native splash artwork into a centered icon slot.
-    # Keep that native phase visually plain; the same full-screen still image is
-    # shown by Flutter immediately after launch, without animation.
-    from PIL import Image
-    transparent_icon = drawable_nodpi / "transparent_splash_icon.png"
-    Image.new("RGBA", (1, 1), (0, 0, 0, 0)).save(transparent_icon)
-
-    values_v31 = resources / "values-v31"
-    values_v31.mkdir(parents=True, exist_ok=True)
-    (values_v31 / "styles.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowSplashScreenBackground">#B9823D</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/transparent_splash_icon</item>
-        <item name="android:windowSplashScreenAnimationDuration">0</item>
-        <item name="android:windowBackground">@drawable/launch_background</item>
-    </style>
-</resources>
-""", encoding="utf-8")
-
-    # Keep older Android launch screens on the same static supplied artwork.
-    values_styles = resources / "values" / "styles.xml"
-    if values_styles.exists():
-        styles_text = values_styles.read_text(encoding="utf-8")
-        styles_text = re.sub(
-            r'(<style name="LaunchTheme"[^>]*>)(.*?)(</style>)',
-            lambda match: match.group(1) +
-                re.sub(r'<item name="android:windowBackground">.*?</item>',
-                       '<item name="android:windowBackground">@drawable/launch_background</item>',
-                       match.group(2)) +
-                ('' if 'name="android:windowBackground"' in match.group(2) else
-                 '<item name="android:windowBackground">@drawable/launch_background</item>') +
-                match.group(3),
-            styles_text, count=1, flags=re.DOTALL)
-        values_styles.write_text(styles_text, encoding="utf-8")
+    for custom_file in (
+        resources / "drawable-nodpi" / "sheikha_intro.png",
+        resources / "drawable-nodpi" / "transparent_splash_icon.png",
+        resources / "drawable" / "launch_background.xml",
+        resources / "values-v31" / "styles.xml",
+    ):
+        custom_file.unlink(missing_ok=True)
 
     manifest.write_text(text, encoding="utf-8")
