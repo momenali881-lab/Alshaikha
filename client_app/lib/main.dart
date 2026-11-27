@@ -337,13 +337,13 @@ Future<void> handleNotificationTap(Map<String,dynamic> n)async{
   if(id.isNotEmpty&&n['target']!='all'){try{await SharedStore.save('notifications',{...n,'id':id,'read':true});}catch(_){}}
   await load(silent:true);if(!mounted)return;
   final type=(n['type']??'').toString();
-  if(type=='message'){setState(()=>tab=1);WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});}
+  if(type=='message'){setState(() {tab=1;headerOpacity=1;});WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});}
   else if(type=='booking'){
     final bookingId=(n['bookingId']??'').toString();
-    setState(() {tab=2;selectedBookingId=bookingId;});
+    setState(() {tab=2;selectedBookingId=bookingId;headerOpacity=1;});
     final found=bookings.where((b)=>b['id']?.toString()==bookingId).toList();
     if(found.isNotEmpty)WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)showClientBooking(found.first);});
-  }else{setState(()=>tab=0);}
+  }else{setState(() {tab=0;headerOpacity=1;});}
 }
 Future<void> showClientBooking(Map<String,dynamic> b)async{
   await showDialog<void>(context:context,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(
@@ -519,7 +519,7 @@ Future<void> openNotifications()async{
    await SharedStore.save('notifications',{'target':'admin','createdBy':user.uid,'customerId':user.uid,'conversationId':conversationId,'type':'message','title':'مشاركة ملف عضو جديدة','body':'يرغب العميل بمراسلة الإدارة حول عضو الكادر ${m['name']}','createdAt':now.toIso8601String(),'read':false});
    _trackActivity('message');
    if(!mounted)return;
-   setState(()=>tab=1);
+   setState(() {tab=1;headerOpacity=1;});
    await load(silent:true);
    note('تم إرسال بطاقة ${m['name']} وفتح المحادثة');
   }catch(e){if(mounted)note('تعذر إرسال بطاقة العضو: $e');}
