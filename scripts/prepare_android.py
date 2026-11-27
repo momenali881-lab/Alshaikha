@@ -149,12 +149,19 @@ for app, (package, activity_file) in apps.items():
     # never shown before the Flutter animated intro. Android 12+ uses the
     # system splash icon independently of the normal launcher icon.
     resources = android / "app" / "src" / "main" / "res"
+    intro_image = root / app / "assets" / "sheikha_intro.png"
+    if not intro_image.is_file():
+        raise FileNotFoundError(f"Missing intro artwork: {intro_image}")
+    drawable_nodpi = resources / "drawable-nodpi"
+    drawable_nodpi.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(intro_image, drawable_nodpi / "sheikha_intro.png")
+
     launch_drawable = resources / "drawable" / "launch_background.xml"
     launch_drawable.parent.mkdir(parents=True, exist_ok=True)
     launch_drawable.write_text("""<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="#B9823D" />
-</layer-list>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/sheikha_intro"
+    android:gravity="fill" />
 """, encoding="utf-8")
 
     values_v31 = resources / "values-v31"
@@ -163,7 +170,7 @@ for app, (package, activity_file) in apps.items():
 <resources>
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowSplashScreenBackground">#B9823D</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/sheikha_intro</item>
         <item name="android:windowSplashScreenAnimationDuration">0</item>
         <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
