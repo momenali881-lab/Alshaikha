@@ -1,5 +1,6 @@
 name: Build Android APKs
 # Build includes the in-app back-navigation and usage-guide changes.
+# Rebuild after the client navigation-key analyzer fix.
 
 on:
   workflow_dispatch:
