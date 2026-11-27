@@ -218,43 +218,65 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;bool headerVisible=true;String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;double headerOpacity=1;DateTime? _lastBackPressedAt;final GlobalKey _homeNavGuideKey=GlobalKey();final GlobalKey _chatNavGuideKey=GlobalKey();final GlobalKey _sessionsNavGuideKey=GlobalKey();final GlobalKey _moreNavGuideKey=GlobalKey();final GlobalKey _searchGuideKey=GlobalKey();final GlobalKey _favoritesGuideKey=GlobalKey();final GlobalKey _notificationsGuideKey=GlobalKey();final GlobalKey _themeGuideKey=GlobalKey();final GlobalKey _chatHeaderGuideKey=GlobalKey();String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();WidgetsBinding.instance.addPostFrameCallback((_)=>_showFirstUseGuide());notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
  @override void dispose(){poll?.cancel();bannerAuto?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();chatFocusNode.dispose();clientChatScrollController.dispose();super.dispose();}
+ Rect? _guideTargetRect(GlobalKey key){
+  final targetContext=key.currentContext;
+  if(targetContext==null)return null;
+  final render=targetContext.findRenderObject();
+  if(render is! RenderBox||!render.hasSize)return null;
+  final origin=render.localToGlobal(Offset.zero);
+  return origin & render.size;
+ }
  Future<void> _showFirstUseGuide() async {
   final user=FirebaseAuth.instance.currentUser;
   if(user==null||!mounted)return;
   final prefs=await SharedPreferences.getInstance();
-  final key='client_first_guide_seen_${user.uid}';
-  if(prefs.getBool(key)==true||!mounted)return;
+  final prefKey='client_first_guide_seen_${user.uid}';
+  if(prefs.getBool(prefKey)==true||!mounted)return;
   final steps=<Map<String,dynamic>>[
-   {'icon':Icons.waving_hand_rounded,'title':'مرحباً بك في الشيخة','body':'أهلاً بك! هذا دليل سريع يساعدك على استخدام التطبيق والعثور على الكادر وإدارة حجوزاتك والتواصل مع الإدارة.'},
-   {'icon':Icons.search_rounded,'title':'اكتشف الكادر','body':'من الرئيسية يمكنك البحث باسم عضو الكادر أو التخصص، واستخدام الترتيب والفلاتر لمعرفة المتاح أو المحجوز وتحديد الموقع.'},
-   {'icon':Icons.spa_rounded,'title':'تعرّف على ملف الكادر','body':'اضغط على بطاقة العضو لعرض الصور والتفاصيل والسعر والموقع. يمكنك تكبير الصور وإضافة العضو إلى المفضلة.'},
-   {'icon':Icons.event_available_rounded,'title':'كيف تحجز موعداً؟','body':'افتح ملف عضو الكادر واضغط زر الحجز، ثم راجع تفاصيل طلبك وأرسله. تابع حالة الطلب من «حجوزاتي» داخل «المزيد».'},
-   {'icon':Icons.chat_bubble_outline_rounded,'title':'تواصل مع الإدارة','body':'افتح «المحادثات» لإرسال استفسارك مباشرة إلى الإدارة. يمكنك أيضاً مشاركة ملف عضو الكادر داخل المحادثة.'},
-   {'icon':Icons.favorite_border_rounded,'title':'المفضلة والجلسات','body':'استخدم رمز القلب للوصول إلى الكادر المفضل، وافتح «الجلسات» لمشاهدة أرشيف الصور والتفاصيل المنشورة.'},
-   {'icon':Icons.tune_rounded,'title':'حسابك والإعدادات','body':'من «المزيد» تصل إلى حسابك وحجوزاتك. ومن رأس التطبيق يمكنك تغيير المظهر الفاتح أو الداكن ومراجعة الإشعارات.'},
+   {'key':_homeNavGuideKey,'tab':0,'icon':Icons.home_rounded,'title':'الرئيسية','body':'من هنا تعودين إلى الصفحة الرئيسية وتكتشفين الكادر المنشور.'},
+   {'key':_searchGuideKey,'tab':0,'icon':Icons.search_rounded,'title':'البحث عن الكادر','body':'اكتبي اسم العضو أو التخصص للعثور على ما تبحثين عنه بسرعة.'},
+   {'key':_favoritesGuideKey,'tab':0,'icon':Icons.favorite_border_rounded,'title':'المفضلة','body':'اضغطي القلب لحفظ أعضاء الكادر والعودة إليهم بسهولة.'},
+   {'key':_notificationsGuideKey,'tab':0,'icon':Icons.notifications_none_rounded,'title':'الإشعارات','body':'هنا تصلك تحديثات الحجوزات والرسائل والتنبيهات.'},
+   {'key':_themeGuideKey,'tab':0,'icon':Icons.dark_mode_rounded,'title':'المظهر','body':'يمكنك التبديل بين الوضع الفاتح والداكن من هذا الزر.'},
+   {'key':_chatHeaderGuideKey,'tab':1,'icon':Icons.support_agent_rounded,'title':'محادثة الإدارة','body':'من المحادثات أرسلي استفسارك للإدارة وتابعي الردود، ويمكنك مشاركة ملف عضو الكادر.'},
+   {'key':_sessionsNavGuideKey,'tab':3,'icon':Icons.photo_library_rounded,'title':'الجلسات','body':'شاهدي الصور والجلسات المنشورة في هذا القسم.'},
+   {'key':_moreNavGuideKey,'tab':0,'icon':Icons.more_horiz_rounded,'title':'المزيد','body':'من هنا تصلين إلى حجوزاتي وحسابي، وتتابعين طلبات الحجز وتحدّثين بياناتك.'},
   ];
   var page=0;
-  await showDialog<void>(context:context,barrierDismissible:false,builder:(dc)=>StatefulBuilder(builder:(dc,setGuideState){
-   final step=steps[page];
-   return Directionality(textDirection:TextDirection.rtl,child:Dialog(backgroundColor:Colors.transparent,insetPadding:const EdgeInsets.symmetric(horizontal:22,vertical:24),child:GlassPanel(radius:28,padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[
-    Row(children:[const Spacer(),const Text('دليل الاستخدام',style:TextStyle(fontWeight:FontWeight.w900)),const Spacer(),IconButton(onPressed:()async{await prefs.setBool(key,true);if(dc.mounted)Navigator.pop(dc);},icon:const Icon(Icons.close_rounded))]),
-    const SizedBox(height:8),Container(width:66,height:66,decoration:BoxDecoration(gradient:const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]),borderRadius:BorderRadius.circular(22)),child:Icon(step['icon'] as IconData,size:32,color:const Color(0xFF342719))),
-    const SizedBox(height:15),Text(step['title'] as String,textAlign:TextAlign.center,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w900)),
-    const SizedBox(height:10),Text(step['body'] as String,textAlign:TextAlign.center,style:TextStyle(fontSize:14,height:1.7,color:Theme.of(dc).colorScheme.onSurface.withOpacity(.78))),
-    const SizedBox(height:18),Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(steps.length,(i)=>AnimatedContainer(duration:const Duration(milliseconds:180),margin:const EdgeInsets.symmetric(horizontal:3),width:i==page?20:7,height:7,decoration:BoxDecoration(color:i==page?gold:gold.withOpacity(.28),borderRadius:BorderRadius.circular(10))))),
-    const SizedBox(height:18),Row(children:[
-     if(page>0)Expanded(child:OutlinedButton(onPressed:()=>setGuideState(()=>page--),child:const Text('السابق'))),
-     if(page>0)const SizedBox(width:8),
-     Expanded(child:FilledButton(onPressed:()async{if(page<steps.length-1){setGuideState(()=>page++);}else{await prefs.setBool(key,true);if(dc.mounted)Navigator.pop(dc);}},style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF342719)),child:Text(page==steps.length-1?'ابدأ الاستخدام':'التالي'))),
-    ]),
-    TextButton(onPressed:()async{await prefs.setBool(key,true);if(dc.mounted)Navigator.pop(dc);},child:const Text('تخطي الدليل')),
-   ]))));
-  }));
+  setState(()=>tab=0);
+  await showGeneralDialog<void>(
+   context:context,barrierDismissible:false,barrierLabel:'دليل الاستخدام',
+   barrierColor:Colors.transparent,
+   pageBuilder:(dialogContext,animation,secondaryAnimation)=>StatefulBuilder(builder:(dialogContext,setGuideState){
+    final step=steps[page];
+    final rect=_guideTargetRect(step['key'] as GlobalKey);
+    return Material(color:Colors.transparent,child:Directionality(textDirection:TextDirection.rtl,child:Stack(fit:StackFit.expand,children:[
+     CustomPaint(painter:_GuideSpotlightPainter(rect)),
+     Positioned(left:18,right:18,bottom:MediaQuery.of(dialogContext).padding.bottom+18,child:GlassPanel(radius:24,padding:const EdgeInsets.all(17),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+      Row(children:[Container(width:42,height:42,decoration:BoxDecoration(color:const Color(0xFFEAD8B5),borderRadius:BorderRadius.circular(14)),child:Icon(step['icon'] as IconData,color:const Color(0xFF342719))),const SizedBox(width:10),Expanded(child:Text(step['title'] as String,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17))),IconButton(onPressed:()async{await prefs.setBool(prefKey,true);if(dialogContext.mounted)Navigator.pop(dialogContext);},icon:const Icon(Icons.close_rounded))]),
+      const SizedBox(height:7),Text(step['body'] as String,style:TextStyle(fontSize:13,height:1.55,color:Theme.of(dialogContext).colorScheme.onSurface.withOpacity(.82))),
+      const SizedBox(height:12),Row(children:[Expanded(child:Text('${page+1} من ${steps.length}',style:TextStyle(fontSize:11,color:Theme.of(dialogContext).hintColor))),TextButton(onPressed:()async{await prefs.setBool(prefKey,true);if(dialogContext.mounted)Navigator.pop(dialogContext);},child:const Text('تخطي')),const SizedBox(width:5),FilledButton(onPressed:()async{
+       if(page<steps.length-1){
+        page++;
+        final nextTab=steps[page]['tab'] as int;
+        if(mounted)setState(()=>tab=nextTab);
+        WidgetsBinding.instance.addPostFrameCallback((_){if(dialogContext.mounted)setGuideState((){});});
+       }else{
+        await prefs.setBool(prefKey,true);
+        if(dialogContext.mounted)Navigator.pop(dialogContext);
+       }
+      },style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF342719)),child:Text(page==steps.length-1?'إنهاء':'التالي'))]),
+     ]))),
+    ])));
+   }),
+   transitionDuration:const Duration(milliseconds:220),
+  );
+  if(mounted)setState(()=>tab=0);
  }
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
  void _showTopNotification(Map<String,dynamic> n){
