@@ -218,7 +218,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;double headerOpacity=1;DateTime? _lastBackPressedAt;final GlobalKey _homeNavGuideKey=GlobalKey();final GlobalKey _chatNavGuideKey=GlobalKey();final GlobalKey _sessionsNavGuideKey=GlobalKey();final GlobalKey _moreNavGuideKey=GlobalKey();final GlobalKey _searchGuideKey=GlobalKey();final GlobalKey _favoritesGuideKey=GlobalKey();final GlobalKey _notificationsGuideKey=GlobalKey();final GlobalKey _themeGuideKey=GlobalKey();final GlobalKey _chatHeaderGuideKey=GlobalKey();String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool sendingMessage=false;double headerOpacity=1;DateTime? _lastBackPressedAt;final GlobalKey _homeNavGuideKey=GlobalKey();final GlobalKey _chatNavGuideKey=GlobalKey();final GlobalKey _sessionsNavGuideKey=GlobalKey();final GlobalKey _moreNavGuideKey=GlobalKey();final GlobalKey _searchGuideKey=GlobalKey();final GlobalKey _favoritesGuideKey=GlobalKey();final GlobalKey _notificationsGuideKey=GlobalKey();final GlobalKey _themeGuideKey=GlobalKey();final GlobalKey _chatHeaderGuideKey=GlobalKey();final GlobalKey _bookingsGuideKey=GlobalKey();final GlobalKey _accountGuideKey=GlobalKey();String search='';String memberSort='recommended';bool compactMembers=false;bool onlyWithPlace=false;String availabilityFilter='all';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.985);int bannerIndex=0;
  @override void initState(){super.initState();WidgetsBinding.instance.addPostFrameCallback((_)=>_showFirstUseGuide());notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:10),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -246,6 +246,8 @@ class _ClientHomeState extends State<ClientHome>{
    {'key':_chatHeaderGuideKey,'tab':1,'icon':Icons.support_agent_rounded,'title':'محادثة الإدارة','body':'من المحادثات أرسلي استفسارك للإدارة وتابعي الردود، ويمكنك مشاركة ملف عضو الكادر.'},
    {'key':_sessionsNavGuideKey,'tab':3,'icon':Icons.photo_library_rounded,'title':'الجلسات','body':'شاهدي الصور والجلسات المنشورة في هذا القسم.'},
    {'key':_moreNavGuideKey,'tab':0,'icon':Icons.more_horiz_rounded,'title':'المزيد','body':'من هنا تصلين إلى حجوزاتي وحسابي، وتتابعين طلبات الحجز وتحدّثين بياناتك.'},
+   {'key':_bookingsGuideKey,'tab':2,'icon':Icons.event_note_rounded,'title':'حجوزاتي','body':'في هذا القسم تتابعين طلبات الحجز وحالتها وتفاصيل مواعيدك.'},
+   {'key':_accountGuideKey,'tab':4,'icon':Icons.person_rounded,'title':'حسابي','body':'من هنا تراجعين بيانات حسابك وتحدّثين معلوماتك الشخصية.'},
   ];
   var page=0;
   setState(()=>tab=0);
@@ -710,7 +712,7 @@ Widget homePage(){
  ]);
 
  Widget bookingsPage()=>ListView(padding:const EdgeInsets.fromLTRB(14,16,14,24),children:[
-  const Text('طلباتي وحجوزاتي',style:TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
+  Text('طلباتي وحجوزاتي',key:_bookingsGuideKey,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w800)),
   const SizedBox(height:5),
   Text('تابع حالة مواعيدك وتفاصيل كل حجز',style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withOpacity(.62))),
   const SizedBox(height:16),
@@ -738,7 +740,7 @@ Widget homePage(){
    Padding(padding:const EdgeInsets.only(bottom:4),child:IconButton(onPressed:sendingMessage?null:sendMessage,tooltip:'إرسال',style:IconButton.styleFrom(backgroundColor:Theme.of(context).colorScheme.primary,foregroundColor:Colors.white,minimumSize:const Size(46,46)),icon:const Icon(Icons.send_rounded)))
   ])))),
  ]);
- Widget accountPage()=>const AccountPage();
+ Widget accountPage()=>const KeyedSubtree(key:_accountGuideKey,child:AccountPage());
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
   void _handleSystemBack(){
   if(tab!=0){
