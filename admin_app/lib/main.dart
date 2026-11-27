@@ -13,6 +13,7 @@ import 'get_pronto_uploader.dart';
 import 'iraq_locations.dart';
 import 'analytics_screen.dart';
 import 'notification_service.dart';
+import 'usage_guide.dart';
 import 'shared/one_signal_service.dart';
 import 'shared/one_signal_subscription_gate.dart';
 
@@ -165,7 +166,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
     await showAdminSetupInstructions(context);
   }
 
-  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
+  @override Widget build(BuildContext context)=>PopScope(canPop:false,onPopInvoked:(didPop){if(!didPop)_handleBack();},child:Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
    const Icon(Icons.admin_panel_settings_rounded,size:68,color:plum),const SizedBox(height:12),
    const Text('الشيخة - الإدارة',style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:plum)),
    const SizedBox(height:24),
@@ -242,9 +243,42 @@ class AdminHome extends StatefulWidget {
 class _AdminHomeState extends State<AdminHome> {
   bool fromChatBooking=false;
   bool showChatConversation=false;
+  bool _exitDialogOpen=false;
+  final Map<String,GlobalKey> _guideKeys=<String,GlobalKey>{};
   String section='members'; String? selectedConversationId; String? selectedBookingCustomerId; String? selectedBookingId; StreamSubscription<Map<String,dynamic>>? notificationTapSub; final Set<String> _seenNotificationIds=<String>{}; bool _notificationsInitialized=false; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> customerProfiles=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; Timer? topNotificationTimer; final chatController=TextEditingController(); final FocusNode chatFocusNode=FocusNode(); final ScrollController adminChatScrollController=ScrollController();
   @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});refresh();loadChatMembers();loadNotifications();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(section=='messages'&&chatFocusNode.hasFocus))refresh(silent:true);loadNotifications();});}
   @override void dispose(){poll?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();chatController.dispose();chatFocusNode.dispose();adminChatScrollController.dispose();super.dispose();}
+
+  Future<void> _handleBack() async {
+    if(chatFocusNode.hasFocus){chatFocusNode.unfocus();return;}
+    if(section=='messages'&&showChatConversation){setState(()=>showChatConversation=false);return;}
+    if(section!='members'){setState(()=>section='members');return;}
+    if(_exitDialogOpen)return;
+    _exitDialogOpen=true;
+    final exit=await showDialog<bool>(context:context,barrierDismissible:false,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(
+      title:const Text('الخروج من تطبيق الإدارة؟'),
+      content:const Text('هل تريد بالفعل إغلاق التطبيق؟'),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('البقاء')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('خروج'))]
+    )));
+    _exitDialogOpen=false;
+    if(exit==true&&mounted)SystemNavigator.pop();
+  }
+  void _showUsageGuide()=>UsageGuide.show(context,sections.entries.map((e)=>UsageGuideStep(
+    targetKey:_guideKeys.putIfAbsent(e.key,()=>GlobalKey()),
+    title:e.value,
+    description:switch(e.key){
+      'members'=>'إدارة أعضاء الكادر وبياناتهم وصورهم وأسعار الخدمات.',
+      'sessions'=>'إضافة وتعديل صور وأرشيف الجلسات المعروضة للعملاء.',
+      'banners'=>'إدارة البانرات والصور التي تظهر في الصفحة الرئيسية.',
+      'bookings'=>'متابعة طلبات الحجز وتأكيدها أو تعديلها والتواصل مع العملاء.',
+      'messages'=>'فتح محادثات العملاء والرد عليهم وإرسال ملفات الأعضاء.',
+      'announcements'=>'نشر الإعلانات والتنويهات التي تظهر للعملاء.',
+      'analytics'=>'متابعة إحصاءات استخدام التطبيق ونشاط العملاء.',
+      _=>'هذا القسم مخصص لإدارة محتوى تطبيق الشيخة.'
+    },
+    icon:sectionIcons[e.key]??Icons.info_outline
+  )).toList());
+
   void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
   void _showTopNotification(Map<String,dynamic> n){
     final messenger=ScaffoldMessenger.of(context);
@@ -646,11 +680,11 @@ class _AdminHomeState extends State<AdminHome> {
     ]);
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-    appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة | الإدارة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:21,letterSpacing:.2))]),actions:[IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout,color:Colors.black)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:Colors.black))]),
+    appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة | الإدارة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:21,letterSpacing:.2))]),actions:[IconButton(tooltip:'دليل الاستخدام',onPressed:_showUsageGuide,icon:const Icon(Icons.help_outline_rounded,color:Colors.black)),IconButton(tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),IconButton(tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout,color:Colors.black)),IconButton(onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:Colors.black))]),
     floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(backgroundColor:rose,foregroundColor:Colors.white,onPressed:()=>edit(),icon:const Icon(Icons.add_circle_rounded,color:Colors.white),label:const Text('إضافة سجل')),
     resizeToAvoidBottomInset:true,
     body:Column(children:[
-      SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(() {section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}))).toList())),
+      SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(key:_guideKeys.putIfAbsent(e.key,()=>GlobalKey()),padding:const EdgeInsets.all(4),child:ChoiceChip(avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(() {section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}))).toList())),
       Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
         Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
         if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
@@ -658,5 +692,5 @@ class _AdminHomeState extends State<AdminHome> {
         ...rows.map(recordCard),const SizedBox(height:90)
       ])))
     ])
-  ));
+  )));
 }
