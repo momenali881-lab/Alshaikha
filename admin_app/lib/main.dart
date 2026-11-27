@@ -258,6 +258,35 @@ class _AdminHomeState extends State<AdminHome> {
   @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});refresh();loadChatMembers();loadNotifications();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(section=='messages'&&chatFocusNode.hasFocus))refresh(silent:true);loadNotifications();});}
   @override void dispose(){_closeGuide();poll?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();chatController.dispose();chatFocusNode.dispose();adminChatScrollController.dispose();super.dispose();}
   void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
+
+  void _closeGuide(){_guideOverlay?.remove();_guideOverlay=null;}
+  void _showGuide(){
+    _closeGuide();
+    final keys=[...sections.keys.map((k)=>_sectionGuideKeys[k]!),_adminAccountsGuideKey,_notificationGuideKey,_logoutGuideKey,_refreshGuideKey,_helpGuideKey];
+    final names=[...sections.values,'الحسابات الإدارية','الإشعارات','تسجيل الخروج','تحديث البيانات','دليل الاستخدام'];
+    final descriptions=['إدارة ملفات الكادر وإضافة الأعضاء وتعديل بياناتهم وصورهم وأسعارهم.','عرض الجلسات السابقة وإدارتها.','إضافة البانرات وتحديثها لتظهر في تطبيق العميل.','مراجعة طلبات الحجز وتأكيدها أو رفضها.','فتح محادثات العملاء والرد عليهم وإرسال ملفات الكادر وبطاقات الحجز.','نشر الإعلانات والتنبيهات التي تظهر للعملاء.','متابعة إحصاءات الاستخدام والعملاء والحجوزات.','إدارة حسابات المشرفين وصلاحياتهم.','عرض التنبيهات الواردة للإدارة.','تسجيل الخروج من حساب الإدارة.','إعادة تحميل بيانات التطبيق.','افتح هذا الدليل مجدداً متى احتجت إلى شرح الأقسام.'];
+    _guideIndex=0;
+    _guideOverlay=OverlayEntry(builder:(ctx){
+      Rect? rect; final target=keys[_guideIndex].currentContext?.findRenderObject();
+      if(target is RenderBox&&target.hasSize){final p=target.localToGlobal(Offset.zero);rect=p&target.size;}
+      return Material(color:Colors.transparent,child:Stack(children:[
+        Positioned.fill(child:CustomPaint(painter:_GuidePainter(rect))),
+        Positioned(left:16,right:16,bottom:24,child:SafeArea(top:false,child:Card(color:Colors.white,elevation:14,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(22)),child:Padding(padding:const EdgeInsets.all(18),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          Row(children:[const Icon(Icons.lightbulb_outline,color:rose),const SizedBox(width:8),Expanded(child:Text(names[_guideIndex],style:const TextStyle(fontSize:19,fontWeight:FontWeight.w900,color:plum))),Text('${_guideIndex+1}/${keys.length}')]),
+          const SizedBox(height:9),Text(descriptions[_guideIndex],style:const TextStyle(fontSize:15,height:1.5)),const SizedBox(height:16),
+          Row(children:[TextButton(onPressed:_closeGuide,child:const Text('إنهاء الدليل')),const Spacer(),if(_guideIndex>0)TextButton(onPressed:(){_guideIndex--;_guideOverlay?.markNeedsBuild();},child:const Text('السابق')),FilledButton(onPressed:(){if(_guideIndex==keys.length-1){_closeGuide();}else{_guideIndex++;_guideOverlay?.markNeedsBuild();}},child:Text(_guideIndex==keys.length-1?'إنهاء':'التالي'))])
+        ])))))
+      ]));
+    });
+    Overlay.of(context).insert(_guideOverlay!);
+  }
+  Future<void> _handleBack() async {
+    if(showChatConversation){setState(()=>showChatConversation=false);return;}
+    if(section!='members'){setState(()=>section='members');return;}
+    final exit=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(title:const Text('الخروج من تطبيق الشيخة - الإدارة'),content:const Text('هل تريد الخروج من التطبيق؟'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('البقاء')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('خروج'))]));
+    if(exit==true)SystemNavigator.pop();
+  }
+
   void _showTopNotification(Map<String,dynamic> n){
     final messenger=ScaffoldMessenger.of(context);
     messenger.hideCurrentMaterialBanner();
@@ -657,7 +686,7 @@ class _AdminHomeState extends State<AdminHome> {
       ])))
     ]);
   }
-  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
+  @override Widget build(BuildContext context)=>PopScope(canPop:false,onPopInvokedWithResult:(didPop,result){if(!didPop)_handleBack();},child:Directionality(textDirection:TextDirection.rtl,child:Scaffold(
     appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة | الإدارة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:21,letterSpacing:.2))]),actions:[IconButton(key:_helpGuideKey,tooltip:'دليل الاستخدام',onPressed:_showGuide,icon:const Icon(Icons.help_outline,color:Colors.black)),IconButton(key:_adminAccountsGuideKey,tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings,color:Colors.black)),Badge(key:_notificationGuideKey,isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black))),IconButton(key:_logoutGuideKey,tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout,color:Colors.black)),IconButton(key:_refreshGuideKey,tooltip:'تحديث البيانات',onPressed:()=>refresh(),icon:const Icon(Icons.refresh,color:Colors.black))]),
     floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(backgroundColor:rose,foregroundColor:Colors.white,onPressed:()=>edit(),icon:const Icon(Icons.add_circle_rounded,color:Colors.white),label:const Text('إضافة سجل')),
     resizeToAvoidBottomInset:true,
