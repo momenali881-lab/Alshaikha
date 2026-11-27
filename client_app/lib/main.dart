@@ -175,7 +175,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
         color:dark?const Color(0xED25211B):const Color(0xF2FBF9F4),
         borderRadius:BorderRadius.circular(25),
         border:Border.all(color:gold.withOpacity(.42)),
-        boxShadow:[BoxShadow(color:Colors.black.withOpacity(dark?.22:.10),blurRadius:22,offset:const Offset(0,8))],
+        boxShadow:[BoxShadow(color:Colors.black.withOpacity(dark ? .22 : .10),blurRadius:22,offset:const Offset(0,8))],
        ),
        child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Row(children:[
