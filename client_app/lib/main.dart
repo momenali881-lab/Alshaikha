@@ -13,6 +13,7 @@ import 'shared_store.dart';
 import 'image_utils.dart';
 import 'account_page.dart';
 import 'notification_service.dart';
+import 'usage_guide.dart';
 import 'shared/one_signal_service.dart';
 import 'shared/one_signal_subscription_gate.dart';
 
@@ -241,7 +242,7 @@ class LoginWaveClipper extends CustomClipper<Path>{
 
 class ClientHome extends StatefulWidget { const ClientHome({super.key}); @override State<ClientHome> createState()=>_ClientHomeState(); }
 class _ClientHomeState extends State<ClientHome>{
- int tab=0;bool busy=true;bool sendingMessage=false;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
+ int tab=0;bool busy=true;bool _exitDialogOpen=false;final List<GlobalKey> _guideKeys=List.generate(5,(_)=>GlobalKey());bool sendingMessage=false;String search='';String get conversationId => FirebaseAuth.instance.currentUser?.uid ?? 'signed-out';
  List<Map<String,dynamic>> members=[],sessions=[],banners=[],bookings=[],favorites=[],messages=[],notifications=[],announcements=[];String? selectedBookingId;StreamSubscription<Map<String,dynamic>>? notificationTapSub;final Set<String> _seenNotificationIds=<String>{};bool _notificationsInitialized=false;
  final searchCtrl=TextEditingController();final messageCtrl=TextEditingController();final FocusNode chatFocusNode=FocusNode();final ScrollController clientChatScrollController=ScrollController();Timer? poll;Timer? bannerAuto;Timer? topNotificationTimer;final PageController bannerPager=PageController(viewportFraction:.92);int bannerIndex=0;
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
@@ -520,14 +521,36 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   Expanded(child:messages.isEmpty?const Center(child:Text('ابدأ المحادثة بإرسال رسالتك الأولى')):ListView.builder(controller:clientChatScrollController,reverse:true,padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(context,index)=>chatMessage(messages[messages.length-1-index]))),
   SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[IconButton(tooltip:'إرسال ملف عضو',onPressed:shareMemberProfile,icon:const Icon(Icons.person_add_alt_1,color:rose)),Expanded(child:TextField(controller:messageCtrl,focusNode:chatFocusNode,minLines:1,maxLines:4,scrollPadding:const EdgeInsets.only(bottom:180),decoration:const InputDecoration(hintText:'اكتب رسالتك...',border:OutlineInputBorder()),onTap:(){WidgetsBinding.instance.addPostFrameCallback((_){if(clientChatScrollController.hasClients)clientChatScrollController.jumpTo(0);});},onSubmitted:(_)=>sendMessage())),IconButton(onPressed:sendMessage,icon:const Icon(Icons.send,color:plum))]))),
  ]);
+
+ Future<void> _handleBack() async {
+  if(chatFocusNode.hasFocus){chatFocusNode.unfocus();return;}
+  if(tab!=0){setState(()=>tab=0);return;}
+  if(_exitDialogOpen)return;
+  _exitDialogOpen=true;
+  final exit=await showDialog<bool>(context:context,barrierDismissible:false,builder:(ctx)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(
+   title:const Text('الخروج من تطبيق الشيخة؟'),
+   content:const Text('هل تريد بالفعل إغلاق التطبيق؟'),
+   actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('البقاء')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('خروج'))]
+  )));
+  _exitDialogOpen=false;
+  if(exit==true&&mounted)SystemNavigator.pop();
+ }
+ void _showUsageGuide()=>UsageGuide.show(context,[
+  UsageGuideStep(targetKey:_guideKeys[0],title:'الرئيسية',description:'من هنا يمكنك تصفح الواجهة الرئيسية والبانرات وأعضاء الكادر.',icon:Icons.home_rounded),
+  UsageGuideStep(targetKey:_guideKeys[1],title:'الدردشة',description:'تواصل مباشرة مع إدارة الشيخة وتابع رسائلك.',icon:Icons.forum_rounded),
+  UsageGuideStep(targetKey:_guideKeys[2],title:'حجوزاتي',description:'أنشئ حجزاً جديداً وتابع حالة حجوزاتك وتفاصيلها.',icon:Icons.event_available_rounded),
+  UsageGuideStep(targetKey:_guideKeys[3],title:'الجلسات',description:'استعرض أرشيف الجلسات والصور التي تنشرها الإدارة.',icon:Icons.photo_library_rounded),
+  UsageGuideStep(targetKey:_guideKeys[4],title:'حسابي',description:'راجع بيانات حسابك وإعداداته.',icon:Icons.account_circle_rounded),
+ ]);
+
  Widget accountPage()=>const AccountPage();
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
- @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-  appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:23,letterSpacing:.3))]),actions:[if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:Colors.black.withOpacity(.06)),icon:const Icon(Icons.favorite,color:Colors.black)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black)))]),
+ @override Widget build(BuildContext context)=>PopScope(canPop:false,onPopInvoked:(didPop){if(!didPop)_handleBack();},child:Directionality(textDirection:TextDirection.rtl,child:Scaffold(
+  appBar:AppBar(toolbarHeight:64,backgroundColor:cream,surfaceTintColor:Colors.transparent,foregroundColor:Colors.black,iconTheme:const IconThemeData(color:Colors.black),actionsIconTheme:const IconThemeData(color:Colors.black),flexibleSpace:const DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFFF91B8),Color(0xFFFFC7DB),Color(0xFFFFF7FB)]))),title:const Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.auto_awesome_rounded,color:Colors.black,size:19),SizedBox(width:6),Text('الشيخة',style:TextStyle(color:Colors.black,fontWeight:FontWeight.w900,fontSize:23,letterSpacing:.3))]),actions:[IconButton(tooltip:'دليل الاستخدام',onPressed:_showUsageGuide,icon:const Icon(Icons.help_outline_rounded,color:Colors.black)),if(tab==0)IconButton(tooltip:'المفضلة',onPressed:openFavorites,style:IconButton.styleFrom(backgroundColor:Colors.black.withOpacity(.06)),icon:const Icon(Icons.favorite,color:Colors.black)),if(tab==0)IconButton(tooltip:'البحث',onPressed:()=>showSearch(context:context,delegate:MemberSearch(members,onPick:(v){setState(()=>search=v);})),icon:const Icon(Icons.search,color:Colors.black)),Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_active,color:Colors.black)))]),
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
-  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
- ));
+  bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:[NavigationDestination(key:_guideKeys[0],icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(key:_guideKeys[1],icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(key:_guideKeys[2],icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(key:_guideKeys[3],icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(key:_guideKeys[4],icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
+  )));
 }
 class MemberSearch extends SearchDelegate<String>{
  final List<Map<String,dynamic>> members;final ValueChanged<String> onPick;
