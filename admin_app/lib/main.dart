@@ -709,7 +709,7 @@ class _AdminHomeState extends State<AdminHome> {
         style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF302719),padding:const EdgeInsets.symmetric(horizontal:8),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(15))),
         onPressed:(){if(section!='members')setState(()=>section='members');edit();},icon:const Icon(Icons.person_add_alt_1_rounded,size:18),label:const Text('إضافة عضو',style:TextStyle(fontSize:11,fontWeight:FontWeight.w900)),
       ))],
-    ))));
+    ]))));
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:WillPopScope(onWillPop:handleSystemBack,child:Scaffold(
     backgroundColor:Theme.of(context).scaffoldBackgroundColor,resizeToAvoidBottomInset:true,
