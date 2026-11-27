@@ -145,9 +145,8 @@ for app, (package, activity_file) in apps.items():
             resized = original.convert("RGB").resize((size, size), Image.Resampling.LANCZOS)
             resized.save(mipmap / f"ic_launcher{icon_extension}", quality=100, subsampling=0)
 
-    # Replace Android's native launch screen so the old launcher artwork is
-    # never shown before the Flutter animated intro. Android 12+ uses the
-    # system splash icon independently of the normal launcher icon.
+    # Use the supplied artwork as the static native launch screen. No Flutter intro
+    # animation or second splash screen is shown after Android starts the app.
     resources = android / "app" / "src" / "main" / "res"
     intro_image = root / app / "assets" / "sheikha_intro.png"
     if not intro_image.is_file():
@@ -177,7 +176,7 @@ for app, (package, activity_file) in apps.items():
 </resources>
 """, encoding="utf-8")
 
-    # Keep pre-Android 12 launch screens on the same clean gold background.
+    # Keep older Android launch screens on the same static supplied artwork.
     values_styles = resources / "values" / "styles.xml"
     if values_styles.exists():
         styles_text = values_styles.read_text(encoding="utf-8")
