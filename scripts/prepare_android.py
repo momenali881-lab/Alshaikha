@@ -163,13 +163,20 @@ for app, (package, activity_file) in apps.items():
     android:gravity="fill" />
 """, encoding="utf-8")
 
+    # Android 12+ forces its native splash artwork into a centered icon slot.
+    # Keep that native phase visually plain; the same full-screen still image is
+    # shown by Flutter immediately after launch, without animation.
+    from PIL import Image
+    transparent_icon = drawable_nodpi / "transparent_splash_icon.png"
+    Image.new("RGBA", (1, 1), (0, 0, 0, 0)).save(transparent_icon)
+
     values_v31 = resources / "values-v31"
     values_v31.mkdir(parents=True, exist_ok=True)
     (values_v31 / "styles.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowSplashScreenBackground">#B9823D</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/sheikha_intro</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/transparent_splash_icon</item>
         <item name="android:windowSplashScreenAnimationDuration">0</item>
         <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
