@@ -166,7 +166,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
     await showAdminSetupInstructions(context);
   }
 
-  @override Widget build(BuildContext context)=>PopScope(canPop:false,onPopInvokedWithResult:(didPop,result){if(!didPop)_handleBack();},child:Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
+  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420),child:Column(mainAxisSize:MainAxisSize.min,children:[
    const Icon(Icons.admin_panel_settings_rounded,size:68,color:plum),const SizedBox(height:12),
    const Text('الشيخة - الإدارة',style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:plum)),
    const SizedBox(height:24),
@@ -178,7 +178,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
    const SizedBox(height:14),
    SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:loading?null:createFirstAdmin,icon:const Icon(Icons.info_outline),label:const Text('طريقة إنشاء أول حساب إداري'))),
    const SizedBox(height:8),const Text('لأمان الحسابات، تتم إضافة المديرين من وحدة تحكم Firebase فقط.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:Colors.black54))
-  ])))))));
+  ]))))));;
 }
 
 class AdminAccountsScreen extends StatefulWidget {
