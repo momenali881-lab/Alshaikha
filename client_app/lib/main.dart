@@ -57,12 +57,176 @@ class SheikhaClientApp extends StatelessWidget {
    theme:GlassDesign.light,
    darkTheme:GlassDesign.dark,
    themeMode:mode,
-   home:const OneSignalSubscriptionGate(child:ClientAuthGate()),
+   home:const SheikhaAnimatedIntro(child:OneSignalSubscriptionGate(child:ClientAuthGate())),
   ),
  );
 }
 
 String _accountEmail(String username) => '${username.trim().toLowerCase()}@alshaikha.app';
+
+
+class SheikhaAnimatedIntro extends StatefulWidget {
+  final Widget child;
+  const SheikhaAnimatedIntro({super.key, required this.child});
+
+  @override
+  State<SheikhaAnimatedIntro> createState() => _SheikhaAnimatedIntroState();
+}
+
+class _SheikhaAnimatedIntroState extends State<SheikhaAnimatedIntro>
+    with TickerProviderStateMixin {
+  late final AnimationController _imageMotion;
+  late final AnimationController _reveal;
+  Timer? _introTimer;
+  bool _showApp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _imageMotion = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 7200),
+    )..repeat(reverse: true);
+    _reveal = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..forward();
+    _introTimer = Timer(const Duration(milliseconds: 4300), () {
+      if (mounted) setState(() => _showApp = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _introTimer?.cancel();
+    _imageMotion.dispose();
+    _reveal.dispose();
+    super.dispose();
+  }
+
+  Widget _introScreen() {
+    return Scaffold(
+      key: const ValueKey('sheikha-intro'),
+      backgroundColor: const Color(0xFFB9823D),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          AnimatedBuilder(
+            animation: _imageMotion,
+            child: Image.asset(
+              'assets/sheikha_intro.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder: (_, __, ___) => const ColoredBox(
+                color: Color(0xFFB9823D),
+                child: Center(
+                  child: Icon(Icons.auto_awesome, color: Colors.white, size: 48),
+                ),
+              ),
+            ),
+            builder: (context, image) => Transform.scale(
+              scale: 1.0 + (_imageMotion.value * 0.065),
+              child: image,
+            ),
+          ),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: [0.0, 0.42, 0.72, 1.0],
+                colors: [
+                  Color(0x33000000),
+                  Color(0x00000000),
+                  Color(0x44000000),
+                  Color(0xCC21170D),
+                ],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 62),
+                child: FadeTransition(
+                  opacity: CurvedAnimation(parent: _reveal, curve: Curves.easeOut),
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.22),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: _reveal,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'الشيخة',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 38,
+                            height: 1.25,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            shadows: [
+                              Shadow(color: Color(0x99000000), blurRadius: 18, offset: Offset(0, 3)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 13),
+                        AnimatedBuilder(
+                          animation: _imageMotion,
+                          builder: (context, _) => Opacity(
+                            opacity: 0.55 + (_imageMotion.value * 0.45),
+                            child: Container(
+                              width: 82,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF2D49A),
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: const [
+                                  BoxShadow(color: Color(0x99F2D49A), blurRadius: 12),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'جمالٌ يليق بكِ',
+                          style: TextStyle(
+                            color: Color(0xFFFFF5E4),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.0,
+                            shadows: [Shadow(color: Colors.black54, blurRadius: 10)],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+        duration: const Duration(milliseconds: 850),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        child: _showApp ? widget.child : _introScreen(),
+      );
+}
 
 class ClientAuthGate extends StatelessWidget {
  const ClientAuthGate({super.key});
