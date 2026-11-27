@@ -1,3 +1,4 @@
+# Native launch artwork is generated from the shared intro asset before both APK builds.
 name: Build Android APKs
 
 on:
