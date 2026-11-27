@@ -740,45 +740,69 @@ Widget homePage(){
  ]);
  Widget accountPage()=>const AccountPage();
  Widget currentPage()=>switch(tab){1=>chatPage(),2=>bookingsPage(),3=>sessionsPage(),4=>accountPage(),_=>homePage()};
+  void _handleSystemBack(){
+  if(tab!=0){
+   chatFocusNode.unfocus();
+   setState(() {tab=0;headerOpacity=1;});
+   _lastBackPressedAt=null;
+   return;
+  }
+  final now=DateTime.now();
+  if(_lastBackPressedAt!=null&&now.difference(_lastBackPressedAt!)<const Duration(seconds:2)){
+   SystemNavigator.pop();
+   return;
+  }
+  _lastBackPressedAt=now;
+  ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(const SnackBar(content:Text('اضغطي مرة أخرى للخروج من التطبيق'),duration:Duration(seconds:2)));
+ }
  @override Widget build(BuildContext context){
   const labels=['الرئيسية','المحادثات','حجوزاتي','الجلسات','حسابي'];
-  const icons=[Icons.home_rounded,Icons.forum_rounded,Icons.event_note_rounded,Icons.photo_library_rounded,Icons.person_rounded];
   final dark=Theme.of(context).brightness==Brightness.dark;
   final unread=notifications.where((n)=>n['read']!=true).length;
-  return Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-   extendBody:true,
-   backgroundColor:dark?const Color(0xFF11100E):const Color(0xFFF7F2E9),
+  final headerWidget=tab==1?const SizedBox.shrink():ClipRect(child:Align(alignment:Alignment.topCenter,heightFactor:headerOpacity,child:Opacity(opacity:headerOpacity,child:Padding(padding:const EdgeInsets.fromLTRB(14,10,14,8),child:Container(
+   padding:const EdgeInsets.symmetric(horizontal:14,vertical:11),
+   decoration:BoxDecoration(color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
+   child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+    Row(children:[Container(width:42,height:42,decoration:BoxDecoration(gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('الشيخة',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),Text(labels[tab],maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600))]))]),
+    Row(mainAxisAlignment:MainAxisAlignment.end,children:[
+     if(tab==0)IconButton(key:_favoritesGuideKey,visualDensity:VisualDensity.compact,tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
+     Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(key:_notificationsGuideKey,visualDensity:VisualDensity.compact,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
+     IconButton(key:_themeGuideKey,visualDensity:VisualDensity.compact,tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
+    ]),
+    if(tab==0)Padding(padding:const EdgeInsets.only(top:5),child:Container(key:_searchGuideKey,height:43,decoration:BoxDecoration(color:dark?Colors.white.withOpacity(.07):const Color(0xFFF0E9DC),borderRadius:BorderRadius.circular(15),border:Border.all(color:gold.withOpacity(.25))),child:Row(children:[const SizedBox(width:10),Icon(Icons.search_rounded,color:gold,size:20),const SizedBox(width:8),Expanded(child:TextField(controller:searchCtrl,textInputAction:TextInputAction.search,onChanged:(v)=>setState(()=>search=v),decoration:const InputDecoration(hintText:'ابحث عن الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:10)))),if(search.isNotEmpty)IconButton(visualDensity:VisualDensity.compact,onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))]))),
+   ]),
+  )))));
+  return Directionality(textDirection:TextDirection.rtl,child:PopScope(
+   canPop:false,
+   onPopInvokedWithResult:(didPop,result){if(!didPop)_handleSystemBack();},
+   child:Scaffold(extendBody:true,backgroundColor:dark?const Color(0xFF11100E):const Color(0xFFF7F2E9),
     body:SafeArea(child:Column(children:[
-     if(tab!=1&&headerVisible)Padding(padding:const EdgeInsets.fromLTRB(14,10,14,8),child:Container(
-      padding:const EdgeInsets.symmetric(horizontal:14,vertical:11),
-      decoration:BoxDecoration(color:dark?const Color(0xD923201B):const Color(0xDDFBF8F1),borderRadius:BorderRadius.circular(24),border:Border.all(color:gold.withOpacity(.28)),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.045),blurRadius:20,offset:const Offset(0,7))]),
-      child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-       Row(children:[Container(width:42,height:42,decoration:BoxDecoration(gradient:const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFE9D4A8),Color(0xFFB78C4D)]),borderRadius:BorderRadius.circular(15)),child:const Icon(Icons.spa_rounded,color:Color(0xFF332719),size:25)),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('الشيخة',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:19,fontWeight:FontWeight.w900)),Text(labels[tab],maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:11,color:dark?Colors.white60:const Color(0xFF806F59),fontWeight:FontWeight.w600))]))]),
-       Row(mainAxisAlignment:MainAxisAlignment.end,children:[
-        if(tab==0)IconButton(visualDensity:VisualDensity.compact,tooltip:'المفضلة',onPressed:openFavorites,icon:const Icon(Icons.favorite_border_rounded)),
-        Badge(isLabelVisible:unread>0,label:Text('$unread'),child:IconButton(visualDensity:VisualDensity.compact,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded))),
-        IconButton(visualDensity:VisualDensity.compact,tooltip:dark?'الوضع الفاتح':'الوضع الداكن',onPressed:()=>setClientThemeMode(dark?ThemeMode.light:ThemeMode.dark),icon:Icon(dark?Icons.light_mode_rounded:Icons.dark_mode_rounded)),
-       ]),
-       if(tab==0)Padding(padding:const EdgeInsets.only(top:5),child:Container(height:43,decoration:BoxDecoration(color:dark?Colors.white.withOpacity(.07):const Color(0xFFF0E9DC),borderRadius:BorderRadius.circular(15),border:Border.all(color:gold.withOpacity(.25))),child:Row(children:[const SizedBox(width:10),Icon(Icons.search_rounded,color:gold,size:20),const SizedBox(width:8),Expanded(child:TextField(controller:searchCtrl,textInputAction:TextInputAction.search,onChanged:(v)=>setState(()=>search=v),decoration:const InputDecoration(hintText:'ابحث عن الكادر أو التخصص...',border:InputBorder.none,isDense:true,contentPadding:EdgeInsets.symmetric(vertical:10)))),if(search.isNotEmpty)IconButton(visualDensity:VisualDensity.compact,onPressed:(){setState(()=>search='');searchCtrl.clear();},icon:const Icon(Icons.close_rounded))]))),
-      ]))),
-     Expanded(child:NotificationListener<ScrollNotification>(onNotification:(n){if(tab==1)return false;if(n is ScrollUpdateNotification&&n.scrollDelta!=null&&n.depth==0){final next=n.scrollDelta!<0;if(next!=headerVisible)setState(()=>headerVisible=next);}if(n is ScrollStartNotification&&n.metrics.pixels<=0&&!headerVisible)setState(()=>headerVisible=true);return false;},child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage()))),
+     headerWidget,
+     Expanded(child:NotificationListener<ScrollNotification>(onNotification:(n){
+      if(tab==1||n.depth!=0)return false;
+      if(n is ScrollUpdateNotification){
+       final next=(1-(n.metrics.pixels/78)).clamp(0.0,1.0).toDouble();
+       if((next-headerOpacity).abs()>.015)setState(()=>headerOpacity=next);
+      }
+      return false;
+     },child:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,color:gold,child:currentPage()))),
      if(tab!=1&&MediaQuery.of(context).viewInsets.bottom==0)Padding(padding:const EdgeInsets.fromLTRB(12,3,12,7),child:GlassPanel(radius:25,padding:const EdgeInsets.symmetric(horizontal:4,vertical:6),child:Row(mainAxisAlignment:MainAxisAlignment.spaceAround,children:[
-      _navItem(0,Icons.home_rounded,'الرئيسية',tab,dark),
-      _navItem(1,Icons.forum_rounded,'المحادثات',tab,dark,unread:unread),
-      _navItem(3,Icons.photo_library_rounded,'الجلسات',tab,dark),
-      InkWell(borderRadius:BorderRadius.circular(17),onTap:()=>showModalBottomSheet(context:context,backgroundColor:Colors.transparent,builder:(sheetContext)=>GlassPanel(radius:24,margin:const EdgeInsets.all(12),padding:const EdgeInsets.all(12),child:Column(mainAxisSize:MainAxisSize.min,children:[
-       ListTile(leading:const Icon(Icons.event_note_rounded),title:const Text('حجوزاتي'),onTap:(){Navigator.pop(sheetContext);setState(()=>tab=2);}),
-       ListTile(leading:const Icon(Icons.person_rounded),title:const Text('حسابي'),onTap:(){Navigator.pop(sheetContext);setState(()=>tab=4);}),
+      _navItem(0,Icons.home_rounded,'الرئيسية',tab,dark,key:_homeNavGuideKey),
+      _navItem(1,Icons.forum_rounded,'المحادثات',tab,dark,unread:unread,key:_chatNavGuideKey),
+      _navItem(3,Icons.photo_library_rounded,'الجلسات',tab,dark,key:_sessionsNavGuideKey),
+      InkWell(key:_moreNavGuideKey,borderRadius:BorderRadius.circular(17),onTap:()=>showModalBottomSheet(context:context,backgroundColor:Colors.transparent,builder:(sheetContext)=>GlassPanel(radius:24,margin:const EdgeInsets.all(12),padding:const EdgeInsets.all(12),child:Column(mainAxisSize:MainAxisSize.min,children:[
+       ListTile(leading:const Icon(Icons.event_note_rounded),title:const Text('حجوزاتي'),onTap:(){Navigator.pop(sheetContext);setState(() {tab=2;headerOpacity=1;});}),
+       ListTile(leading:const Icon(Icons.person_rounded),title:const Text('حسابي'),onTap:(){Navigator.pop(sheetContext);setState(() {tab=4;headerOpacity=1;});}),
       ]))),child:Padding(padding:const EdgeInsets.symmetric(horizontal:14,vertical:7),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.more_horiz_rounded,color:tab==2||tab==4?gold:(dark?Colors.white70:const Color(0xFF806F59)),size:23),Text('المزيد',style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:tab==2||tab==4?gold:(dark?Colors.white70:const Color(0xFF806F59))))]))),
      ]))),
     ])),
-   ));
+   ),
+  ));
  }
-
- Widget _navItem(int index,IconData icon,String label,int activeTab,bool dark,{int unread=0}){
+ Widget _navItem(int index,IconData icon,String label,int activeTab,bool dark,{int unread=0,Key? key}){
   final active=activeTab==index;
   final fg=active?const Color(0xFF342719):(dark?Colors.white70:const Color(0xFF806F59));
-  return InkWell(borderRadius:BorderRadius.circular(17),onTap:()=>setState((){tab=index;headerVisible=true;}),child:AnimatedContainer(duration:const Duration(milliseconds:220),padding:EdgeInsets.symmetric(horizontal:active?13:10,vertical:7),decoration:BoxDecoration(gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(17)),child:Column(mainAxisSize:MainAxisSize.min,children:[Stack(clipBehavior:Clip.none,children:[Icon(icon,size:22,color:fg),if(index==1&&unread>0)Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52)))]),const SizedBox(height:3),Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:fg))])));
+  return InkWell(key:key,borderRadius:BorderRadius.circular(17),onTap:()=>setState((){tab=index;headerOpacity=1;}),child:AnimatedContainer(duration:const Duration(milliseconds:220),padding:EdgeInsets.symmetric(horizontal:active?13:10,vertical:7),decoration:BoxDecoration(gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(17)),child:Column(mainAxisSize:MainAxisSize.min,children:[Stack(clipBehavior:Clip.none,children:[Icon(icon,size:22,color:fg),if(index==1&&unread>0)Positioned(left:-7,top:-5,child:CircleAvatar(radius:4,backgroundColor:Color(0xFFB86C52)))]),const SizedBox(height:3),Text(label,style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:fg))])));
  }
 }
 class MemberSearch extends SearchDelegate<String>{
