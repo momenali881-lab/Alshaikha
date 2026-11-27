@@ -605,7 +605,7 @@ class _AdminHomeState extends State<AdminHome> {
        if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')
         Text.rich(TextSpan(children:[
          TextSpan(text:'${m['text']??'تعذر العثور على ملف العضو'}'),
-         TextSpan(text:'  ${m['createdAt']??''}',style:TextStyle(fontSize:9,color:Theme.of(context).hintColor)),
+         TextSpan(text:'  ${m['createdAt']??''}',style:TextStyle(fontSize:8,color:Theme.of(context).hintColor)),
         ]),style:const TextStyle(fontSize:15,height:1.3)),
       ])
      ));
