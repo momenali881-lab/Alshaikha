@@ -178,7 +178,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
    const SizedBox(height:14),
    SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:loading?null:createFirstAdmin,icon:const Icon(Icons.info_outline),label:const Text('طريقة إنشاء أول حساب إداري'))),
    const SizedBox(height:8),const Text('لأمان الحسابات، تتم إضافة المديرين من وحدة تحكم Firebase فقط.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:Colors.black54))
-  ]))))));;
+  ])))))));
 }
 
 class AdminAccountsScreen extends StatefulWidget {
@@ -691,7 +691,7 @@ class _AdminHomeState extends State<AdminHome> {
     floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(backgroundColor:rose,foregroundColor:Colors.white,onPressed:()=>edit(),icon:const Icon(Icons.add_circle_rounded,color:Colors.white),label:const Text('إضافة سجل')),
     resizeToAvoidBottomInset:true,
     body:Column(children:[
-      SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(key:_sectionGuideKeys[e.key],avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(() {section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}))).toList())),
+      SizedBox(height:58,child:SingleChildScrollView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:8),child:Row(children:sections.entries.map((e)=>Padding(padding:const EdgeInsets.all(4),child:ChoiceChip(key:_sectionGuideKeys[e.key],avatar:Icon(sectionIcons[e.key],size:18,color:section==e.key?Colors.white:sectionColors[e.key]),label:Text(e.value,style:TextStyle(color:section==e.key?Colors.white:sectionColors[e.key],fontWeight:FontWeight.bold)),selected:section==e.key,selectedColor:sectionColors[e.key],backgroundColor:Colors.white,side:BorderSide(color:sectionColors[e.key]!.withOpacity(.35)),shape:const StadiumBorder(),onSelected:(_){setState(() {section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();}))).toList()))),
       Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:refresh,child:ListView(padding:const EdgeInsets.all(14),children:[
         Container(padding:const EdgeInsets.all(20),decoration:BoxDecoration(gradient:const LinearGradient(colors:[plum,rose,teal]),borderRadius:BorderRadius.circular(22)),child:Text('${sections[section]}\n${rows.length} سجل',style:const TextStyle(color:Colors.white,fontSize:22,fontWeight:FontWeight.bold))),
         if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
