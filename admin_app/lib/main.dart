@@ -193,18 +193,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
     }
     final now=DateTime.now();
     if(_lastBackPress==null||now.difference(_lastBackPress!)>const Duration(seconds:2)){
-      _lastBackPress=now;
-      note('اضغط زر الرجوع مرة أخرى للخروج');
-      return false;
+      _lastBackPress=now;note('اضغط زر الرجوع مرة أخرى للخروج');return false;
     }
     return true;
   }
   void selectAdminSection(String key){
-    setState((){
-      section=key;
-      if(key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}
-      if(key!='messages')showChatConversation=false;
-    });
+    setState((){section=key;if(key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(key!='messages')showChatConversation=false;});
     if(key=='bookings')loadChatMembers();
     refresh();
   }
@@ -214,25 +208,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>{
       Expanded(child:SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(mainAxisSize:MainAxisSize.min,children:sections.entries.map((e){
         final active=section==e.key;
         return Padding(padding:const EdgeInsets.symmetric(horizontal:2),child:InkWell(borderRadius:BorderRadius.circular(14),onTap:()=>selectAdminSection(e.key),child:AnimatedContainer(duration:const Duration(milliseconds:200),padding:const EdgeInsets.symmetric(horizontal:9,vertical:8),decoration:BoxDecoration(gradient:active?const LinearGradient(colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,borderRadius:BorderRadius.circular(14)),child:Column(mainAxisSize:MainAxisSize.min,children:[
-          Icon(sectionIcons[e.key],size:19,color:active?const Color(0xFF302719):sectionColors[e.key]),
-          const SizedBox(height:3),
+          Icon(sectionIcons[e.key],size:19,color:active?const Color(0xFF302719):sectionColors[e.key]),const SizedBox(height:3),
           Text(e.value,style:TextStyle(fontSize:9,fontWeight:FontWeight.w800,color:active?const Color(0xFF302719):sectionColors[e.key]),maxLines:1,overflow:TextOverflow.ellipsis),
         ]))));
       }).toList()))),
-      if(showAdd)...[
-        const SizedBox(width:6),
-        SizedBox(width:104,height:48,child:FilledButton.icon(
-          style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF302719),padding:const EdgeInsets.symmetric(horizontal:8),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(15))),
-          onPressed:(){if(section!='members')setState(()=>section='members');edit();},
-          icon:const Icon(Icons.person_add_alt_1_rounded,size:18),
-          label:const Text('إضافة عضو',style:TextStyle(fontSize:11,fontWeight:FontWeight.w900)),
-        )),
-      ],
+      if(showAdd)...[const SizedBox(width:6),SizedBox(width:104,height:48,child:FilledButton.icon(
+        style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:const Color(0xFF302719),padding:const EdgeInsets.symmetric(horizontal:8),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(15))),
+        onPressed:(){if(section!='members')setState(()=>section='members');edit();},icon:const Icon(Icons.person_add_alt_1_rounded,size:18),label:const Text('إضافة عضو',style:TextStyle(fontSize:11,fontWeight:FontWeight.w900)),
+      ))],
     ))));
   }
   @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:WillPopScope(onWillPop:handleSystemBack,child:Scaffold(
-    backgroundColor:Theme.of(context).scaffoldBackgroundColor,
-    resizeToAvoidBottomInset:true,
+    backgroundColor:Theme.of(context).scaffoldBackgroundColor,resizeToAvoidBottomInset:true,
     body:SafeArea(child:Column(children:[
       if(section!='messages')Padding(padding:const EdgeInsets.fromLTRB(12,6,12,7),child:Container(
         padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),
