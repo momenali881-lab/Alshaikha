@@ -26,7 +26,7 @@ class UsageGuide {
       final cardTop=target==null?size.height*.30:(target.center.dy>size.height*.52?86.0:size.height-226.0);
       return Positioned.fill(child:Material(color:Colors.transparent,child:Stack(children:[
         CustomPaint(size:size,painter:_GuidePainter(target)),
-        Positioned(left:18,right:18,top:cardTop.clamp(70.0,size.height-205.0),child:Material(
+        Positioned(left:18,right:18,top:cardTop.clamp(70.0,size.height-205.0).toDouble(),child:Material(
           color:Colors.white,elevation:16,borderRadius:BorderRadius.circular(22),
           child:Directionality(textDirection:TextDirection.rtl,child:Padding(padding:const EdgeInsets.all(17),child:Column(
             mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
