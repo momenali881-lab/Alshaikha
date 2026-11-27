@@ -145,4 +145,45 @@ for app, (package, activity_file) in apps.items():
             resized = original.convert("RGB").resize((size, size), Image.Resampling.LANCZOS)
             resized.save(mipmap / f"ic_launcher{icon_extension}", quality=100, subsampling=0)
 
+    # Replace Android's native launch screen so the old launcher artwork is
+    # never shown before the Flutter animated intro. Android 12+ uses the
+    # system splash icon independently of the normal launcher icon.
+    resources = android / "app" / "src" / "main" / "res"
+    launch_drawable = resources / "drawable" / "launch_background.xml"
+    launch_drawable.parent.mkdir(parents=True, exist_ok=True)
+    launch_drawable.write_text("""<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="#B9823D" />
+</layer-list>
+""", encoding="utf-8")
+
+    values_v31 = resources / "values-v31"
+    values_v31.mkdir(parents=True, exist_ok=True)
+    (values_v31 / "styles.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">#B9823D</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+</resources>
+""", encoding="utf-8")
+
+    # Keep pre-Android 12 launch screens on the same clean gold background.
+    values_styles = resources / "values" / "styles.xml"
+    if values_styles.exists():
+        styles_text = values_styles.read_text(encoding="utf-8")
+        styles_text = re.sub(
+            r'(<style name="LaunchTheme"[^>]*>)(.*?)(</style>)',
+            lambda match: match.group(1) +
+                re.sub(r'<item name="android:windowBackground">.*?</item>',
+                       '<item name="android:windowBackground">@drawable/launch_background</item>',
+                       match.group(2)) +
+                ('' if 'name="android:windowBackground"' in match.group(2) else
+                 '<item name="android:windowBackground">@drawable/launch_background</item>') +
+                match.group(3),
+            styles_text, count=1, flags=re.DOTALL)
+        values_styles.write_text(styles_text, encoding="utf-8")
+
     manifest.write_text(text, encoding="utf-8")
