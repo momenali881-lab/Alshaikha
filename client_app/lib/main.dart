@@ -158,7 +158,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
    resizeToAvoidBottomInset:true,
    body:LayoutBuilder(builder:(context,screen){
     final compact=screen.maxHeight<720||keyboard>0;
-    final top=keyboard>0?screen.maxHeight*.10:(compact?screen.maxHeight*.25:screen.maxHeight*.445);
+    final top=keyboard>0?screen.maxHeight*.10:(compact?screen.maxHeight*.25:screen.maxHeight*.49);
     return Stack(fit:StackFit.expand,children:[
      Positioned.fill(child:Image.asset('login_background.webp',fit:BoxFit.cover,alignment:Alignment.topCenter)),
      Positioned.fill(child:DecoratedBox(decoration:BoxDecoration(gradient:LinearGradient(
@@ -212,7 +212,6 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
          child:const Text('نسيت كلمة المرور؟',style:TextStyle(color:muted,fontWeight:FontWeight.w700,fontSize:11)))),
        ]),
       ))),
-      if(keyboard==0)Positioned(left:0,right:0,bottom:7,child:Text('راحة • عناية • تجربة حجز سهلة',textAlign:TextAlign.center,style:TextStyle(color:dark?Colors.white54:muted,fontSize:10,fontWeight:FontWeight.w600))),
      ])),
     ]);
    }),
