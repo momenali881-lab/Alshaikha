@@ -57,11 +57,18 @@ service cloud.firestore {
       allow read, delete: if isAdmin() || (signedIn() && resource.data.customerId == request.auth.uid);
       allow create, update: if signedIn() && request.resource.data.customerId == request.auth.uid;
     }
+    match /deleted_conversations/{uid} {
+      allow read: if isAdmin() || isSelf(uid);
+      allow create, update, delete: if isAdmin();
+    }
+
     match /messages/{id} {
       allow read: if isAdmin() || (signedIn() && resource.data.conversationId == request.auth.uid);
-      allow create: if isAdmin() || (signedIn()
-        && request.resource.data.conversationId == request.auth.uid
-        && request.resource.data.senderId == request.auth.uid);
+      allow create: if request.resource.data.conversationId is string
+        && !exists(/databases/$(database)/documents/deleted_conversations/$(request.resource.data.conversationId))
+        && (isAdmin() || (signedIn()
+          && request.resource.data.conversationId == request.auth.uid
+          && request.resource.data.senderId == request.auth.uid));
       allow update, delete: if isAdmin();
     }
     match /notifications/{id} {

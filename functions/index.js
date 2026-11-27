@@ -89,3 +89,60 @@ exports.createAdminAccount = onCall(
     }
   }
 );
+
+
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
+
+exports.deliverAppNotification = onDocumentCreated("notifications/{notificationId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+  const notification = snapshot.data() || {};
+  const target = String(notification.target || "");
+  let profiles = [];
+  if (target === "customer" && notification.customerId) {
+    const profile = await db.collection("profiles").doc(String(notification.customerId)).get();
+    if (profile.exists) profiles = [profile];
+  } else if (target === "admin") {
+    profiles = (await db.collection("profiles").where("role", "==", "admin").get()).docs;
+  } else if (target === "all") {
+    profiles = (await db.collection("profiles").where("role", "==", "customer").get()).docs;
+  } else return;
+
+  const owners = new Map();
+  for (const profile of profiles) {
+    const data = profile.data() || {};
+    const tokens = Array.isArray(data.fcmTokens) ? [...data.fcmTokens] : [];
+    if (data.fcmToken) tokens.push(data.fcmToken);
+    for (const token of tokens) {
+      if (typeof token === "string" && token.length) owners.set(token, profile.ref);
+    }
+  }
+  const entries = [...owners.entries()];
+  if (!entries.length) {
+    console.log("No FCM tokens registered for", snapshot.id);
+    return;
+  }
+  const data = {};
+  for (const key of ["type","bookingId","customerId","createdBy","conversationId","target","title","body","senderName"]) {
+    if (notification[key] !== undefined && notification[key] !== null) data[key] = String(notification[key]);
+  }
+  data.notificationId = snapshot.id;
+  for (let start=0; start<entries.length; start+=500) {
+    const batch=entries.slice(start,start+500);
+    const result=await getMessaging().sendEachForMulticast({
+      tokens:batch.map(([token])=>token),
+      notification:{title:String(notification.title||"الشيخة"),body:String(notification.body||"لديك إشعار جديد")},
+      data,
+      android:{priority:"high",notification:{channelId:"alshaikha_notifications",sound:"default"}}
+    });
+    const cleanup=[];
+    result.responses.forEach((response,index)=>{
+      if(!response.success && ["messaging/registration-token-not-registered","messaging/invalid-registration-token"].includes(response.error?.code)){
+        const [token,owner]=batch[index];
+        cleanup.push(owner.update({fcmTokens:FieldValue.arrayRemove(token)}));
+      }
+    });
+    await Promise.all(cleanup);
+  }
+});

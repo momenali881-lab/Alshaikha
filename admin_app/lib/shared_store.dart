@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +8,41 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class SharedStore {
   static const _channel = MethodChannel('al_sheikha/shared_store');
   static final _db = FirebaseFirestore.instance;
+  static const _notificationWebhookUrl =
+      String.fromEnvironment('ALSHAIKHA_NOTIFICATION_WEBHOOK_URL');
+
+  static Future<void> _dispatchNotificationImmediately(String notificationId) async {
+    if (_notificationWebhookUrl.isEmpty) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final idToken = await user.getIdToken();
+      if (idToken == null || idToken.isEmpty) return;
+      await http.post(
+        Uri.parse(_notificationWebhookUrl),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'notificationId': notificationId,
+          'idToken': idToken,
+        }),
+      ).timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // The one-minute Apps Script trigger remains the delivery fallback.
+    }
+  }
+
+  // Convert Firestore-only values before passing records to Android/SQLite.
+  static dynamic _toLocalSafeValue(dynamic value) {
+    if (value == null || value is String || value is num || value is bool) return value;
+    if (value is Timestamp) return value.toDate().toIso8601String();
+    if (value is DateTime) return value.toIso8601String();
+    if (value is GeoPoint) return <String, dynamic>{'latitude': value.latitude, 'longitude': value.longitude};
+    if (value is DocumentReference) return value.path;
+    if (value is Blob) return base64Encode(value.bytes);
+    if (value is Map) return value.map((key, item) => MapEntry(key.toString(), _toLocalSafeValue(item)));
+    if (value is Iterable) return value.map(_toLocalSafeValue).toList();
+    return value.toString();
+  }
 
   static Future<List<Map<String, dynamic>>> _localList(String table) async {
     try {
@@ -23,7 +60,8 @@ class SharedStore {
 
   static Future<void> _cache(String table, Map<String, dynamic> data) async {
     try {
-      await _channel.invokeMethod<String>('save', {'table': table, 'data': data});
+      final safeData = _toLocalSafeValue(data) as Map<String, dynamic>;
+      await _channel.invokeMethod<String>('save', {'table': table, 'data': safeData});
     } on PlatformException {
       // The customer may install this app on a device without the admin provider.
     } on MissingPluginException {
@@ -49,7 +87,7 @@ class SharedStore {
         for (final snapshot in snapshots) {
           for (final doc in snapshot.docs) { docs[doc.id] = doc; }
         }
-        final remote = docs.values.map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()}).toList();
+        final remote = docs.values.map((doc) => _toLocalSafeValue(<String, dynamic>{'id': doc.id, ...doc.data()}) as Map<String, dynamic>).toList();
         for (final item in remote) { await _cache(table, item); }
         return remote;
       }
@@ -61,7 +99,7 @@ class SharedStore {
         }
       }
       final snapshot = await query.get();
-      final remote = snapshot.docs.map((doc) => <String, dynamic>{'id': doc.id, ...doc.data()}).toList();
+      final remote = snapshot.docs.map((doc) => _toLocalSafeValue(<String, dynamic>{'id': doc.id, ...doc.data()}) as Map<String, dynamic>).toList();
       for (final item in remote) {
         await _cache(table, item);
       }
@@ -92,13 +130,22 @@ class SharedStore {
       throw StateError('يجب تسجيل الدخول قبل حفظ البيانات المشتركة');
     }
     final id = (data['id'] as String?) ?? _db.collection(table).doc().id;
+    final isNewNotification = table == 'notifications' && data['id'] == null;
     final record = <String, dynamic>{...data, 'id': id};
+    // Queue newly-created notifications for the free OneSignal dispatcher.
+    if (isNewNotification && !record.containsKey('pushStatus')) {
+      record['pushStatus'] = 'pending';
+      record['pushAttempts'] = 0;
+    }
     // Firestore is the source of truth. Cache locally only after the cloud write succeeds.
     await _db.collection(table).doc(id).set({
       ...record,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     await _cache(table, record);
+    if (isNewNotification && record['pushStatus'] == 'pending') {
+      unawaited(_dispatchNotificationImmediately(id));
+    }
     return id;
   }
 
