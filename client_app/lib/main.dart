@@ -550,7 +550,7 @@ Widget homePage()=>ListView(padding:const EdgeInsets.all(14),children:[
   resizeToAvoidBottomInset:true,
   body:busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:currentPage()),
   bottomNavigationBar:MediaQuery.of(context).viewInsets.bottom>0?null:NavigationBar(height:72,backgroundColor:Colors.white,indicatorColor:gold.withOpacity(.25),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:[NavigationDestination(key:_guideKeys[0],icon:Icon(Icons.home_outlined,color:teal),selectedIcon:Icon(Icons.home_rounded,color:teal),label:'الرئيسية'),NavigationDestination(key:_guideKeys[1],icon:Icon(Icons.forum_outlined,color:plum),selectedIcon:Icon(Icons.forum,color:plum),label:'الدردشة'),NavigationDestination(key:_guideKeys[2],icon:Icon(Icons.event_note_outlined,color:rose),selectedIcon:Icon(Icons.event_available,color:rose),label:'حجوزاتي'),NavigationDestination(key:_guideKeys[3],icon:Icon(Icons.photo_library_outlined,color:gold),selectedIcon:Icon(Icons.photo_library,color:gold),label:'الجلسات'),NavigationDestination(key:_guideKeys[4],icon:Icon(Icons.account_circle_outlined,color:plum),selectedIcon:Icon(Icons.account_circle,color:plum),label:'حسابي')])
- ));
+  )));
 }
 class MemberSearch extends SearchDelegate<String>{
  final List<Map<String,dynamic>> members;final ValueChanged<String> onPick;
