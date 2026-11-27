@@ -442,43 +442,31 @@ Future<void> openNotifications()async{
   final accent=Theme.of(context).colorScheme.primary;
   final stamp=DateTime.tryParse('${msg['createdAt']??''}');
   final timeLabel=stamp==null?'':TimeOfDay.fromDateTime(stamp.toLocal()).format(context);
-  final bubbleTint=mine?const Color(0x33D8B878):const Color(0x3359452F);
+  final textColor=Theme.of(context).colorScheme.onSurface;
+  final bubbleColor=mine?const Color(0xFFF0DFB5):const Color(0xFFE9E4DA);
   return Align(
    alignment:mine?Alignment.centerRight:Alignment.centerLeft,
    child:Container(
-    constraints:const BoxConstraints(maxWidth:330),
-    margin:const EdgeInsets.symmetric(vertical:6),
-    child:GlassPanel(
-     radius:mine?21:17,
-     tint:bubbleTint,
-     child:Container(
-      decoration:BoxDecoration(
-       borderRadius:BorderRadius.circular(mine?21:17),
-       border:Border.all(color:mine?const Color(0xFFD8B878).withOpacity(.72):const Color(0xFF80664A).withOpacity(.58),width:1.15)
-      ),
-      child:Padding(
-       padding:const EdgeInsets.all(12),
-       child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        if(msg['pending']==true)const Align(alignment:Alignment.centerLeft,child:SizedBox(width:10,height:10,child:CircularProgressIndicator(strokeWidth:1.5))),
-        const SizedBox(height:4),
-        if(member!=null)InkWell(onTap:()=>openMember(member),child:GlassPanel(radius:17,child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-         Row(children:[ClipRRect(borderRadius:BorderRadius.circular(13),child:photo(member,size:68)),const SizedBox(width:11),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),const SizedBox(height:5),Text('${member['hourlyPrice']??0} د.ع / ساعة',style:TextStyle(color:accent,fontWeight:FontWeight.w800)),const SizedBox(height:4),_memberInfoPill(member['available']==false?'غير متاح':'متاح للحجز',member['available']==false?Colors.grey:teal)])),Icon(Icons.open_in_new_rounded,color:accent)]),
-         const SizedBox(height:9),Row(children:[Expanded(child:Text(member['hasPlace']==true?'يوجد مكان':'بدون مكان',style:TextStyle(fontSize:11,color:Theme.of(context).hintColor))),TextButton.icon(onPressed:()=>openMember(member),icon:const Icon(Icons.person_search_rounded,size:17),label:const Text('عرض الملف'))])
-        ])))),
-        if(msg['type']=='bookingCard')bookingMessageCard(msg),
-        if(msg['type']!='memberProfile'&&msg['type']!='bookingCard'||member==null&&msg['type']=='memberProfile')
-         Text('${msg['text']??'تعذر العثور على ملف العضو'}',style:TextStyle(height:1.45,color:Theme.of(context).colorScheme.onSurface)),
-        const SizedBox(height:7),
-        Row(mainAxisSize:MainAxisSize.min,children:[
-         if(timeLabel.isNotEmpty)Text(timeLabel,style:TextStyle(fontSize:10,color:Theme.of(context).hintColor)),
-         if(msg['pending']!=true&&timeLabel.isNotEmpty)...[
-          const SizedBox(width:4),Icon(Icons.done_all_rounded,size:13,color:mine?accent:Theme.of(context).hintColor)
-         ]
-        ])
-       ])
-      )
-     )
-    )
+    constraints:const BoxConstraints(maxWidth:290),
+    margin:const EdgeInsets.symmetric(vertical:3),
+    padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),
+    decoration:BoxDecoration(color:bubbleColor,borderRadius:BorderRadius.circular(17)),
+    child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisSize:MainAxisSize.min,children:[
+     if(msg['pending']==true)const Align(alignment:Alignment.centerLeft,child:SizedBox(width:10,height:10,child:CircularProgressIndicator(strokeWidth:1.5))),
+     if(member!=null)InkWell(onTap:()=>openMember(member),child:GlassPanel(radius:15,padding:const EdgeInsets.all(8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[ClipRRect(borderRadius:BorderRadius.circular(11),child:photo(member,size:62)),const SizedBox(width:9),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${member['name']??'عضو الكادر'}',maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),const SizedBox(height:4),Text('${member['hourlyPrice']??0} د.ع / ساعة',style:TextStyle(color:accent,fontWeight:FontWeight.w800)),const SizedBox(height:3),_memberInfoPill(member['available']==false?'غير متاح':'متاح للحجز',member['available']==false?Colors.grey:teal)])),Icon(Icons.open_in_new_rounded,color:accent)]),
+      const SizedBox(height:7),Row(children:[Expanded(child:Text(member['hasPlace']==true?'يوجد مكان':'بدون مكان',style:TextStyle(fontSize:11,color:Theme.of(context).hintColor))),TextButton.icon(onPressed:()=>openMember(member),icon:const Icon(Icons.person_search_rounded,size:16),label:const Text('عرض الملف'))])
+     ]))),
+     if(msg['type']=='bookingCard')bookingMessageCard(msg),
+     if(msg['type']!='memberProfile'&&msg['type']!='bookingCard'||member==null&&msg['type']=='memberProfile')
+      Text.rich(TextSpan(children:[
+       TextSpan(text:'${msg['text']??'تعذر العثور على ملف العضو'}'),
+       if(timeLabel.isNotEmpty)TextSpan(text:'  $timeLabel',style:TextStyle(fontSize:9,color:Theme.of(context).hintColor)),
+       if(msg['pending']!=true&&timeLabel.isNotEmpty)WidgetSpan(alignment:PlaceholderAlignment.middle,child:Padding(padding:const EdgeInsetsDirectional.only(start:3),child:Icon(Icons.done_all_rounded,size:12,color:mine?accent:Theme.of(context).hintColor))),
+      ]),style:TextStyle(fontSize:15,height:1.4,color:textColor)),
+     if((msg['type']=='memberProfile'||msg['type']=='bookingCard')&&timeLabel.isNotEmpty)
+      Padding(padding:const EdgeInsets.only(top:3),child:Text(timeLabel,style:TextStyle(fontSize:9,color:Theme.of(context).hintColor))),
+    ])
    )
   );
  }
