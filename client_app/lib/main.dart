@@ -235,7 +235,7 @@ class _ClientHomeState extends State<ClientHome>{
   final user=FirebaseAuth.instance.currentUser;
   if(user==null||!mounted)return;
   final prefs=await SharedPreferences.getInstance();
-  final prefKey='client_first_guide_seen_${user.uid}';
+  final prefKey='client_first_guide_spotlight_seen_${user.uid}';
   if(prefs.getBool(prefKey)==true||!mounted)return;
   final steps=<Map<String,dynamic>>[
    {'key':_homeNavGuideKey,'tab':0,'icon':Icons.home_rounded,'title':'الرئيسية','body':'من هنا تعودين إلى الصفحة الرئيسية وتكتشفين الكادر المنشور.'},
