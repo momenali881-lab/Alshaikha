@@ -148,7 +148,7 @@ class _AccountPageState extends State<AccountPage> {
             icon: const Icon(Icons.password), label: Text(_changingPassword ? 'جارٍ التغيير...' : 'تحديث كلمة المرور')),
         ]))),
         const SizedBox(height: 18),
-        if (onShowGuide != null) OutlinedButton.icon(onPressed: onShowGuide, icon: const Icon(Icons.help_outline), label: const Text('دليل الاستخدام')),
+        if (widget.onShowGuide != null) OutlinedButton.icon(onPressed: widget.onShowGuide, icon: const Icon(Icons.help_outline), label: const Text('دليل الاستخدام')),
         const SizedBox(height: 8),
         OutlinedButton.icon(onPressed: _signOut, icon: const Icon(Icons.logout), label: const Text('تسجيل الخروج'),
           style: OutlinedButton.styleFrom(foregroundColor: Colors.red)),
