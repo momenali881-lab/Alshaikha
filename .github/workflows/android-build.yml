@@ -3,7 +3,7 @@ name: Build Android APKs
 on:
   workflow_dispatch:
   push:
-    branches: [main, notifications-bookings-polish, feature/notifications-speed-display-2026-11-25]
+    branches: [main, notifications-bookings-polish, feature/notifications-speed-display-2026-11-25, feature/client-member-card-compact-frame]
   pull_request:
     branches: [main]
 
