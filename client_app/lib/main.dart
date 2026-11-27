@@ -263,6 +263,29 @@ bool sendingMessage=false;String search='';String get conversationId => Firebase
  @override void initState(){super.initState();notificationTapSub=NotificationService.taps.listen((data)=>handleNotificationTap(data));WidgetsBinding.instance.addPostFrameCallback((_){final initial=NotificationService.takeInitialTap();if(initial!=null)handleNotificationTap(initial);});_trackActivity('app_open');load();poll=Timer.periodic(const Duration(seconds:5),(_){if(!(tab==1&&chatFocusNode.hasFocus))load(silent:true);});bannerAuto=Timer.periodic(const Duration(seconds:4),(_){if(!mounted||banners.length<2||!bannerPager.hasClients)return;final next=(bannerIndex+1)%banners.length;bannerPager.animateToPage(next,duration:const Duration(milliseconds:550),curve:Curves.easeInOutCubic);});}
  @override void dispose(){_closeGuide();poll?.cancel();bannerAuto?.cancel();topNotificationTimer?.cancel();notificationTapSub?.cancel();bannerPager.dispose();searchCtrl.dispose();messageCtrl.dispose();chatFocusNode.dispose();clientChatScrollController.dispose();super.dispose();}
  void note(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
+
+ void _closeGuide(){_guideOverlay?.remove();_guideOverlay=null;}
+ void _showGuide(){
+  _closeGuide();final keys=[_homeGuideKey,_chatGuideKey,_bookingsGuideKey,_sessionsGuideKey,_accountGuideKey,_notificationGuideKey,_helpGuideKey];_guideIndex=0;
+  _guideOverlay=OverlayEntry(builder:(ctx){
+   Rect? rect;final target=keys[_guideIndex].currentContext?.findRenderObject();
+   if(target is RenderBox&&target.hasSize){final p=target.localToGlobal(Offset.zero);rect=p&target.size;}
+   return Material(color:Colors.transparent,child:Stack(children:[
+    Positioned.fill(child:CustomPaint(painter:_GuidePainter(rect))),
+    Positioned(left:16,right:16,bottom:24,child:SafeArea(top:false,child:Card(color:Colors.white,elevation:14,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(22)),child:Padding(padding:const EdgeInsets.all(18),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+     Row(children:[const Icon(Icons.lightbulb_outline,color:rose),const SizedBox(width:8),Expanded(child:Text(_guideTitles[_guideIndex],style:const TextStyle(fontSize:19,fontWeight:FontWeight.w900,color:plum))),Text('${_guideIndex+1}/${keys.length}')]),
+     const SizedBox(height:9),Text(_guideDescriptions[_guideIndex],style:const TextStyle(fontSize:15,height:1.5)),const SizedBox(height:16),
+     Row(children:[TextButton(onPressed:_closeGuide,child:const Text('إنهاء الدليل')),const Spacer(),if(_guideIndex>0)TextButton(onPressed:(){_guideIndex--;_guideOverlay?.markNeedsBuild();},child:const Text('السابق')),FilledButton(onPressed:(){if(_guideIndex==keys.length-1){_closeGuide();}else{_guideIndex++;_guideOverlay?.markNeedsBuild();}},child:Text(_guideIndex==keys.length-1?'إنهاء':'التالي'))])
+    ])))))
+   ]));
+  });
+  Overlay.of(context).insert(_guideOverlay!);
+ }
+ Future<void> _handleBack() async {
+  if(tab!=0){setState(()=>tab=0);return;}
+  final exit=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(title:const Text('الخروج من تطبيق الشيخة'),content:const Text('هل تريدين الخروج من التطبيق؟'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('البقاء')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('خروج'))]));
+  if(exit==true)SystemNavigator.pop();
+ }
  void _showTopNotification(Map<String,dynamic> n){
   final messenger=ScaffoldMessenger.of(context);
   messenger.hideCurrentMaterialBanner();
