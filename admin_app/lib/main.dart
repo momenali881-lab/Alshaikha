@@ -709,7 +709,8 @@ class _AdminHomeState extends State<AdminHome> {
       onTap: () => _selectAdminSection(key),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        padding: EdgeInsets.symmetric(horizontal: active ? 13 : 10, vertical: 7),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 7),
         decoration: BoxDecoration(
           gradient: active
               ? const LinearGradient(colors: [Color(0xFFEAD8B5), Color(0xFFD2B47E)])
@@ -789,16 +790,6 @@ class _AdminHomeState extends State<AdminHome> {
       child: Scaffold(
         extendBody: true,
         backgroundColor: dark ? const Color(0xFF11100E) : const Color(0xFFF7F2E9),
-        floatingActionButton: (section == 'messages' || section == 'analytics')
-            ? null
-            : FloatingActionButton.extended(
-                backgroundColor: gold,
-                foregroundColor: const Color(0xFF2C2114),
-                elevation: 2,
-                onPressed: () => edit(),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('إضافة سجل', style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
         resizeToAvoidBottomInset: true,
         body: SafeArea(
           child: Column(children: [
@@ -864,8 +855,24 @@ class _AdminHomeState extends State<AdminHome> {
                       onSelected: (value) {
                         if (value == 'refresh') refresh();
                         if (value == 'logout') FirebaseAuth.instance.signOut();
+                        if (value == 'banners') _selectAdminSection('banners');
+                        if (value == 'announcements') _selectAdminSection('announcements');
+                        if (value == 'analytics') _selectAdminSection('analytics');
+                        if (value == 'accounts') {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => const AdminAccountsScreen()));
+                        }
                       },
                       itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'banners', child: ListTile(
+                          dense: true, leading: Icon(Icons.campaign_rounded), title: Text('البانرات'))),
+                        PopupMenuItem(value: 'announcements', child: ListTile(
+                          dense: true, leading: Icon(Icons.notifications_active_rounded), title: Text('الإعلانات'))),
+                        PopupMenuItem(value: 'analytics', child: ListTile(
+                          dense: true, leading: Icon(Icons.query_stats_rounded), title: Text('الإحصاءات'))),
+                        PopupMenuItem(value: 'accounts', child: ListTile(
+                          dense: true, leading: Icon(Icons.admin_panel_settings_rounded), title: Text('الحسابات الإدارية'))),
+                        PopupMenuDivider(),
                         PopupMenuItem(value: 'refresh', child: ListTile(
                           dense: true, leading: Icon(Icons.refresh_rounded), title: Text('تحديث'))),
                         PopupMenuItem(value: 'logout', child: ListTile(
@@ -989,25 +996,35 @@ class _AdminHomeState extends State<AdminHome> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _adminNavItem('members', Icons.groups_rounded, 'الكادر'),
-                      _adminNavItem('sessions', Icons.photo_library_rounded, 'الجلسات'),
-                      _adminNavItem('bookings', Icons.event_note_rounded, 'الحجوزات'),
-                      _adminNavItem('messages', Icons.forum_rounded, 'الدردشة',
+                      Expanded(child: _adminNavItem('members', Icons.groups_rounded, 'الكادر')),
+                      Expanded(child: _adminNavItem('sessions', Icons.photo_library_rounded, 'الجلسات')),
+                      Expanded(child: _adminNavItem('bookings', Icons.event_note_rounded, 'الحجوزات')),
+                      Expanded(child: _adminNavItem('messages', Icons.forum_rounded, 'الدردشة',
                         badge: notifications.where((n) =>
-                          n['read'] != true && (n['type'] == 'message' || n['type'] == 'booking')).length),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(17),
-                        onTap: _openAdminMoreMenu,
+                          n['read'] != true && (n['type'] == 'message' || n['type'] == 'booking')).length)),
+                      Expanded(
+                        flex: 2,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                          child: Column(mainAxisSize: MainAxisSize.min, children: [
-                            Icon(Icons.more_horiz_rounded, size: 23,
-                              color: section == 'banners' || section == 'announcements' || section == 'analytics'
-                                ? gold : (dark ? Colors.white70 : const Color(0xFF806F59))),
-                            Text('المزيد', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800,
-                              color: section == 'banners' || section == 'announcements' || section == 'analytics'
-                                ? gold : (dark ? Colors.white70 : const Color(0xFF806F59)))),
-                          ]),
+                          padding: const EdgeInsetsDirectional.only(start: 5, end: 3),
+                          child: SizedBox(
+                            height: 54,
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: gold,
+                                foregroundColor: const Color(0xFF2C2114),
+                                elevation: 1,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                              ),
+                              onPressed: (section == 'messages' || section == 'analytics') ? null : () => edit(),
+                              icon: const Icon(Icons.add_rounded, size: 22),
+                              label: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text('إضافة سجل', maxLines: 1,
+                                  style: TextStyle(fontWeight: FontWeight.w800)),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
