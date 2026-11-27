@@ -1,4 +1,5 @@
 name: Build Android APKs
+# Build includes the in-app back-navigation and usage-guide changes.
 
 on:
   workflow_dispatch:
