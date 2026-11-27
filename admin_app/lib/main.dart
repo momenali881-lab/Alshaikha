@@ -593,13 +593,13 @@ class _AdminHomeState extends State<AdminHome> {
      final tint=mine?const Color(0x33D8B878):const Color(0x3359452F);
      final edge=mine?const Color(0xFFD8B878):const Color(0xFF80664A);
      return Align(alignment:mine?Alignment.centerLeft:Alignment.centerRight,child:Container(
-      constraints:const BoxConstraints(maxWidth:330),margin:const EdgeInsets.symmetric(vertical:7),
-      child:GlassPanel(radius:mine?21:17,tint:tint,child:Container(
-       decoration:BoxDecoration(borderRadius:BorderRadius.circular(mine?21:17),border:Border.all(color:edge.withOpacity(.65),width:1.2)),
-       padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        const SizedBox(height:4),if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,
-        if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')Text('${m['text']??'تعذر العثور على ملف العضو'}',style:const TextStyle(height:1.45)),
-        const SizedBox(height:6),Text('${m['createdAt']??''}',style:TextStyle(fontSize:10,color:Theme.of(context).hintColor))
+      constraints:const BoxConstraints(maxWidth:280),margin:const EdgeInsets.symmetric(vertical:4),
+      child:GlassPanel(radius:mine?18:16,padding:const EdgeInsets.all(8),tint:tint,child:Container(
+       decoration:BoxDecoration(borderRadius:BorderRadius.circular(mine?18:16),border:Border.all(color:edge.withOpacity(.65),width:1)),
+       padding:const EdgeInsets.symmetric(horizontal:9,vertical:7),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisSize:MainAxisSize.min,children:[
+        if(profile!=null)InkWell(onTap:()=>openSharedMember(member!),child:profile!),if(bookingCard!=null)bookingCard!,
+        if(m['type']!='memberProfile'&&m['type']!='bookingCard'||profile==null&&m['type']=='memberProfile')Text('${m['text']??'تعذر العثور على ملف العضو'}',style:const TextStyle(fontSize:15,height:1.3)),
+        const SizedBox(height:3),Text('${m['createdAt']??''}',style:TextStyle(fontSize:9,color:Theme.of(context).hintColor))
        ])
       ))
      ));
