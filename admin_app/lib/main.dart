@@ -685,71 +685,339 @@ class _AdminHomeState extends State<AdminHome> {
       ]))))
     ]);
   }
-  @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(
-    backgroundColor:Theme.of(context).scaffoldBackgroundColor,
-    floatingActionButton:(section=='messages'||section=='analytics')?null:FloatingActionButton.extended(
-      backgroundColor:gold,foregroundColor:const Color(0xFF2C2114),elevation:5,
-      onPressed:()=>edit(),icon:const Icon(Icons.add_rounded),label:const Text('إضافة سجل',style:TextStyle(fontWeight:FontWeight.w800))),
-    resizeToAvoidBottomInset:true,
-    body:SafeArea(child:Column(children:[
-      Padding(padding:const EdgeInsets.fromLTRB(16,12,16,12),child:Container(
-        padding:const EdgeInsets.fromLTRB(16,16,16,14),
-        decoration:BoxDecoration(
-          gradient:const LinearGradient(begin:Alignment.topRight,end:Alignment.bottomLeft,colors:[Color(0xFF30271D),Color(0xFF6C5433),Color(0xFF9A7845)]),
-          borderRadius:BorderRadius.circular(27),border:Border.all(color:gold.withOpacity(.55)),
-          boxShadow:[BoxShadow(color:Colors.black.withOpacity(.12),blurRadius:22,offset:const Offset(0,8))]),
-        child:Column(children:[
-          Row(children:[
-            Container(width:46,height:46,decoration:BoxDecoration(color:Colors.white.withOpacity(.13),borderRadius:BorderRadius.circular(16),border:Border.all(color:Colors.white24)),child:const Icon(Icons.spa_rounded,color:Color(0xFFF1D9A9),size:27)),
-            const SizedBox(width:11),const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text('الشيخة',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w900)),
-              Text('مركز إدارة الحجوزات والكادر',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:Color(0xFFE9DCC7),fontSize:11,fontWeight:FontWeight.w600)),
-            ])),
+  void _selectAdminSection(String key) {
+    setState(() {
+      section = key;
+      if (key != 'bookings') {
+        selectedBookingCustomerId = null;
+        selectedBookingId = null;
+      }
+      if (key != 'messages') showChatConversation = false;
+    });
+    if (key == 'bookings') loadChatMembers();
+    refresh();
+  }
+
+  Widget _adminNavItem(String key, IconData icon, String label, {int badge = 0}) {
+    final active = section == key;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final foreground = active
+        ? const Color(0xFF342719)
+        : (dark ? Colors.white70 : const Color(0xFF806F59));
+    return InkWell(
+      borderRadius: BorderRadius.circular(17),
+      onTap: () => _selectAdminSection(key),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: EdgeInsets.symmetric(horizontal: active ? 13 : 10, vertical: 7),
+        decoration: BoxDecoration(
+          gradient: active
+              ? const LinearGradient(colors: [Color(0xFFEAD8B5), Color(0xFFD2B47E)])
+              : null,
+          borderRadius: BorderRadius.circular(17),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(clipBehavior: Clip.none, children: [
+              Icon(icon, size: 22, color: foreground),
+              if (badge > 0)
+                Positioned(left: -8, top: -6, child: CircleAvatar(
+                  radius: 8,
+                  backgroundColor: const Color(0xFFB86C52),
+                  child: Text('$badge', style: const TextStyle(
+                    color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+                )),
+            ]),
+            const SizedBox(height: 3),
+            Text(label, style: TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w800, color: foreground)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openAdminMoreMenu() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: GlassPanel(
+          radius: 24,
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ListTile(
+              leading: const Icon(Icons.campaign_rounded),
+              title: const Text('البانرات'),
+              onTap: () { Navigator.pop(sheetContext); _selectAdminSection('banners'); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_active_rounded),
+              title: const Text('الإعلانات'),
+              onTap: () { Navigator.pop(sheetContext); _selectAdminSection('announcements'); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.query_stats_rounded),
+              title: const Text('الإحصاءات'),
+              onTap: () { Navigator.pop(sheetContext); _selectAdminSection('analytics'); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings_rounded),
+              title: const Text('الحسابات الإدارية'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const AdminAccountsScreen()));
+              },
+            ),
           ]),
-          const SizedBox(height:4),
-          Row(mainAxisAlignment:MainAxisAlignment.end,children:[
-            IconButton(visualDensity:VisualDensity.compact,tooltip:'الحسابات الإدارية',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const AdminAccountsScreen())),icon:const Icon(Icons.admin_panel_settings_outlined,color:Colors.white)),
-            Badge(isLabelVisible:notifications.any((n)=>n['read']!=true),label:Text('${notifications.where((n)=>n['read']!=true).length}'),child:IconButton(visualDensity:VisualDensity.compact,tooltip:'الإشعارات',onPressed:openNotifications,icon:const Icon(Icons.notifications_none_rounded,color:Colors.white))),
-            IconButton(visualDensity:VisualDensity.compact,tooltip:'تبديل المظهر',onPressed:()=>setAdminThemeMode(Theme.of(context).brightness==Brightness.dark?ThemeMode.light:ThemeMode.dark),icon:Icon(Theme.of(context).brightness==Brightness.dark?Icons.light_mode_rounded:Icons.dark_mode_rounded,color:Colors.white)),
-            IconButton(visualDensity:VisualDensity.compact,tooltip:'تحديث',onPressed:()=>refresh(),icon:const Icon(Icons.refresh_rounded,color:Colors.white)),
-            IconButton(visualDensity:VisualDensity.compact,tooltip:'تسجيل الخروج',onPressed:()=>FirebaseAuth.instance.signOut(),icon:const Icon(Icons.logout_rounded,color:Colors.white)),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final unread = notifications.where((n) => n['read'] != true).length;
+    final hideNavigation = section == 'messages' && showChatConversation;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        extendBody: true,
+        backgroundColor: dark ? const Color(0xFF11100E) : const Color(0xFFF7F2E9),
+        floatingActionButton: (section == 'messages' || section == 'analytics')
+            ? null
+            : FloatingActionButton.extended(
+                backgroundColor: gold,
+                foregroundColor: const Color(0xFF2C2114),
+                elevation: 2,
+                onPressed: () => edit(),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('إضافة سجل', style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+              child: GlassPanel(
+                radius: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Column(children: [
+                  Row(children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFE9D4A8), Color(0xFFB78C4D)],
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const Icon(Icons.spa_rounded, color: Color(0xFF332719), size: 25),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('الشيخة', maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                        Text(sections[section] ?? 'لوحة الإدارة', maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11,
+                            color: dark ? Colors.white60 : const Color(0xFF806F59),
+                            fontWeight: FontWeight.w600)),
+                      ],
+                    )),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'الحسابات الإدارية',
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const AdminAccountsScreen())),
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
+                    ),
+                    Badge(
+                      isLabelVisible: unread > 0,
+                      label: Text('$unread'),
+                      child: IconButton(
+                        visualDensity: VisualDensity.compact,
+                        tooltip: 'الإشعارات',
+                        onPressed: openNotifications,
+                        icon: const Icon(Icons.notifications_none_rounded),
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: dark ? 'الوضع الفاتح' : 'الوضع الداكن',
+                      onPressed: () => setAdminThemeMode(dark ? ThemeMode.light : ThemeMode.dark),
+                      icon: Icon(dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
+                    ),
+                    PopupMenuButton<String>(
+                      tooltip: 'المزيد',
+                      icon: const Icon(Icons.more_vert_rounded),
+                      onSelected: (value) {
+                        if (value == 'refresh') refresh();
+                        if (value == 'logout') FirebaseAuth.instance.signOut();
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'refresh', child: ListTile(
+                          dense: true, leading: Icon(Icons.refresh_rounded), title: Text('تحديث'))),
+                        PopupMenuItem(value: 'logout', child: ListTile(
+                          dense: true, leading: Icon(Icons.logout_rounded), title: Text('تسجيل الخروج'))),
+                      ],
+                    ),
+                  ]),
+                  if (section != 'messages')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: dark ? Colors.white.withOpacity(.07) : const Color(0xFFF0E9DC),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: gold.withOpacity(.25)),
+                        ),
+                        child: Row(children: [
+                          Icon(sectionIcons[section] ?? Icons.dashboard_rounded,
+                            color: gold, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(sections[section] ?? 'لوحة الإدارة',
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                          if (section != 'analytics')
+                            Text('${rows.length} سجل',
+                              style: TextStyle(fontSize: 11, color: Theme.of(context).hintColor)),
+                        ]),
+                      ),
+                    ),
+                ]),
+              ),
+            ),
+            Expanded(
+              child: section == 'analytics'
+                  ? const AdminAnalyticsScreen()
+                  : section == 'messages'
+                      ? adminChat()
+                      : section == 'bookings'
+                          ? adminBookingsPage()
+                          : busy
+                              ? const Center(child: CircularProgressIndicator())
+                              : RefreshIndicator(
+                                  onRefresh: refresh,
+                                  color: gold,
+                                  child: ListView(
+                                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 90),
+                                    children: [
+                                      GlassPanel(
+                                        padding: const EdgeInsets.all(18),
+                                        radius: 24,
+                                        child: Row(children: [
+                                          Container(
+                                            width: 46,
+                                            height: 46,
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                colors: [gold.withOpacity(.32), gold.withOpacity(.10)],
+                                              ),
+                                              borderRadius: BorderRadius.circular(16),
+                                              border: Border.all(color: gold.withOpacity(.35)),
+                                            ),
+                                            child: Icon(sectionIcons[section] ?? Icons.dashboard_rounded,
+                                              color: gold, size: 25),
+                                          ),
+                                          const SizedBox(width: 13),
+                                          Expanded(child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(sections[section] ?? 'الإدارة',
+                                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                                              Text('إدارة وتنظيم بيانات ${sections[section] ?? ''}',
+                                                style: TextStyle(fontSize: 11, color: Theme.of(context).hintColor)),
+                                            ],
+                                          )),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: gold.withOpacity(.14),
+                                              borderRadius: BorderRadius.circular(14),
+                                              border: Border.all(color: gold.withOpacity(.28)),
+                                            ),
+                                            child: Text('${rows.length}',
+                                              style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: gold)),
+                                          ),
+                                        ]),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      if (section == 'banners' && rows.length >= 7)
+                                        const Padding(padding: EdgeInsets.all(8),
+                                          child: Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
+                                      if (rows.isEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.all(24),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).cardColor,
+                                            borderRadius: BorderRadius.circular(22),
+                                            border: Border.all(color: gold.withOpacity(.2)),
+                                          ),
+                                          child: const Column(children: [
+                                            Icon(Icons.inbox_rounded, size: 42, color: Color(0xFFC49A55)),
+                                            SizedBox(height: 10),
+                                            Text('لا توجد بيانات بعد', style: TextStyle(fontWeight: FontWeight.w800)),
+                                            Text('استخدم زر إضافة سجل للبدء',
+                                              style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                          ]),
+                                        ),
+                                      ...rows.map(recordCard),
+                                    ],
+                                  ),
+                                ),
+            ),
+            if (!hideNavigation && MediaQuery.of(context).viewInsets.bottom == 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 3, 12, 7),
+                child: GlassPanel(
+                  radius: 25,
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _adminNavItem('members', Icons.groups_rounded, 'الكادر'),
+                      _adminNavItem('sessions', Icons.photo_library_rounded, 'الجلسات'),
+                      _adminNavItem('bookings', Icons.event_note_rounded, 'الحجوزات'),
+                      _adminNavItem('messages', Icons.forum_rounded, 'الدردشة',
+                        badge: notifications.where((n) =>
+                          n['read'] != true && (n['type'] == 'message' || n['type'] == 'booking')).length),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(17),
+                        onTap: _openAdminMoreMenu,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          child: Column(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.more_horiz_rounded, size: 23,
+                              color: section == 'banners' || section == 'announcements' || section == 'analytics'
+                                ? gold : (dark ? Colors.white70 : const Color(0xFF806F59))),
+                            Text('المزيد', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800,
+                              color: section == 'banners' || section == 'announcements' || section == 'analytics'
+                                ? gold : (dark ? Colors.white70 : const Color(0xFF806F59)))),
+                          ]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ]),
-          const SizedBox(height:12),
-          Row(children:[
-            Expanded(child:Container(padding:const EdgeInsets.symmetric(horizontal:12,vertical:10),decoration:BoxDecoration(color:Colors.white.withOpacity(.12),borderRadius:BorderRadius.circular(15)),
-              child:Row(children:[const Icon(Icons.dashboard_outlined,color:Color(0xFFE9DCC7),size:17),const SizedBox(width:8),
-                Expanded(child:Text(sections[section]??'لوحة الإدارة',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w800,fontSize:13))),
-                Text(section=='messages'?'':section=='analytics'?'': '${rows.length} سجل',style:const TextStyle(color:Color(0xFFE9DCC7),fontSize:11,fontWeight:FontWeight.w700))
-              ]))),
-          ]),
-        ]),
-      )),
-      Padding(padding:const EdgeInsets.fromLTRB(12,0,12,10),child:GlassPanel(radius:22,padding:const EdgeInsets.symmetric(horizontal:7,vertical:7),child:SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(children:sections.entries.map((e){
-        final active=section==e.key;
-        return Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:InkWell(borderRadius:BorderRadius.circular(16),onTap:(){setState((){section=e.key;if(e.key!='bookings'){selectedBookingCustomerId=null;selectedBookingId=null;}if(e.key!='messages')showChatConversation=false;});if(e.key=='bookings')loadChatMembers();refresh();},child:AnimatedContainer(duration:const Duration(milliseconds:220),curve:Curves.easeOutCubic,padding:EdgeInsets.symmetric(horizontal:active?13:11,vertical:10),decoration:BoxDecoration(gradient:active?const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFFEAD8B5),Color(0xFFD2B47E)]):null,color:active?null:Colors.transparent,borderRadius:BorderRadius.circular(15),border:Border.all(color:active?gold.withOpacity(.5):sectionColors[e.key]!.withOpacity(.18))),child:Row(mainAxisSize:MainAxisSize.min,children:[Icon(sectionIcons[e.key],size:18,color:active?const Color(0xFF302719):sectionColors[e.key]),const SizedBox(width:7),Text(e.value,style:TextStyle(color:active?const Color(0xFF302719):sectionColors[e.key],fontWeight:FontWeight.w800,fontSize:12))]))));
-      }).toList())))),
-      Expanded(child:section=='analytics'?const AdminAnalyticsScreen():section=='messages'?adminChat():section=='bookings'?adminBookingsPage():busy?const Center(child:CircularProgressIndicator()):RefreshIndicator(
-        onRefresh:refresh,color:gold,child:ListView(padding:const EdgeInsets.fromLTRB(14,12,14,90),children:[
-          GlassPanel(padding:const EdgeInsets.all(18),radius:24,child:Row(children:[
-              Container(width:46,height:46,decoration:BoxDecoration(
-                gradient:LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[gold.withOpacity(.32),gold.withOpacity(.10)]),
-                borderRadius:BorderRadius.circular(16),border:Border.all(color:gold.withOpacity(.35))),
-                child:Icon(sectionIcons[section]??Icons.dashboard_rounded,color:gold,size:25)),
-              const SizedBox(width:13),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Text(sections[section]??'الإدارة',style:const TextStyle(fontSize:18,fontWeight:FontWeight.w900)),
-                Text('إدارة وتنظيم بيانات ${sections[section]??''}',style:TextStyle(fontSize:11,color:Theme.of(context).hintColor)),
-              ])),
-              Container(padding:const EdgeInsets.symmetric(horizontal:14,vertical:8),decoration:BoxDecoration(
-                color:gold.withOpacity(.14),borderRadius:BorderRadius.circular(14),border:Border.all(color:gold.withOpacity(.28))),
-                child:Text('${rows.length}',style:TextStyle(fontSize:21,fontWeight:FontWeight.w900,color:gold))),
-            ])),
-          const SizedBox(height:12),
-          if(section=='banners'&&rows.length>=7)const Padding(padding:EdgeInsets.all(8),child:Text('وصلت إلى الحد الأقصى: 7 بانرات.')),
-          if(rows.isEmpty)Container(padding:const EdgeInsets.all(24),decoration:BoxDecoration(color:Theme.of(context).cardColor,borderRadius:BorderRadius.circular(22),border:Border.all(color:gold.withOpacity(.2))),
-            child:const Column(children:[Icon(Icons.inbox_rounded,size:42,color:Color(0xFFC49A55)),SizedBox(height:10),Text('لا توجد بيانات بعد',style:TextStyle(fontWeight:FontWeight.w800)),Text('استخدم زر إضافة سجل للبدء',style:TextStyle(fontSize:12,color:Colors.grey))])),
-          ...rows.map(recordCard),
-        ]))),
-    ])),
-  ));
+        ),
+      ),
+    );
+  }
 
 }
