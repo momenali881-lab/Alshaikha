@@ -252,6 +252,10 @@ class AdminHome extends StatefulWidget {
  @override State<AdminHome> createState()=>_AdminHomeState();
 }
 class _AdminHomeState extends State<AdminHome> {
+  final Map<String,GlobalKey> _sectionGuideKeys={for(final key in sections.keys)key:GlobalKey()};
+  final GlobalKey _helpGuideKey=GlobalKey(),_adminAccountsGuideKey=GlobalKey(),_notificationGuideKey=GlobalKey(),_logoutGuideKey=GlobalKey(),_refreshGuideKey=GlobalKey();
+  OverlayEntry? _guideOverlay;
+  int _guideIndex=0;
   bool fromChatBooking=false;
   bool showChatConversation=false;
   String section='members'; String? selectedConversationId; String? selectedBookingCustomerId; String? selectedBookingId; StreamSubscription<Map<String,dynamic>>? notificationTapSub; final Set<String> _seenNotificationIds=<String>{}; bool _notificationsInitialized=false; List<Map<String,dynamic>> rows=[]; List<Map<String,dynamic>> chatMembers=[]; List<Map<String,dynamic>> customerProfiles=[]; List<Map<String,dynamic>> notifications=[]; bool busy=true; Timer? poll; Timer? topNotificationTimer; final chatController=TextEditingController(); final FocusNode chatFocusNode=FocusNode(); final ScrollController adminChatScrollController=ScrollController();
