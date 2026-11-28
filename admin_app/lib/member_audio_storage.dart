@@ -28,7 +28,7 @@ class MemberAudioStorage {
     if (bytes == null || bytes.isEmpty) {
       throw Exception('تعذر قراءة الملف الصوتي من الهاتف');
     }
-    final path = 'member_audio/$memberId/voice.$extension';
+    final path = 'member_audio/$memberId/voice_${DateTime.now().microsecondsSinceEpoch}.$extension';
     final ref = FirebaseStorage.instance.ref().child(path);
     await ref.putData(bytes, SettableMetadata(contentType: contentType(extension)));
     final url = await ref.getDownloadURL();
