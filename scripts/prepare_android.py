@@ -38,6 +38,8 @@ for app, (package, activity_file) in apps.items():
     # Newer Android plugins (including the lifecycle dependency used by file_picker)
     # require compileSdk 36+. Keep targetSdk/minSdk unchanged; this only raises the
     # compile API available to the build.
+    # Flutter's generated Kotlin DSL may use either a numeric value or
+    # flutter.compileSdkVersion. Force the app module's compile SDK explicitly.
     gradle_text, compile_count = re.subn(
         r"(?m)^(\s*compileSdk\s*=\s*).*$",
         r"\g<1>36",
@@ -46,7 +48,7 @@ for app, (package, activity_file) in apps.items():
     )
     if compile_count == 0:
         raise RuntimeError(f"Missing compileSdk assignment in {gradle_file}")
-    if "isCoreLibraryDesugaringEnabled" not in gradle_text:
+    if not re.search(r"(?m)^\\s*compileSdk\\s*=\\s*36\\s*$", gradle_text):\n        raise RuntimeError(f"compileSdk 36 was not applied in {gradle_file}")\n    if "isCoreLibraryDesugaringEnabled" not in gradle_text:
         compile_options = re.search(r"compileOptions\s*\{", gradle_text)
         if not compile_options:
             raise RuntimeError(f"Missing compileOptions block in {gradle_file}")
