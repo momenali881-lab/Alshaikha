@@ -13,12 +13,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Keep one signing identity across builds so installed apps can be updated safely.
-      - name: Restore stable Android signing key
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: alshaikha-android-debug-signing-v1
+      # Restore the exact existing Android debug signing identity from repository secrets.
+      # This keeps both APKs signed with the same key without relying on an expiring Actions cache.
+      - name: Restore permanent Android signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          mkdir -p "$HOME/.android"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+          keytool -list -v -storetype JKS \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" > "$RUNNER_TEMP/signing-certificate.txt"
+          grep -Fq 'B2:0A:4E:CB:E1:83:DD:95:67:BF:04:29:1E:62:BC:5D:53:84:DC:78' "$RUNNER_TEMP/signing-certificate.txt"
+          echo "Verified expected Android signing certificate."
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
