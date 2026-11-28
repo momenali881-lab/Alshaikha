@@ -48,7 +48,9 @@ for app, (package, activity_file) in apps.items():
     )
     if compile_count == 0:
         raise RuntimeError(f"Missing compileSdk assignment in {gradle_file}")
-    if not re.search(r"(?m)^\\s*compileSdk\\s*=\\s*36\\s*$", gradle_text):\n        raise RuntimeError(f"compileSdk 36 was not applied in {gradle_file}")\n    if "isCoreLibraryDesugaringEnabled" not in gradle_text:
+    if not re.search(r"(?m)^\\s*compileSdk\\s*=\\s*36\\s*$", gradle_text):
+        raise RuntimeError(f"compileSdk 36 was not applied in {gradle_file}")
+    if "isCoreLibraryDesugaringEnabled" not in gradle_text:
         compile_options = re.search(r"compileOptions\s*\{", gradle_text)
         if not compile_options:
             raise RuntimeError(f"Missing compileOptions block in {gradle_file}")
