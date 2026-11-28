@@ -18,7 +18,7 @@ class _MemberVoicePlayerState extends State<MemberVoicePlayer> {
   void initState() {
     super.initState();
     _player = AudioPlayer();
-    _player.setUrl(widget.url).catchError((_) {});
+    unawaited(_player.setUrl(widget.url).catchError((Object _) => null));
   }
 
   @override
