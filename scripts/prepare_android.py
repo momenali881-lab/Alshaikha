@@ -16,6 +16,41 @@ for app in ("admin_app", "client_app"):
 
 for app, (package, activity_file) in apps.items():
     android = root / app / "android"
+    # The file_picker dependency requires Android API 36 at compile time.
+    # Flutter generates these Gradle files during the workflow, so update the
+    # generated app module here for both apps without changing targetSdk/minSdk.
+    gradle_files = [
+        android / "app" / "build.gradle.kts",
+        android / "app" / "build.gradle",
+    ]
+    gradle_file = next((candidate for candidate in gradle_files if candidate.is_file()), None)
+    if gradle_file is None:
+        raise FileNotFoundError(f"Generated Android app Gradle file not found for {app}")
+    gradle_text = gradle_file.read_text(encoding="utf-8")
+    if gradle_file.suffix == ".kts":
+        gradle_text, replacements = re.subn(
+            r"(?m)^(\\s*compileSdk\\s*=\\s*).*$",
+            r"\\g<1>36",
+            gradle_text,
+            count=1,
+        )
+    else:
+        gradle_text, replacements = re.subn(
+            r"(?m)^(\\s*compileSdkVersion\\s+).*$",
+            r"\\g<1>36",
+            gradle_text,
+            count=1,
+        )
+        if replacements == 0:
+            gradle_text, replacements = re.subn(
+                r"(?m)^(\\s*compileSdk\\s*=\\s*).*$",
+                r"\\g<1>36",
+                gradle_text,
+                count=1,
+            )
+    if replacements != 1:
+        raise RuntimeError(f"Could not safely set compileSdk to 36 in {gradle_file}")
+    gradle_file.write_text(gradle_text, encoding="utf-8")
     source = root / "shared" / "android"
     pkg_dir = android / "app" / "src" / "main" / "kotlin" / Path(*package.split("."))
     pkg_dir.mkdir(parents=True, exist_ok=True)
