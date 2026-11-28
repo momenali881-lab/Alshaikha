@@ -29,22 +29,22 @@ for app, (package, activity_file) in apps.items():
     gradle_text = gradle_file.read_text(encoding="utf-8")
     if gradle_file.suffix == ".kts":
         gradle_text, replacements = re.subn(
-            r"(?m)^(\\s*compileSdk\\s*=\\s*).*$",
-            r"\\g<1>36",
+            r"(?m)^(\s*compileSdk\s*=\s*).*$",
+            r"\g<1>36",
             gradle_text,
             count=1,
         )
     else:
         gradle_text, replacements = re.subn(
-            r"(?m)^(\\s*compileSdkVersion\\s+).*$",
-            r"\\g<1>36",
+            r"(?m)^(\s*compileSdkVersion\s+).*$",
+            r"\g<1>36",
             gradle_text,
             count=1,
         )
         if replacements == 0:
             gradle_text, replacements = re.subn(
-                r"(?m)^(\\s*compileSdk\\s*=\\s*).*$",
-                r"\\g<1>36",
+                r"(?m)^(\s*compileSdk\s*=\s*).*$",
+                r"\g<1>36",
                 gradle_text,
                 count=1,
             )
