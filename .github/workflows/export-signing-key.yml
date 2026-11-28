@@ -1,0 +1,34 @@
+name: Export signing key securely
+
+on:
+  push:
+    branches:
+      - feature/animated-intro-client-admin
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore original signing key
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: alshaikha-android-debug-signing-v1
+
+      - name: Verify and encrypt key
+        env:
+          KEY_EXPORT_PASSWORD: ${{ secrets.KEY_EXPORT_PASSWORD }}
+        run: |
+          test -s ~/.android/debug.keystore
+          openssl enc -aes-256-cbc -pbkdf2 -salt \
+            -in ~/.android/debug.keystore \
+            -out alshaikha-signing-key.enc \
+            -pass env:KEY_EXPORT_PASSWORD
+          sha256sum ~/.android/debug.keystore
+
+      - name: Upload encrypted key
+        uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-signing-key
+          path: alshaikha-signing-key.enc
+          retention-days: 3

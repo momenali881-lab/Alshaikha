@@ -100,6 +100,9 @@ Future<void> showAdminSetupInstructions(BuildContext context) async {
 String _adminAccountEmail(String username) => '${username.trim().toLowerCase()}@alshaikha.app';
 
 
+
+
+
 class AdminAuthGate extends StatelessWidget {
  const AdminAuthGate({super.key});
  @override Widget build(BuildContext context)=>StreamBuilder<User?>(

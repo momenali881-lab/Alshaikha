@@ -64,6 +64,9 @@ class SheikhaClientApp extends StatelessWidget {
 
 String _accountEmail(String username) => '${username.trim().toLowerCase()}@alshaikha.app';
 
+
+
+
 class ClientAuthGate extends StatelessWidget {
  const ClientAuthGate({super.key});
  @override Widget build(BuildContext context) => StreamBuilder<User?>(
