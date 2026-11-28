@@ -10,9 +10,12 @@ import 'glass_design.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'shared_store.dart';
 import 'image_utils.dart';
 import 'get_pronto_uploader.dart';
+import 'member_audio_storage.dart';
+import 'member_voice_player.dart';
 import 'iraq_locations.dart';
 import 'analytics_screen.dart';
 import 'notification_service.dart';
@@ -401,6 +404,25 @@ class _AdminHomeState extends State<AdminHome> {
     DateTime? bookingDate=DateTime.tryParse('${old?['date']??''}');
     bool available=old?['available']!=false, hasPlace=old == null || old['hasPlace']==true, featured=old?['featured']==true, active=old?['active']!=false;
     List<String> images=List<String>.from(old?['images']??[]);
+    final memberId=section=='members'?(old?['id']?.toString()??FirebaseFirestore.instance.collection('members').doc().id):null;
+    String? voiceUrl=old?['voiceUrl']?.toString();
+    String? voicePath=old?['voicePath']?.toString();
+    String? voiceName=old?['voiceName']?.toString();
+    String? previousVoicePath=voicePath;
+    bool uploadingVoice=false;
+    Future<void> chooseMemberVoice() async {
+      final picked=await FilePicker.platform.pickFiles(type:FileType.custom,allowedExtensions:MemberAudioStorage.extensions.toList(),withData:true);
+      if(picked==null||picked.files.isEmpty)return;
+      final file=picked.files.single;
+      if(file.size>MemberAudioStorage.maxBytes){note('حجم البصمة الصوتية يجب ألا يتجاوز 10 ميغابايت');return;}
+      ds(()=>uploadingVoice=true);
+      try {
+        final uploaded=await MemberAudioStorage.upload(file,memberId!);
+        ds((){voiceUrl=uploaded['url'];voicePath=uploaded['path'];voiceName=uploaded['name'];});
+        note('تم رفع البصمة الصوتية، احفظ بيانات العضو لتثبيتها');
+      } catch(e) { note('تعذر رفع البصمة الصوتية: $e'); }
+      finally { ds(()=>uploadingVoice=false); }
+    }
     final result=await showDialog<bool>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,ds)=>AlertDialog(
       backgroundColor:Theme.of(ctx).colorScheme.surface.withOpacity(.96),surfaceTintColor:Colors.transparent,elevation:0,shadowColor:Colors.black.withOpacity(.16),
       shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(28),side:BorderSide(color:gold.withOpacity(.30),width:1)),
@@ -456,21 +478,29 @@ class _AdminHomeState extends State<AdminHome> {
             Positioned(right:0,top:0,child:InkWell(onTap:()=>ds(()=>images.removeAt(e.key)),child:const CircleAvatar(radius:10,child:Icon(Icons.close,size:12))))
           ])).toList()),
           Padding(padding:const EdgeInsets.only(top:9),child:Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:Theme.of(ctx).colorScheme.onSurface.withOpacity(.025),borderRadius:BorderRadius.circular(18),border:Border.all(color:gold.withOpacity(.20))),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Row(children:[Icon(Icons.photo_library_outlined,color:gold,size:19),const SizedBox(width:8),Expanded(child:Text('معرض الصور',style:TextStyle(fontWeight:FontWeight.w800,color:Theme.of(ctx).colorScheme.onSurface))),Text('${images.length} / 10',style:TextStyle(fontSize:12,color:Theme.of(ctx).hintColor))]),const SizedBox(height:9),OutlinedButton.icon(onPressed:images.length>=10?null:()async{final v=await pickImages(images);ds(()=>images=v);},icon:const Icon(Icons.add_photo_alternate_rounded),label:Text(images.isEmpty?'اختيار صور من الهاتف':'إضافة أو تغيير الصور'),style:OutlinedButton.styleFrom(foregroundColor:gold,side:BorderSide(color:gold.withOpacity(.42)),padding:const EdgeInsets.symmetric(vertical:12),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(14))))]))),
+          if(section=='members')Padding(padding:const EdgeInsets.only(top:12),child:Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:Theme.of(ctx).colorScheme.onSurface.withOpacity(.025),borderRadius:BorderRadius.circular(18),border:Border.all(color:gold.withOpacity(.25))),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+            Row(children:[Icon(Icons.graphic_eq_rounded,color:gold,size:20),const SizedBox(width:8),Expanded(child:Text('البصمة الصوتية للعضو',style:TextStyle(fontWeight:FontWeight.w800,color:Theme.of(ctx).colorScheme.onSurface))),if(voiceUrl!=null)IconButton(tooltip:'حذف البصمة',onPressed:()=>ds((){voiceUrl=null;voicePath=null;voiceName=null;}),icon:const Icon(Icons.delete_outline,color:Colors.redAccent))]),
+            if(voiceUrl!=null)MemberVoicePlayer(url:voiceUrl!),
+            if(voiceName!=null)Padding(padding:const EdgeInsets.only(top:5),child:Text(voiceName!,style:TextStyle(fontSize:12,color:Theme.of(ctx).hintColor),maxLines:1,overflow:TextOverflow.ellipsis)),
+            const SizedBox(height:8),
+            OutlinedButton.icon(onPressed:uploadingVoice?null:chooseMemberVoice,icon:uploadingVoice?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.audio_file_rounded),label:Text(uploadingVoice?'جارٍ رفع الملف...':voiceUrl==null?'اختيار بصمة صوتية':'استبدال البصمة الصوتية')),
+            const Text('الصيغ: MP3، M4A، WAV، AAC، OGG، OPUS • الحد الأقصى 10 MB • مدة مقترحة 60 ثانية',style:TextStyle(fontSize:11,color:Colors.black54)),
+          ]))),
         ]
       ]))),
       actionsPadding:const EdgeInsets.fromLTRB(20,8,20,18),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),style:TextButton.styleFrom(foregroundColor:Theme.of(ctx).hintColor,padding:const EdgeInsets.symmetric(horizontal:18,vertical:12)),child:const Text('إلغاء')),FilledButton.icon(onPressed:()=>Navigator.pop(ctx,true),icon:const Icon(Icons.check_rounded,size:18),label:const Text('حفظ التغييرات'),style:FilledButton.styleFrom(backgroundColor:gold,foregroundColor:Colors.black,padding:const EdgeInsets.symmetric(horizontal:20,vertical:13),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(15))))],
     )));
     if(result==true){
-      final data=<String,dynamic>{'id':old?['id'],'customerId':selectedCustomerId};
+      final data=<String,dynamic>{'id':section=='members'?memberId:old?['id'],'customerId':selectedCustomerId};
       for(final key in fields.keys){if(key=='available'||key=='hasPlace'||(section=='members'&&key=='address'))continue;if(section=='bookings'&&key=='memberId'){data[key]=selectedMemberId;continue;}if(section=='bookings'&&key=='date'){data[key]=bookingDate?.toIso8601String()??'';continue;}final v=ctrls[key]!.text.trim();data[key]=(key=='age'||key=='durationMinutes')?int.tryParse(v)??0:(key=='hourlyPrice'||key=='nightlyPrice')?v:v;}
       if(section=='bookings'){final chosen=bookingMembers.where((m)=>m['id']?.toString()==selectedMemberId).toList();data['memberName']=chosen.isEmpty?'':chosen.first['name'];final customer=customerProfiles.where((p)=>p['id']?.toString()==selectedCustomerId).toList();if(customer.isNotEmpty){data['customerId']=selectedCustomerId;if((data['customerName']??'').toString().trim().isEmpty)data['customerName']=customer.first['displayName']??customer.first['username']??'عميل';}}
       if(section=='sessions'){final chosen=sessionMembers.where((m)=>m['id']?.toString()==sessionMemberId).toList();data['memberId']=sessionMemberId==null||sessionMemberId!.isEmpty?null:sessionMemberId;data['memberName']=chosen.isEmpty?'':chosen.first['name'];data['date']=sessionDate?.toIso8601String()??'';}
-      if(section=='members'){data['available']=available;data['hasPlace']=hasPlace;data['featured']=featured;data['province']=selectedProvince??'';data['area']=areaName.text.trim();data['district']=areaName.text.trim();data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,areaName.text.trim(),data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
+      if(section=='members'){data['voiceUrl']=voiceUrl;data['voicePath']=voicePath;data['voiceName']=voiceName;data['available']=available;data['hasPlace']=hasPlace;data['featured']=featured;data['province']=selectedProvince??'';data['area']=areaName.text.trim();data['district']=areaName.text.trim();data['neighborhood']='';data['landmark']=landmark.text.trim().isNotEmpty?landmark.text.trim():(selectedLandmark??'');data['landmarkSource']=landmark.text.trim().isNotEmpty?'user-entered':'reference-dataset';data['address']=[selectedProvince,areaName.text.trim(),data['landmark']].where((v)=>v!=null&&v.toString().trim().isNotEmpty).join('، ');}
       if(section=='banners')data['active']=active;
       if(['members','sessions','banners','announcements'].contains(section))data['images']=images;
       if(section=='banners'){data['linkedMemberId']=(linkedMemberId==null||linkedMemberId!.isEmpty)?null:linkedMemberId;data['linkedSessionId']=(linkedSessionId==null||linkedSessionId!.isEmpty)?null:linkedSessionId;data['targetType']=data['linkedMemberId']!=null?'member':data['linkedSessionId']!=null?'session':'none';data['targetId']=data['linkedMemberId']??data['linkedSessionId'];}
       if(section=='announcements'){data['createdAt']=DateTime.now().toIso8601String();}
-      if(section=='members'&&(selectedProvince==null||areaName.text.trim().isEmpty||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||(ctrls['customerName']!.text.trim().isEmpty&&selectedCustomerId==null))){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else if(section=='sessions'&&(ctrls['title']!.text.trim().isEmpty||sessionDate==null)){note('اكتب عنوان الجلسة وحدد تاريخها');}else try{final savedId=await SharedStore.save(section,data);if(section=='bookings'&&fromChatBooking&&selectedConversationId!=null){await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'bookingCard','bookingId':savedId,'customerName':data['customerName'],'memberId':data['memberId'],'memberName':data['memberName'],'date':data['date'],'durationMinutes':data['durationMinutes']??60,'notes':data['notes']??'','status':data['status']??'قيد المراجعة','text':'تم إنشاء بطاقة حجز','createdAt':DateTime.now().toIso8601String()});}if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':'الشيخة','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'&&data['customerId']!=null){await SharedStore.save('notifications',{'target':'customer','customerId':data['customerId'],'conversationId':data['customerId'],'type':'booking','title':'الشيخة','senderName':'الشيخة','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':savedId});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
+      if(section=='members'&&(selectedProvince==null||areaName.text.trim().isEmpty||(selectedLandmark==null&&landmark.text.trim().isEmpty))){note('اختر المحافظة والمنطقة وحدد نقطة دالة حقيقية أو اكتب اسمها الكامل');}else if(section=='bookings'&&(selectedMemberId==null||bookingDate==null||(ctrls['customerName']!.text.trim().isEmpty&&selectedCustomerId==null))){note('اكتب اسم العميل واختر عضو الكادر وحدد تاريخ ووقت الحجز');}else if(section=='sessions'&&(ctrls['title']!.text.trim().isEmpty||sessionDate==null)){note('اكتب عنوان الجلسة وحدد تاريخها');}else try{final savedId=await SharedStore.save(section,data);if(section=='members'&&previousVoicePath!=null&&previousVoicePath!=voicePath){try{await MemberAudioStorage.delete(previousVoicePath);}catch(_){}}if(section=='bookings'&&fromChatBooking&&selectedConversationId!=null){await SharedStore.save('messages',{'conversationId':selectedConversationId,'senderId':FirebaseAuth.instance.currentUser?.uid,'sender':'الإدارة','type':'bookingCard','bookingId':savedId,'customerName':data['customerName'],'memberId':data['memberId'],'memberName':data['memberName'],'date':data['date'],'durationMinutes':data['durationMinutes']??60,'notes':data['notes']??'','status':data['status']??'قيد المراجعة','text':'تم إنشاء بطاقة حجز','createdAt':DateTime.now().toIso8601String()});}if(section=='announcements'){await SharedStore.save('notifications',{'target':'all','type':'announcement','title':'الشيخة','body':data['body']??'','createdAt':DateTime.now().toIso8601String(),'read':false});}if(section=='bookings'&&data['customerId']!=null){await SharedStore.save('notifications',{'target':'customer','customerId':data['customerId'],'conversationId':data['customerId'],'type':'booking','title':'الشيخة','senderName':'الشيخة','body':'الموعد: ${data['date']} مع ${data['memberName']??''} لمدة ${data['durationMinutes']??60} دقيقة','createdAt':DateTime.now().toIso8601String(),'read':false,'bookingId':savedId});}await refresh();note('تم الحفظ بنجاح');}catch(e){note('فشل الحفظ: $e');}
     }
     for(final c in ctrls.values){c.dispose();}landmark.dispose();areaName.dispose();
   }
