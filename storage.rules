@@ -8,9 +8,10 @@ service firebase.storage {
     }
     match /member_audio/{memberId}/{fileName} {
       allow read: if signedIn();
-      allow write: if isAdmin()
-        && request.resource.size < 10 * 1024 * 1024
+      allow create, update: if isAdmin()
+        && request.resource.size <= 10 * 1024 * 1024
         && request.resource.contentType.matches('audio/(mpeg|mp4|wav|aac|ogg|opus)');
+      allow delete: if isAdmin();
     }
     match /{allPaths=**} {
       allow read: if signedIn();
