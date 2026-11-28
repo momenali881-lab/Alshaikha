@@ -194,7 +194,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> with TickerPr
       SizedBox(
        height:imageHeight,width:double.infinity,
        child:ColoredBox(color:const Color(0xFFF45EAE),
-        child:Image.asset('file_00000000df048210b32f5dc7efa7f5ad.png',
+        child:Image.asset('file_0000000012bc824396c4a5b43005df2e.png',
          fit:BoxFit.contain,alignment:Alignment.center,filterQuality:FilterQuality.high,
          errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.image_not_supported_outlined,color:Colors.white70,size:38)))),
       ),
