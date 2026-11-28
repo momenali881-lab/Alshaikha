@@ -39,8 +39,8 @@ for app, (package, activity_file) in apps.items():
     # require compileSdk 36+. Keep targetSdk/minSdk unchanged; this only raises the
     # compile API available to the build.
     gradle_text, compile_count = re.subn(
-        r"(?m)^(\\s*compileSdk\\s*=\\s*)\\d+",
-        r"\\g<1>36",
+        r"(?m)^(\s*compileSdk\s*=\s*).*$",
+        r"\g<1>36",
         gradle_text,
         count=1,
     )
