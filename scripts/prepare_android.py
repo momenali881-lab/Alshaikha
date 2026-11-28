@@ -35,6 +35,17 @@ for app, (package, activity_file) in apps.items():
     # flutter_local_notifications requires Android core library desugaring.
     gradle_file = android / "app" / "build.gradle.kts"
     gradle_text = gradle_file.read_text(encoding="utf-8")
+    # Newer Android plugins (including the lifecycle dependency used by file_picker)
+    # require compileSdk 36+. Keep targetSdk/minSdk unchanged; this only raises the
+    # compile API available to the build.
+    gradle_text, compile_count = re.subn(
+        r"(?m)^(\\s*compileSdk\\s*=\\s*)\\d+",
+        r"\\g<1>36",
+        gradle_text,
+        count=1,
+    )
+    if compile_count == 0:
+        raise RuntimeError(f"Missing compileSdk assignment in {gradle_file}")
     if "isCoreLibraryDesugaringEnabled" not in gradle_text:
         compile_options = re.search(r"compileOptions\s*\{", gradle_text)
         if not compile_options:
