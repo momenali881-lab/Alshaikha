@@ -410,7 +410,7 @@ class _AdminHomeState extends State<AdminHome> {
     String? voiceName=old?['voiceName']?.toString();
     String? previousVoicePath=voicePath;
     bool uploadingVoice=false;
-    Future<void> chooseMemberVoice() async {
+    Future<void> chooseMemberVoice(StateSetter ds) async {
       final picked=await FilePicker.platform.pickFiles(type:FileType.custom,allowedExtensions:MemberAudioStorage.extensions.toList(),withData:true);
       if(picked==null||picked.files.isEmpty)return;
       final file=picked.files.single;
@@ -483,7 +483,7 @@ class _AdminHomeState extends State<AdminHome> {
             if(voiceUrl!=null)MemberVoicePlayer(url:voiceUrl!),
             if(voiceName!=null)Padding(padding:const EdgeInsets.only(top:5),child:Text(voiceName!,style:TextStyle(fontSize:12,color:Theme.of(ctx).hintColor),maxLines:1,overflow:TextOverflow.ellipsis)),
             const SizedBox(height:8),
-            OutlinedButton.icon(onPressed:uploadingVoice?null:chooseMemberVoice,icon:uploadingVoice?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.audio_file_rounded),label:Text(uploadingVoice?'جارٍ رفع الملف...':voiceUrl==null?'اختيار بصمة صوتية':'استبدال البصمة الصوتية')),
+            OutlinedButton.icon(onPressed:uploadingVoice?null:()=>chooseMemberVoice(ds),icon:uploadingVoice?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.audio_file_rounded),label:Text(uploadingVoice?'جارٍ رفع الملف...':voiceUrl==null?'اختيار بصمة صوتية':'استبدال البصمة الصوتية')),
             const Text('الصيغ: MP3، M4A، WAV، AAC، OGG، OPUS • الحد الأقصى 10 MB • مدة مقترحة 60 ثانية',style:TextStyle(fontSize:11,color:Colors.black54)),
           ]))),
         ]
